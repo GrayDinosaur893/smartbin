@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-100">
+        
+        <div class="border-b pb-4 mb-6">
+            <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Step 1 of 2</span>
+            <h1 class="text-2xl font-extrabold text-slate-900 mt-1">Report Waste / Overflowing Bin</h1>
+            <p class="text-xs text-slate-500">Provide a photo and verify your location for AI analysis.</p>
+        </div>
+
+        {% if error %}
+            <div class="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-4 border border-red-200">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="/report-waste" enctype="multipart/form-data">
+            
+            <!-- Step 1: Camera / Gallery Upload Choice -->
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">📷 Photo Capture / Upload</label>
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <label class="border-2 border-dashed border-emerald-400 hover:bg-emerald-50 p-4 rounded-xl text-center cursor-pointer transition">
+                        <i class="fa-solid fa-camera text-2xl text-emerald-600 mb-1"></i>
+                        <span class="block text-xs font-bold text-slate-800">Take Photo (Live)</span>
+                        <input type="file" name="photo" accept="image/*" capture="environment" id="photoInput" required class="hidden">
+                    </label>
+                    <label class="border-2 border-dashed border-slate-300 hover:bg-slate-50 p-4 rounded-xl text-center cursor-pointer transition">
+                        <i class="fa-solid fa-image text-2xl text-slate-500 mb-1"></i>
+                        <span class="block text-xs font-bold text-slate-800">Upload Gallery</span>
+                        <input type="file" name="photo" accept="image/*" id="galleryInput" class="hidden">
+                    </label>
+                </div>
+                <div id="imagePreviewContainer" class="hidden text-center mt-2">
+                    <img id="imagePreview" class="max-h-48 mx-auto rounded-lg border shadow-sm">
+                </div>
+            </div>
+
+            <!-- Step 2: Auto GPS + Manual Pin Drag Adjustment -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">📍 Location Detection</label>
+                    <span class="text-xs text-emerald-600 font-semibold"><i class="fa-solid fa-location-crosshairs mr-1"></i> Auto GPS Active</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">If GPS location is slightly off, drag the pin on the map to adjust location.</p>
+                
+                <div id="locationMap" class="map-container shadow-inner border mb-2" style="height: 220px;"></div>
+
+                <input type="hidden" name="lat_detected" id="latDetected" value="21.1904">
+                <input type="hidden" name="lng_detected" id="lngDetected" value="81.2849">
+                <input type="hidden" name="lat_user" id="latUser" value="21.1904">
+                <input type="hidden" name="lng_user" id="lngUser" value="81.2849">
+
+                <div class="text-[11px] font-mono text-slate-500 bg-slate-50 p-2 rounded border">
+                    Adjusted Pin Coordinates: <span id="coordDisplay" class="font-bold text-slate-900">21.1904, 81.2849</span>
+                </div>
+            </div>
+
+            <!-- Step 3: Minimal Optional Note -->
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">📝 Additional Note (Optional)</label>
+                <textarea name="user_notes" rows="2" placeholder="e.g. Garbage has been overflowing since yesterday..." class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                <span>Submit for AI Analysis</span>
+                <i class="fa-solid fa-microchip text-emerald-300"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Image preview handler
+        const photoInput = document.getElementById('photoInput');
+        const galleryInput = document.getElementById('galleryInput');
+        const preview = document.getElementById('imagePreview');
+        const previewContainer = document.getElementById('imagePreviewContainer');
+
+        function handleFile(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    preview.src = evt.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        }
+        photoInput.addEventListener('change', handleFile);
+        galleryInput.addEventListener('change', handleFile);
+
+        // Leaflet Location map with draggable pin
+        var defaultLat = 21.1904;
+        var defaultLng = 81.2849;
+
+        var map = L.map('locationMap').setView([defaultLat, defaultLng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        var marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+        function updateCoords(lat, lng) {
+            document.getElementById('latUser').value = lat.toFixed(5);
+            document.getElementById('lngUser').value = lng.toFixed(5);
+            document.getElementById('coordDisplay').innerText = lat.toFixed(5) + ", " + lng.toFixed(5);
+        }
+
+        marker.on('dragend', function(e) {
+            var position = marker.getLatLng();
+            updateCoords(position.lat, position.lng);
+        });
+
+        // Try HTML5 geolocation
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+                document.getElementById('latDetected').value = lat;
+                document.getElementById('lngDetected').value = lng;
+                map.setView([lat, lng], 15);
+                marker.setLatLng([lat, lng]);
+                updateCoords(lat, lng);
+            });
+        }
+    });
+</script>
+{% endblock %}

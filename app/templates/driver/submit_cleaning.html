@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-8">
+    <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
+        <h2 class="text-xl font-bold text-slate-900 mb-1">Submit Proof of Cleaning</h2>
+        <p class="text-xs text-slate-500 mb-6">Task ID: <span class="font-bold text-slate-900">{{ task.task_code }}</span> | Report: {{ report.report_code }}</p>
+
+        {% if error %}
+            <div class="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-4 border border-red-200">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/driver/submit-cleaning/{{ task.id }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="driver_lat" id="driverLat" value="{{ report.gps_lat_user }}">
+            <input type="hidden" name="driver_lng" id="driverLng" value="{{ report.gps_lng_user }}">
+
+            <div class="mb-4">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">Before Cleaning Photo (Citizen Report)</span>
+                <img src="{{ url_for('static', filename=report.image_path) }}" class="w-full h-36 object-cover rounded-xl border">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">📸 Take "After Cleaning" Photo</label>
+                <label class="border-2 border-dashed border-emerald-400 hover:bg-emerald-50 p-6 rounded-xl text-center block cursor-pointer transition">
+                    <i class="fa-solid fa-camera text-3xl text-emerald-600 mb-1"></i>
+                    <span class="block text-xs font-bold text-slate-800">Snap Cleared Site Photo</span>
+                    <input type="file" name="after_photo" accept="image/*" capture="environment" required class="hidden" onchange="this.form.submit()">
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            document.getElementById('driverLat').value = pos.coords.latitude;
+            document.getElementById('driverLng').value = pos.coords.longitude;
+        });
+    }
+</script>
+{% endblock %}

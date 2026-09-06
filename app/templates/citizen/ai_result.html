@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-10">
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center">
+
+        {% if report.status == 'verified' %}
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 shadow-sm animate-bounce">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Verification Complete</span>
+            <h1 class="text-3xl font-black text-slate-900 mt-2">REPORT VERIFIED ✅</h1>
+            <p class="text-xs text-slate-500 mt-1 mb-6">Report ID: <span class="font-bold text-slate-900">{{ report.report_code }}</span></p>
+
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 text-left text-xs space-y-3 mb-6">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">Waste Detected</span>
+                    <span class="font-bold text-emerald-600">✓ YES</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">Classification</span>
+                    <span class="font-bold text-slate-800">{{ report.waste_type }}</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">Severity Rating</span>
+                    <span class="font-bold text-red-600">{{ report.severity.upper() }}</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-slate-500">Illegal Dumping Flag</span>
+                    <span class="font-bold {{ 'text-red-600' if report.is_illegal_dumping else 'text-slate-600' }}">
+                        {{ '🚨 DETECTED' if report.is_illegal_dumping else 'NO' }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-slate-500">AI Confidence Score</span>
+                    <span class="font-mono font-bold text-emerald-700 text-sm">{{ report.ai_confidence }}%</span>
+                </div>
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs mb-6 font-medium">
+                <i class="fa-solid fa-gift text-emerald-600 text-base mr-1"></i>
+                You earned <strong>+50 Eco-Points</strong> & <strong>₹15.00 Cash Reward</strong> for this verified report!
+            </div>
+
+        {% elif report.status == 'uncertain' %}
+            <div class="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 shadow-sm">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Review Required</span>
+            <h1 class="text-2xl font-black text-slate-900 mt-2">VERIFICATION UNCERTAIN ⚠️</h1>
+            <p class="text-xs text-slate-500 mt-1 mb-6">Report ID: <span class="font-bold text-slate-900">{{ report.report_code }}</span></p>
+
+            <div class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-xs mb-6 text-left leading-relaxed">
+                We couldn't confidently verify this report automatically (AI Confidence: <strong>{{ report.ai_confidence }}%</strong>). Your report has been routed to the Municipal Officer dashboard for fast manual review.
+            </div>
+
+        {% else %}
+            <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 shadow-sm">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 mt-2">UNABLE TO VERIFY ❌</h1>
+            <p class="text-xs text-slate-500 mt-1 mb-6">The image does not appear to show a waste-management issue.</p>
+        {% endif %}
+
+        <div class="flex gap-3">
+            <a href="/citizen/dashboard" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition">
+                View My Dashboard
+            </a>
+            <a href="/report-waste" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition">
+                Report Another Spot
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Leaflet Z-Index Isolation Fix to prevent map bleeding over header/navbar */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 0.75rem;
+  z-index: 1 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 2 !important;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-control-container {
+  position: relative;
+  z-index: 2 !important;
+}
+
+/* Responsive Tactile Touch Lift & Box Shadow Feedback Effects */
+.touch-card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.touch-card:hover, .touch-card:focus-within {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.12), 0 6px 12px -4px rgba(0, 0, 0, 0.08);
+}
+
+.touch-card:active {
+  transform: translateY(-2px) scale(0.99);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.15);
+}

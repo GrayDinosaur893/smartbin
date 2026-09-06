@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex min-h-screen bg-slate-100">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 hidden md:flex">
+        <div class="p-5 border-b border-slate-800">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">Control Center</span>
+            <h2 class="text-base font-extrabold text-white mt-0.5">Municipal Admin</h2>
+        </div>
+
+        <nav class="p-3 space-y-1 text-xs font-semibold flex-grow">
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-600 text-white shadow">
+                <i class="fa-solid fa-house w-4"></i> Dashboard
+            </a>
+            <a href="#reports" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-clipboard-list w-4"></i> Reports
+            </a>
+            <a href="#map" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-map-location-dot w-4"></i> Waste Map
+            </a>
+            <a href="#ai" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-robot w-4"></i> AI Verification
+            </a>
+            <a href="#drivers" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-truck-ram w-4"></i> Drivers & Workers
+            </a>
+            <a href="#routes" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-compass w-4"></i> Route Planning (C++)
+            </a>
+            <a href="#illegal" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-triangle-exclamation text-red-400 w-4"></i> Illegal Dumping
+            </a>
+            <a href="#analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-chart-pie w-4"></i> Analytics
+            </a>
+            <a href="#accountability" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-file-contract w-4"></i> Accountability Logs
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <a href="/admin/export-csv" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-2 border border-slate-700 transition">
+                <i class="fa-solid fa-file-csv text-emerald-400"></i> Export Report (CSV)
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow p-6">
+        
+        <!-- Contextual Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-900">Good Morning, Admin</h1>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">{{ current_date }} · Durg Municipal Zone</p>
+            </div>
+            <div class="flex gap-2">
+                <form action="/admin/optimize-routes" method="POST" class="flex items-center gap-2">
+                    <select name="driver_id" class="px-3 py-2 border rounded-lg text-xs font-semibold bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        {% for d in drivers %}
+                            <option value="{{ d.id }}">Assign Driver: {{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-bolt text-amber-300"></i> Optimize Routes (C++ Engine)
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Live Snapshot KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Reports Today</span>
+                <div class="text-3xl font-black text-slate-900 mt-1">{{ reports_today }}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-[11px] font-bold uppercase text-amber-500 tracking-wider">Pending Review</span>
+                <div class="text-3xl font-black text-amber-600 mt-1">{{ pending_review }}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-[11px] font-bold uppercase text-blue-500 tracking-wider">Assigned Tasks</span>
+                <div class="text-3xl font-black text-blue-600 mt-1">{{ assigned_tasks }}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-[11px] font-bold uppercase text-emerald-500 tracking-wider">Cleaned Today</span>
+                <div class="text-3xl font-black text-emerald-600 mt-1">{{ cleaned_today }}</div>
+            </div>
+        </div>
+
+        <!-- Hero Grid: Live Waste GIS Map + ATTENTION REQUIRED Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            
+            <!-- LIVE WASTE MAP HERO -->
+            <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-map text-emerald-600"></i> LIVE WASTE MAP
+                    </h2>
+                    <div class="flex gap-3 text-[11px] font-semibold">
+                        <span class="text-red-600"><i class="fa-solid fa-circle text-[9px]"></i> Overflow</span>
+                        <span class="text-amber-500"><i class="fa-solid fa-circle text-[9px]"></i> Reported</span>
+                        <span class="text-blue-500"><i class="fa-solid fa-circle text-[9px]"></i> Assigned</span>
+                        <span class="text-emerald-500"><i class="fa-solid fa-circle text-[9px]"></i> Cleaned</span>
+                    </div>
+                </div>
+                <div id="adminWasteMap" class="map-container flex-grow shadow-inner border" style="height: 350px;"></div>
+            </div>
+
+            <!-- ATTENTION REQUIRED PANEL -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                <h2 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2 text-red-600">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ATTENTION REQUIRED
+                </h2>
+
+                <div class="space-y-3 flex-grow overflow-y-auto max-h-[350px] text-xs">
+                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex justify-between items-center">
+                        <span><i class="fa-solid fa-clock mr-1"></i> {{ unverified_reports|length }} reports waiting verification</span>
+                        <span class="font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[10px]">REVIEW</span>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 flex justify-between items-center">
+                        <span><i class="fa-solid fa-dumpster mr-1"></i> {{ high_priority_overflow|length }} high-priority overflow cases</span>
+                        <span class="font-bold bg-red-200 text-red-900 px-2 py-0.5 rounded text-[10px]">URGENT</span>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex justify-between items-center">
+                        <span><i class="fa-solid fa-truck-slash mr-1"></i> {{ inactive_drivers|length }} drivers haven't started route</span>
+                        <span class="font-bold bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[10px]">OFF DUTY</span>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 flex justify-between items-center">
+                        <span><i class="fa-solid fa-ban mr-1"></i> {{ illegal_dumping_reports|length }} suspicious dumping spots</span>
+                        <span class="font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded text-[10px]">ILLEGAL</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Recent Reports Table -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-slate-900 text-sm">RECENT REPORTS FEED</h2>
+                <a href="/admin/export-csv" class="text-xs text-emerald-600 font-bold hover:underline">View All / Export</a>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-50 uppercase font-semibold text-slate-500 border-b">
+                        <tr>
+                            <th class="p-3">Report ID</th>
+                            <th class="p-3">Waste Category</th>
+                            <th class="p-3">AI Confidence</th>
+                            <th class="p-3">Severity</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for r in reports %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 font-bold text-slate-900">{{ r.report_code }}</td>
+                            <td class="p-3">{{ r.waste_type }}</td>
+                            <td class="p-3 font-mono font-bold text-slate-800">{{ r.ai_confidence }}%</td>
+                            <td class="p-3">
+                                {% if r.is_illegal_dumping %}
+                                    <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-semibold">🚨 Illegal Dumping</span>
+                                {% else %}
+                                    <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-semibold">{{ r.severity.capitalize() }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 font-semibold">
+                                {{ r.status.replace('_', ' ').capitalize() }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var map = L.map('adminWasteMap').setView([21.1904, 81.2849], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        {% for b in dustbins %}
+            L.marker([{{ b.latitude }}, {{ b.longitude }}]).addTo(map).bindPopup("<b>Bin {{ b.bin_code }}</b><br>{{ b.location_name }}");
+        {% endfor %}
+
+        {% for r in reports %}
+            var color = "{{ 'green' if r.status == 'completed' else ('purple' if r.is_illegal_dumping else ('blue' if r.status == 'assigned' else 'red')) }}";
+            L.circleMarker([{{ r.gps_lat_user }}, {{ r.gps_lng_user }}], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.8,
+                radius: 9
+            }).addTo(map).bindPopup("<b>{{ r.report_code }}</b><br>{{ r.waste_type }}<br>Status: {{ r.status }}");
+        {% endfor %}
+    });
+</script>
+{% endblock %}
