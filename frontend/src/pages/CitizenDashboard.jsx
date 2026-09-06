@@ -138,11 +138,11 @@ export default function CitizenDashboard({ user, lang }) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Before (Citizen)</span>
-                    <img src={`http://localhost:5000/static/${item.before_image}`} className="w-full h-28 object-cover rounded-xl border" />
+                    <img src={item.before_image?.startsWith('http') ? item.before_image : `/static/${item.before_image}`} className="w-full h-28 object-cover rounded-xl border" />
                   </div>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-emerald-600 block mb-1">After (Driver)</span>
-                    <img src={`http://localhost:5000/static/${item.after_image}`} className="w-full h-28 object-cover rounded-lg border border-emerald-400" />
+                    <img src={item.after_image?.startsWith('http') ? item.after_image : `/static/${item.after_image}`} className="w-full h-28 object-cover rounded-lg border border-emerald-400" />
                   </div>
                 </div>
                 <button
