@@ -8,20 +8,7 @@
   ],
   "routes": [
     {
-      "src": "/assets/(.*)",
-      "dest": "/api/static/assets/$1"
-    },
-    {
-      "src": "/favicon.svg",
-      "dest": "/api/static/favicon.svg"
-    },
-    {
-      "src": "/icons.svg",
-      "dest": "/api/static/icons.svg"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
