@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify, current_app, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from app.database import db
-from app.models.models import User, DriverProfile, Dustbin, Report, Task, CleaningProof, Attendance, RewardsLedger, MunicipalZone, SponsorOffer, UserActivityLog
+from app.models.models import User, DriverProfile, Dustbin, Report, Task, CleaningProof, Attendance, RewardsLedger, MunicipalZone, SponsorOffer, UserActivityLog, VoucherRedemption
 from app.services.ai_service import AIService
 from app.services.vrp_service import VRPService
 from app.services.reward_service import RewardService
@@ -322,13 +322,25 @@ def get_citizen_dashboard(user_id):
         join(Report, Task.report_id == Report.id).\
         filter(Report.citizen_id == user_id, CleaningProof.citizen_approved == False).all()
 
+    redemptions = VoucherRedemption.query.filter_by(user_id=user_id).order_by(VoucherRedemption.redeemed_at.desc()).all()
+    claimed_vouchers = [{
+        'id': v.id,
+        'voucher_code': v.voucher_code,
+        'points_spent': v.points_spent,
+        'redeemed_at': v.redeemed_at.strftime("%b %d, %Y %H:%M"),
+        'company_name': v.sponsor_offer.company_name if v.sponsor_offer else 'Government of CG',
+        'offer_title': v.sponsor_offer.offer_title if v.sponsor_offer else 'Swachh Rewards Voucher',
+        'offer_type': v.sponsor_offer.offer_type if v.sponsor_offer else 'Voucher'
+    } for v in redemptions]
+
     return jsonify({
         'user': {
             'id': user.id,
             'name': user.name,
             'city_zone': user.city_zone,
             'eco_points': user.eco_points,
-            'cash_wallet_balance': user.cash_wallet_balance
+            'cash_wallet_balance': user.cash_wallet_balance,
+            'total_claimed_vouchers': len(claimed_vouchers)
         },
         'reports': [{
             'id': r.id,
@@ -346,8 +358,34 @@ def get_citizen_dashboard(user_id):
             'waste_type': r.waste_type,
             'before_image': r.image_path,
             'after_image': p.after_image_path
-        } for p, t, r in pending_approvals]
+        } for p, t, r in pending_approvals],
+        'claimed_vouchers': claimed_vouchers
     })
+
+
+@api_bp.route('/citizen/vouchers/<int:user_id>', methods=['GET'])
+def get_user_vouchers_api(user_id):
+    try:
+        user = User.query.get_or_404(user_id)
+        redemptions = VoucherRedemption.query.filter_by(user_id=user_id).order_by(VoucherRedemption.redeemed_at.desc()).all()
+        return jsonify({
+            'success': True,
+            'user_id': user.id,
+            'eco_points': user.eco_points,
+            'cash_wallet_balance': user.cash_wallet_balance,
+            'claimed_vouchers': [{
+                'id': v.id,
+                'voucher_code': v.voucher_code,
+                'points_spent': v.points_spent,
+                'redeemed_at': v.redeemed_at.strftime("%b %d, %Y %H:%M"),
+                'company_name': v.sponsor_offer.company_name if v.sponsor_offer else 'Government of CG',
+                'offer_title': v.sponsor_offer.offer_title if v.sponsor_offer else 'Swachh Rewards Voucher',
+                'offer_type': v.sponsor_offer.offer_type if v.sponsor_offer else 'Voucher'
+            } for v in redemptions]
+        })
+    except Exception as e:
+        print(f"[User Vouchers API Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @api_bp.route('/citizen/report-waste', methods=['POST'])

@@ -1,4 +1,5 @@
 import random
+import uuid
 from app.database import db
 from app.models.models import User, RewardsLedger, Report, SponsorOffer, VoucherRedemption
 
@@ -83,9 +84,10 @@ class RewardService:
         cash_deducted = points_needed * cls.POINT_TO_CASH_RATE
         user.cash_wallet_balance = max(0.0, user.cash_wallet_balance - cash_deducted)
 
-        # GENERATE UNIQUE PROMO VOUCHER CODE
-        random_suffix = random.randint(1000, 9999)
-        voucher_code = f"{sponsor.voucher_code_prefix}{random_suffix}"
+        # GENERATE UNIQUE PROMO VOUCHER CODE WITH UUID
+        unique_suffix = uuid.uuid4().hex[:8].upper()
+        prefix = sponsor.voucher_code_prefix if sponsor.voucher_code_prefix else "VCH-CG-2026-"
+        voucher_code = f"{prefix}{unique_suffix}"
 
         # RECORD IN REDEMPTION & REWARDS LEDGER
         redemption_record = VoucherRedemption(
