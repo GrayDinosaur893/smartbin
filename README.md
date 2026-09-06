@@ -7,7 +7,7 @@
 
 ## 📌 Executive Overview
 
-**SmartBin AI** is an end-to-end intelligent solid waste management platform tailored for municipal corporations across **Chhattisgarh** (Headquartered at **Bilaspur Municipal Corporation, Station Road, Bilaspur, CG 495001**).
+**SmartBin AI** is an end-to-end intelligent solid waste management platform tailored for municipal corporations across **Chhattisgarh** (Headquartered at **Bilaspur Municipal Corporation, Nehru Chowk, Bilaspur, CG 495001**).
 
 The system integrates **computer vision AI** for automated waste analysis, a **C++ VRP (Vehicle Routing Problem) engine** for optimal driver collection routes, a **Citizen Eco-Reward Points Engine**, and a **Corporate Sponsors Portal** connecting local businesses with municipal sustainability goals.
 
@@ -145,8 +145,8 @@ npm run dev
 ## 📍 Headquarters & Municipal Contact
 
 **Bilaspur Municipal Corporation HQ**  
-Station Road, Bilaspur, Chhattisgarh — 495001  
-**Helpline**: 1800-233-0001 | **Control Room Email**: `clean@bilaspurmc.cg.gov.in`
+Nehru Chowk, Bilaspur, Chhattisgarh — 495001  
+**Helpline**: 1800-233-1042 | **Control Room Email**: `smartbin@gmail.com`
 
 ---
 *Built with ❤️ for a Cleaner & Greener Chhattisgarh.*
