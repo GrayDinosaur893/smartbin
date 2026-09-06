@@ -221,11 +221,11 @@ export default function App() {
                 {/* Watch Intro Re-trigger Button */}
                 <button
                   onClick={() => setShowIntro(true)}
-                  className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow transition active:scale-95 flex items-center gap-1"
+                  className="hidden sm:flex bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow transition active:scale-95 items-center gap-1"
                   title="Watch SmartBin Video Intro"
                 >
                   <Play className="w-3.5 h-3.5 fill-current text-slate-950" />
-                  <span className="hidden sm:inline">{lang === 'hi' ? 'वीडियो इंट्रो देखें' : 'Watch Intro'}</span>
+                  <span className="hidden lg:inline">{lang === 'hi' ? 'वीडियो इंट्रो देखें' : 'Watch Intro'}</span>
                 </button>
 
                 {/* Language Switcher */}
@@ -239,15 +239,15 @@ export default function App() {
 
                 {/* User Profile / Auth */}
                 {user ? (
-                  <div className="flex items-center gap-2 bg-emerald-900/90 border border-emerald-600 px-3 py-1 rounded-xl text-xs font-bold">
+                  <div className="hidden md:flex items-center gap-2 bg-emerald-900/90 border border-emerald-600 px-3 py-1 rounded-xl text-xs font-bold">
                     <User className="w-4 h-4 text-emerald-300" />
-                    <span className="hidden md:inline">{user.full_name || user.name || 'User'} ({user.role})</span>
+                    <span>{user.full_name || user.name || 'User'} ({user.role})</span>
                     <button onClick={logout} className="hover:text-red-300 text-slate-300 transition ml-1" title="Logout">
                       <LogOut className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5">
+                  <div className="hidden md:flex items-center gap-1.5">
                     <Link
                       to="/login"
                       className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
