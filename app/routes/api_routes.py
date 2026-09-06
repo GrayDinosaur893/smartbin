@@ -761,7 +761,7 @@ def apply_sponsor_offer():
 
 @api_bp.route('/public/test-sms', methods=['GET', 'POST'])
 def test_sms_api():
-    phone = request.args.get('phone') or (request.json.get('phone') if request.is_json else '9876543210')
+    phone = request.args.get('phone') or (request.json.get('phone') if request.is_json else '8085668669')
     results = SMSService.send_report_confirmation_sms(
         report_code="#SB1099",
         city_name="Bilaspur",
@@ -771,18 +771,8 @@ def test_sms_api():
     )
     return jsonify({
         'success': True,
-        'message': f'SMS Notification dispatched successfully to +91 {phone}!',
+        'message': f'1-Click Free Cellular SMS dispatched for +91 {phone}!',
         'sms_logs': results
     })
 
-
-@api_bp.route('/public/set-sms-key', methods=['POST'])
-def set_sms_key_api():
-    data = request.get_json() or {}
-    api_key = data.get('api_key', '')
-    SMSService.set_api_key(api_key)
-    return jsonify({
-        'success': True,
-        'message': 'Fast2SMS Cellular Gateway API Key configured successfully!'
-    })
 

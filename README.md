@@ -110,8 +110,8 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 ```env
 DATABASE_URL=postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-muddy-glade...aws.neon.tech/neondb?sslmode=require
-FAST2SMS_API_KEY=YOUR_OPTIONAL_API_KEY
 SECRET_KEY=smartbin_super_secret_cg_2026
+TARGET_SMS_PHONE=8085668669
 ```
 
 ### 3️⃣ Run Backend Server
