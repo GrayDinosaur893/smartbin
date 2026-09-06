@@ -24,13 +24,64 @@ export default function CitizenDashboard({ user, lang }) {
       .catch(() => alert("Failed to approve cleaning proof"));
   };
 
-  const handleRedeemVoucher = (voucherCode, ptsCost) => {
-    if ((data.user?.eco_points || 0) < ptsCost) {
-      alert(lang === 'hi' ? `पर्याप्त इको-पॉइंट्स नहीं हैं! (आवश्यक: ${ptsCost} Pts)` : `Insufficient Eco-Points! Required: ${ptsCost} Pts`);
+  const handleRedeemVoucher = (voucherCode, ptsCost, offerTitle = 'Municipal Voucher') => {
+    const currentUserId = data.user?.id || user?.id;
+    if (!currentUserId) {
+      alert(lang === 'hi' ? 'कृपया पहले अपने खाते में लॉगिन करें!' : 'Please login to your citizen account first!');
       return;
     }
-    setRedeemed([...redeemed, voucherCode]);
-    alert(lang === 'hi' ? `बधाई हो! वाउचर सफलतापूर्व क्लेम किया गया। वाउचर कोड: ${voucherCode}-2026-CG` : `Congratulations! Voucher claimed successfully. Code: ${voucherCode}-2026-CG`);
+
+    if ((data.user?.eco_points || 0) < ptsCost) {
+      alert(lang === 'hi'
+        ? `पर्याप्त इको-पॉइंट्स नहीं हैं! (आवश्यक: ${ptsCost} Pts, आपके पास: ${data.user?.eco_points || 0} Pts)`
+        : `Insufficient Eco-Points! Required: ${ptsCost} Pts, Available: ${data.user?.eco_points || 0} Pts`
+      );
+      return;
+    }
+
+    axios.post(`${API_BASE}/citizen/redeem-voucher`, {
+      user_id: currentUserId,
+      voucher_code: voucherCode,
+      points_cost: ptsCost,
+      offer_title: offerTitle
+    })
+    .then(res => {
+      if (res.data.success) {
+        const updatedPoints = res.data.remaining_points;
+        const updatedWallet = res.data.remaining_wallet;
+
+        // Update local React state immediately
+        setData(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            eco_points: updatedPoints,
+            cash_wallet_balance: updatedWallet
+          }
+        }));
+
+        const updatedUserLocal = {
+          ...user,
+          eco_points: updatedPoints,
+          cash_wallet_balance: updatedWallet
+        };
+        localStorage.setItem('smartbin_user', JSON.stringify(updatedUserLocal));
+
+        // Re-fetch dashboard from Neon Cloud DB
+        loadDashboard();
+
+        alert(lang === 'hi'
+          ? `🎉 बधाई हो! वाउचर सफलतापूर्वक क्लेम किया गया!\n\n🎟️ यूनिक वाउचर कोड: ${res.data.voucher_code}\n💰 काटे गए पॉइंट्स: -${ptsCost} Pts\n✨ शेष इको-पॉइंट्स: ${updatedPoints} Pts`
+          : `🎉 Congratulations! Voucher claimed successfully!\n\n🎟️ Unique Voucher Code: ${res.data.voucher_code}\n💰 Points Deducted: -${ptsCost} Pts\n✨ Remaining Points: ${updatedPoints} Pts`
+        );
+      } else {
+        alert(res.data.error || 'Failed to claim voucher');
+      }
+    })
+    .catch(err => {
+      const msg = err.response?.data?.error || err.message || 'Error claiming voucher';
+      alert(`⚠️ ${msg}`);
+    });
   };
 
   const credibleReportsCount = data.reports.filter(r => r.status === 'verified' || r.status === 'completed').length;
@@ -98,20 +149,20 @@ export default function CitizenDashboard({ user, lang }) {
 
         {/* Milestone Choice Preview Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-slate-900 text-xs font-black">
-          <div className="bg-white p-3 rounded-2xl text-center shadow-sm hover:shadow-md transition cursor-pointer">
-            <span className="text-lg block">🥤</span>
+          <div className="bg-white p-3 rounded-2xl shadow-sm text-center">
+            <span className="block text-lg mb-1">🥤</span>
             <span>₹100 Food Voucher</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl text-center shadow-sm hover:shadow-md transition cursor-pointer">
-            <span className="text-lg block">🛒</span>
+          <div className="bg-white p-3 rounded-2xl shadow-sm text-center">
+            <span className="block text-lg mb-1">🛒</span>
             <span>₹150 Grocery Coupon</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl text-center shadow-sm hover:shadow-md transition cursor-pointer">
-            <span className="text-lg block">🚕</span>
+          <div className="bg-white p-3 rounded-2xl shadow-sm text-center">
+            <span className="block text-lg mb-1">🛺</span>
             <span>₹100 EV Pass</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl text-center shadow-sm hover:shadow-md transition cursor-pointer">
-            <span className="text-lg block">🌱</span>
+          <div className="bg-white p-3 rounded-2xl shadow-sm text-center">
+            <span className="block text-lg mb-1">🌱</span>
             <span>Plant-a-Tree Cert</span>
           </div>
         </div>
@@ -194,7 +245,7 @@ export default function CitizenDashboard({ user, lang }) {
             <div className="mt-4 border-t border-amber-200 pt-3">
               {credibleReportsCount >= 100 ? (
                 <button
-                  onClick={() => handleRedeemVoucher('GOVT-TAX-REBATE', 0)}
+                  onClick={() => handleRedeemVoucher('GOVT-TAX-REBATE', 0, 'Free Property Tax Rebate')}
                   className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black text-xs py-2.5 rounded-xl shadow transition"
                 >
                   🎁 {lang === 'hi' ? 'मुफ्त वाउचर क्लेम करें' : 'Claim Free Voucher'}
@@ -224,11 +275,10 @@ export default function CitizenDashboard({ user, lang }) {
             <div className="mt-4 border-t pt-3 flex justify-between items-center">
               <span className="font-black text-emerald-600 text-xs">500 Pts</span>
               <button
-                onClick={() => handleRedeemVoucher('CITY-BUS-7D', 500)}
-                disabled={redeemed.includes('CITY-BUS-7D')}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition"
+                onClick={() => handleRedeemVoucher('CITY-BUS-7D', 500, '7-Day Municipal Bus Pass')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition cursor-pointer"
               >
-                {redeemed.includes('CITY-BUS-7D') ? (lang === 'hi' ? 'क्लेम हो गया' : 'Claimed') : (lang === 'hi' ? 'रिडीम करें' : 'Redeem')}
+                {lang === 'hi' ? 'रिडीम करें' : 'Redeem'}
               </button>
             </div>
           </div>
@@ -249,11 +299,10 @@ export default function CitizenDashboard({ user, lang }) {
             <div className="mt-4 border-t pt-3 flex justify-between items-center">
               <span className="font-black text-emerald-600 text-xs">300 Pts</span>
               <button
-                onClick={() => handleRedeemVoucher('NURSERY-PLANT', 300)}
-                disabled={redeemed.includes('NURSERY-PLANT')}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition"
+                onClick={() => handleRedeemVoucher('NURSERY-PLANT', 300, 'Municipal Plant & Compost Pack')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition cursor-pointer"
               >
-                {redeemed.includes('NURSERY-PLANT') ? (lang === 'hi' ? 'क्लेम हो गया' : 'Claimed') : (lang === 'hi' ? 'रिडीम करें' : 'Redeem')}
+                {lang === 'hi' ? 'रिडीम करें' : 'Redeem'}
               </button>
             </div>
           </div>
@@ -274,17 +323,60 @@ export default function CitizenDashboard({ user, lang }) {
             <div className="mt-4 border-t pt-3 flex justify-between items-center">
               <span className="font-black text-emerald-600 text-xs">1,000 Pts</span>
               <button
-                onClick={() => handleRedeemVoucher('WATER-BILL-100', 1000)}
-                disabled={redeemed.includes('WATER-BILL-100')}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition"
+                onClick={() => handleRedeemVoucher('WATER-BILL-100', 1000, 'Water Supply Bill Subsidy')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 py-2 rounded-xl shadow transition cursor-pointer"
               >
-                {redeemed.includes('WATER-BILL-100') ? (lang === 'hi' ? 'क्लेम हो गया' : 'Claimed') : (lang === 'hi' ? 'रिडीम करें' : 'Redeem')}
+                {lang === 'hi' ? 'रिडीम करें' : 'Redeem'}
               </button>
             </div>
           </div>
 
         </div>
       </div>
+
+      {/* My Claimed Vouchers History Section (Permanent Neon PostgreSQL Sync) */}
+      {data.claimed_vouchers && data.claimed_vouchers.length > 0 && (
+        <div className="bg-emerald-950 text-white p-6 rounded-3xl shadow-xl space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-800 text-emerald-200 px-3 py-1 rounded-full border border-emerald-700">
+                🔒 Permanent Neon Cloud DB Sync
+              </span>
+              <h2 className="text-xl font-black mt-1.5 flex items-center gap-2 text-amber-400">
+                <Ticket className="w-6 h-6 text-amber-400" />
+                {lang === 'hi' ? 'मेरे द्वारा क्लेम किए गए वाउचर' : 'My Claimed Vouchers History'}
+              </h2>
+            </div>
+            <span className="text-xs font-black bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl shadow font-mono">
+              {data.claimed_vouchers.length} Vouchers Active
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+            {data.claimed_vouchers.map(v => (
+              <div key={v.id} className="bg-white/10 backdrop-blur border border-white/20 p-4.5 rounded-2xl space-y-3 shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-emerald-300 block uppercase tracking-wider">{v.company_name}</span>
+                    <h4 className="font-black text-sm text-white">{v.offer_title}</h4>
+                  </div>
+                  <span className="bg-amber-400 text-slate-950 font-mono text-[11px] font-black px-2.5 py-0.5 rounded-lg shrink-0">
+                    -{v.points_spent} Pts
+                  </span>
+                </div>
+                <div className="bg-slate-900/90 p-3 rounded-xl border border-amber-400/40 font-mono text-center shadow-inner">
+                  <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-widest mb-0.5">GUARANTEED UNIQUE PROMO CODE</span>
+                  <span className="text-sm font-black text-amber-300 tracking-wider select-all">{v.voucher_code}</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-emerald-200 font-semibold pt-1 border-t border-white/10">
+                  <span>Status: Verified Claimed ✅</span>
+                  <span>{v.redeemed_at}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* My Reports List */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">

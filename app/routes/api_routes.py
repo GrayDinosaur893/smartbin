@@ -856,6 +856,43 @@ def redeem_sponsor_api():
         return jsonify(result), 400
 
 
+@api_bp.route('/citizen/redeem-voucher', methods=['POST'])
+def redeem_citizen_voucher_api():
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id')
+        voucher_code = data.get('voucher_code', 'CG-GOVT')
+        points_cost = int(data.get('points_cost', 0))
+        offer_title = data.get('offer_title', 'Municipal Voucher')
+
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User ID is required'}), 400
+
+        result = RewardService.redeem_custom_voucher(
+            user_id=int(user_id),
+            voucher_prefix=voucher_code,
+            points_cost=points_cost,
+            offer_title=offer_title
+        )
+
+        if result.get('success'):
+            user = User.query.get(int(user_id))
+            if user:
+                log_user_activity(
+                    user_id=user.id,
+                    user_name=user.name,
+                    phone_or_email=user.phone or user.email,
+                    action_type='MUNICIPAL_VOUCHER_REDEEMED',
+                    description=f"Claimed municipal voucher {result['voucher_code']} (-{result['points_spent']} Pts)"
+                )
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+    except Exception as e:
+        print(f"[Redeem Voucher API Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @api_bp.route('/public/test-sms', methods=['GET', 'POST'])
 def test_sms_api():
     phone = request.args.get('phone') or (request.json.get('phone') if request.is_json else '8085668669')

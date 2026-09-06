@@ -121,3 +121,57 @@ class RewardService:
             }
         }
 
+    @classmethod
+    def redeem_custom_voucher(cls, user_id: int, voucher_prefix: str, points_cost: int, offer_title: str) -> dict:
+        user = User.query.get(user_id)
+        if not user:
+            return {'success': False, 'error': 'User not found!'}
+
+        if user.eco_points < points_cost:
+            return {
+                'success': False,
+                'error': f'Insufficient Eco-Points! You need {points_cost} Pts, but you currently have {user.eco_points} Pts.'
+            }
+
+        # Deduct Eco-Points & Cash Wallet Balance
+        user.eco_points -= points_cost
+        cash_deducted = points_cost * cls.POINT_TO_CASH_RATE
+        user.cash_wallet_balance = max(0.0, user.cash_wallet_balance - cash_deducted)
+
+        # Generate Unique Promo Voucher Code with UUID
+        unique_suffix = uuid.uuid4().hex[:8].upper()
+        prefix = voucher_prefix if voucher_prefix else "CG-GOVT-"
+        if not prefix.endswith('-'):
+            prefix += '-'
+        voucher_code = f"{prefix}{unique_suffix}"
+
+        # Record in VoucherRedemption
+        redemption_record = VoucherRedemption(
+            user_id=user_id,
+            sponsor_offer_id=None,
+            voucher_code=voucher_code,
+            points_spent=points_cost
+        )
+        db.session.add(redemption_record)
+
+        # Record in RewardsLedger
+        ledger_entry = RewardsLedger(
+            user_id=user_id,
+            points_earned=-points_cost,
+            cash_earned=-cash_deducted,
+            transaction_type="municipal_voucher_redeemed",
+            description=f"🎟️ Claimed Municipal Voucher: {offer_title} (-{points_cost} Pts)"
+        )
+        db.session.add(ledger_entry)
+        db.session.commit()
+
+        return {
+            'success': True,
+            'message': f'Successfully claimed {offer_title}!',
+            'voucher_code': voucher_code,
+            'points_spent': points_cost,
+            'remaining_points': user.eco_points,
+            'remaining_wallet': user.cash_wallet_balance,
+            'offer_title': offer_title
+        }
+
