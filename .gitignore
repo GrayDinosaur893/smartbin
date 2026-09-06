@@ -25,10 +25,11 @@ cpp_engine/build/
 cpp_engine/*.o
 cpp_engine/*.exe
 
-# Media Files
-assets/
+/assets/
 *.mp4
 !app/static/assets/*.mp4
+!public/assets/
+!app/static/assets/
 
 # IDE & OS
 .vscode/
