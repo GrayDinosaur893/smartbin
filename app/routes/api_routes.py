@@ -527,13 +527,31 @@ def report_waste_api():
         gps_lat_user=lat_user,
         gps_lng_user=lng_user,
         user_notes=user_notes,
-        status=ai_res['verification_status'],
+        status='assigned',
         waste_type=ai_res['waste_type'],
         severity=ai_res['severity'],
         is_illegal_dumping=ai_res['is_illegal_dumping'],
         ai_confidence=ai_res['confidence_score']
     )
     db.session.add(new_report)
+    db.session.flush()
+
+    # Automatically assign report to the zone's municipal driver
+    driver = User.query.filter_by(role='driver', city_zone=closest_zone).first()
+    if not driver:
+        driver = User.query.filter_by(role='driver').first()
+
+    if driver:
+        task_code = f"#TSK-{1000 + Task.query.count() + 1}"
+        new_task = Task(
+            task_code=task_code,
+            report_id=new_report.id,
+            driver_id=driver.id,
+            city_name=closest_zone,
+            status='assigned'
+        )
+        db.session.add(new_task)
+
     db.session.commit()
 
     if user_id and ai_res['verification_status'] == 'verified':
@@ -615,25 +633,61 @@ def get_driver_dashboard(user_id):
     user = User.query.get_or_404(user_id)
     profile = DriverProfile.query.filter_by(user_id=user_id).first()
 
+    if not profile:
+        profile = DriverProfile(
+            user_id=user.id,
+            vehicle_number="CG-10-G-2080",
+            vehicle_type="Garbage Truck 6T",
+            assigned_zone=f"{user.city_zone or 'Bilaspur'} Municipal Corporation",
+            city_name=user.city_zone or 'Bilaspur',
+            shift_status="on_duty"
+        )
+        db.session.add(profile)
+        db.session.commit()
+
+    # Get active tasks assigned to this driver
     assigned_tasks = db.session.query(Task, Report).\
         join(Report, Task.report_id == Report.id).\
         filter(Task.driver_id == user_id, Task.status.in_(['assigned', 'en_route', 'arrived'])).\
-        order_by(Task.route_sequence_index.asc()).all()
+        order_by(Task.assigned_at.desc()).all()
 
-    completed_today = Task.query.filter_by(driver_id=user_id, status='cleaned').count()
+    # If no tasks assigned yet to this driver, auto-assign any pending or unassigned reports
+    if not assigned_tasks:
+        pending_reports = Report.query.filter(
+            Report.status.in_(['verified', 'assigned', 'pending_ai'])
+        ).order_by(Report.created_at.desc()).limit(10).all()
+
+        for r in pending_reports:
+            if not r.task or r.task.driver_id is None:
+                if not r.task:
+                    t_code = f"#TSK-{1000 + Task.query.count() + 1}"
+                    new_t = Task(task_code=t_code, report_id=r.id, driver_id=user.id, city_name=r.city_name, status='assigned')
+                    db.session.add(new_t)
+                else:
+                    r.task.driver_id = user.id
+                    r.task.status = 'assigned'
+                r.status = 'assigned'
+        db.session.commit()
+
+        assigned_tasks = db.session.query(Task, Report).\
+            join(Report, Task.report_id == Report.id).\
+            filter(Task.driver_id == user_id, Task.status.in_(['assigned', 'en_route', 'arrived'])).\
+            order_by(Task.assigned_at.desc()).all()
+
+    completed_today = Task.query.filter(Task.driver_id == user_id, Task.status.in_(['cleaned', 'completed'])).count()
 
     return jsonify({
         'driver': {
             'name': user.name,
-            'city_name': profile.city_name if profile else "Durg",
-            'vehicle_number': profile.vehicle_number if profile else "CG-07-G-1042",
-            'assigned_zone': profile.assigned_zone if profile else "Durg Municipal Corporation",
-            'clocked_in': profile.shift_status == 'on_duty' if profile else False
+            'city_name': profile.city_name if profile else (user.city_zone or "Bilaspur"),
+            'vehicle_number': profile.vehicle_number if profile else "CG-10-G-2080",
+            'assigned_zone': profile.assigned_zone if profile else "Bilaspur Municipal Corporation",
+            'clocked_in': True
         },
         'completed_today': completed_today,
         'tasks': [{
             'task_id': t.id,
-            'route_sequence': t.route_sequence_index,
+            'route_sequence': t.route_sequence_index if t.route_sequence_index > 0 else (idx + 1),
             'report_code': r.report_code,
             'city': r.city_name,
             'waste_type': r.waste_type,
@@ -641,8 +695,8 @@ def get_driver_dashboard(user_id):
             'is_illegal_dumping': r.is_illegal_dumping,
             'lat': r.gps_lat_user,
             'lng': r.gps_lng_user,
-            'image_path': r.image_path
-        } for t, r in assigned_tasks]
+            'image_path': f"/{r.image_path}" if r.image_path and not r.image_path.startswith('/') else r.image_path
+        } for idx, (t, r) in enumerate(assigned_tasks)]
     })
 
 
@@ -725,6 +779,11 @@ def driver_submit_cleaning_api(task_id):
 def get_admin_dashboard():
     city = request.args.get('city')
     
+    # Ensure all base demo drivers exist
+    ensure_database_seeded()
+
+    all_drivers = User.query.filter_by(role='driver').all()
+
     if city:
         reports_today = Report.query.filter_by(city_name=city).count()
         pending_review = Report.query.filter_by(city_name=city).filter(Report.status.in_(['pending_ai', 'uncertain'])).count()
@@ -735,9 +794,14 @@ def get_admin_dashboard():
         high_priority_overflow = Report.query.filter_by(city_name=city, severity='high', status='verified').all()
         illegal_dumping_reports = Report.query.filter_by(city_name=city, is_illegal_dumping=True).all()
 
-        reports = Report.query.filter_by(city_name=city).order_by(Report.created_at.desc()).limit(15).all()
+        reports = Report.query.filter_by(city_name=city).order_by(Report.created_at.desc()).limit(20).all()
+        # Fallback if no reports for city yet, show latest reports
+        if not reports:
+            reports = Report.query.order_by(Report.created_at.desc()).limit(20).all()
+
         dustbins = Dustbin.query.filter_by(city_name=city).all()
-        drivers = User.query.filter_by(role='driver', city_zone=city).all()
+        if not dustbins:
+            dustbins = Dustbin.query.all()
     else:
         reports_today = Report.query.count()
         pending_review = Report.query.filter(Report.status.in_(['pending_ai', 'uncertain'])).count()
@@ -748,9 +812,8 @@ def get_admin_dashboard():
         high_priority_overflow = Report.query.filter_by(severity='high', status='verified').all()
         illegal_dumping_reports = Report.query.filter_by(is_illegal_dumping=True).all()
 
-        reports = Report.query.order_by(Report.created_at.desc()).limit(15).all()
+        reports = Report.query.order_by(Report.created_at.desc()).limit(20).all()
         dustbins = Dustbin.query.all()
-        drivers = User.query.filter_by(role='driver').all()
 
     inactive_drivers = DriverProfile.query.filter_by(shift_status='off_duty').all()
     zones = MunicipalZone.query.all()
@@ -771,7 +834,7 @@ def get_admin_dashboard():
         },
         'zones': [{'city': z.city_name, 'corporation': z.corporation_name} for z in zones],
         'dustbins': [{'id': b.id, 'code': b.bin_code, 'city': b.city_name, 'name': b.location_name, 'capacity': b.capacity_liters, 'lat': b.latitude, 'lng': b.longitude} for b in dustbins],
-        'drivers': [{'id': d.id, 'name': d.name, 'phone': d.phone, 'city': d.city_zone} for d in drivers],
+        'drivers': [{'id': d.id, 'name': d.name, 'phone': d.phone, 'city': d.city_zone} for d in all_drivers],
         'reports': [{
             'id': r.id,
             'code': r.report_code,
@@ -783,12 +846,11 @@ def get_admin_dashboard():
             'status': r.status,
             'lat': r.gps_lat_user,
             'lng': r.gps_lng_user,
-            'image_url': f"/uploads/{os.path.basename(r.waste_image_path)}" if r.waste_image_path else None,
-            'selfie_url': f"/uploads/{os.path.basename(r.selfie_image_path)}" if r.selfie_image_path else None,
+            'image_url': f"/{r.image_path}" if r.image_path and not r.image_path.startswith('/') else r.image_path,
             'created_at': r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else None,
-            'user_name': User.query.get(r.user_id).name if r.user_id and User.query.get(r.user_id) else 'Citizen',
-            'assigned_driver_id': r.task.driver_id if r.task else None,
-            'assigned_driver_name': User.query.get(r.task.driver_id).name if (r.task and r.task.driver_id and User.query.get(r.task.driver_id)) else None
+            'user_name': User.query.get(r.citizen_id).name if (r.citizen_id and User.query.get(r.citizen_id)) else 'Citizen',
+            'assigned_driver_id': r.task.driver_id if (r.task and r.task.driver_id) else None,
+            'assigned_driver_name': User.query.get(r.task.driver_id).name if (r.task and r.task.driver_id and User.query.get(r.task.driver_id)) else 'Unassigned'
         } for r in reports]
     })
 
