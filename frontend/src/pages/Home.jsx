@@ -42,7 +42,15 @@ export default function Home({ user, lang }) {
 
   useEffect(() => {
     axios.get(`${API_BASE}/public/waste-map`)
-      .then(res => setData(res.data))
+      .then(res => {
+        if (res.data) {
+          setData({
+            dustbins: res.data.dustbins || [],
+            reports: res.data.reports || [],
+            stats: res.data.stats || { active_reports: 0, cleaned_today: 0 }
+          });
+        }
+      })
       .catch(err => console.error("Failed to load map data", err));
 
     getLiveUserLocation();
@@ -65,8 +73,9 @@ export default function Home({ user, lang }) {
   const findNearestDustbin = (coords) => {
     const userLat = coords[0];
     const userLng = coords[1];
+    const binsList = data?.dustbins || [];
 
-    if (!data.dustbins || data.dustbins.length === 0) {
+    if (binsList.length === 0) {
       alert(lang === 'hi' ? 'कोई डस्टबिन डेटा उपलब्ध नहीं है' : 'No dustbins available on map');
       return;
     }
@@ -74,11 +83,13 @@ export default function Home({ user, lang }) {
     let minDistance = Infinity;
     let closestBin = null;
 
-    data.dustbins.forEach(bin => {
-      const dist = calculateHaversineDistance(userLat, userLng, bin.lat, bin.lng);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestBin = { ...bin, distanceKm: dist };
+    binsList.forEach(bin => {
+      if (bin && bin.lat && bin.lng) {
+        const dist = calculateHaversineDistance(userLat, userLng, bin.lat, bin.lng);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestBin = { ...bin, distanceKm: dist };
+        }
       }
     });
 
@@ -151,6 +162,11 @@ export default function Home({ user, lang }) {
       })
       .catch(() => alert('OpenStreetMap API search failed'));
   };
+
+  const dustbins = data?.dustbins || [];
+  const reports = data?.reports || [];
+  const activeReportsCount = data?.stats?.active_reports ?? 0;
+  const cleanedTodayCount = data?.stats?.cleaned_today ?? 0;
 
   return (
     <div>
@@ -324,7 +340,7 @@ export default function Home({ user, lang }) {
                 )}
 
                 {/* Custom Official Dustbin Markers */}
-                {data.dustbins.map(b => (
+                {dustbins.map(b => (
                   <Marker key={`bin-${b.id}`} position={[b.lat, b.lng]} icon={dustbinIcon}>
                     <Popup>
                       <b>{lang === 'hi' ? 'डस्टबिन' : 'Dustbin'} {b.code}</b><br />
@@ -343,7 +359,7 @@ export default function Home({ user, lang }) {
                 ))}
 
                 {/* Active Reported Waste Circle Markers */}
-                {data.reports.map(r => (
+                {reports.map(r => (
                   <CircleMarker
                     key={`rep-${r.id}`}
                     center={[r.lat, r.lng]}
@@ -381,13 +397,13 @@ export default function Home({ user, lang }) {
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                  <span className="text-3xl font-black text-emerald-600">{data.stats.active_reports}</span>
+                  <span className="text-3xl font-black text-emerald-600">{activeReportsCount}</span>
                   <p className="text-xs text-slate-500 font-medium mt-1">
                     {lang === 'hi' ? 'सक्रिय रिपोर्टें' : 'Active Reports'}
                   </p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                  <span className="text-3xl font-black text-teal-600">{data.stats.cleaned_today}</span>
+                  <span className="text-3xl font-black text-teal-600">{cleanedTodayCount}</span>
                   <p className="text-xs text-slate-500 font-medium mt-1">
                     {lang === 'hi' ? 'आज साफ किया गया' : 'Cleaned Today'}
                   </p>
@@ -400,7 +416,7 @@ export default function Home({ user, lang }) {
                 {lang === 'hi' ? 'हाल की रिपोर्ट फ़ीड' : 'Recent Reports Feed'}
               </h3>
               <div className="space-y-3 max-h-72 overflow-y-auto">
-                {data.reports.map(r => (
+                {reports.map(r => (
                   <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                     <div>
                       <span className="font-bold text-slate-900">{r.code}</span>
@@ -411,7 +427,7 @@ export default function Home({ user, lang }) {
                         ? (lang === 'hi' ? 'साफ किया गया ✅' : 'CLEANED ✅')
                         : (r.status === 'verified'
                             ? (lang === 'hi' ? 'सत्यापित' : 'VERIFIED')
-                            : r.status.toUpperCase())}
+                            : (r.status || '').toUpperCase())}
                     </span>
                   </div>
                 ))}

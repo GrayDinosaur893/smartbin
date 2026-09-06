@@ -16,6 +16,47 @@ import { Play } from 'lucide-react';
 
 export const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
+// ErrorBoundary component to prevent blank white screen on uncaught errors
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("React ErrorBoundary caught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center font-bold text-2xl border border-emerald-400/40">
+            ♻️
+          </div>
+          <h1 className="text-2xl font-black">SmartBin Chhattisgarh</h1>
+          <p className="text-xs text-slate-300 max-w-md">
+            Application session updated. Click below to refresh the page.
+          </p>
+          <button
+            onClick={() => {
+              window.location.reload();
+            }}
+            className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black px-6 py-3 rounded-2xl shadow-xl transition active:scale-95 text-xs"
+          >
+            🔄 Refresh SmartBin App
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Mobile Bottom Navigation Bar Component for Mobile Phones
 function MobileBottomNav({ user, lang }) {
   const location = useLocation();
@@ -69,227 +110,240 @@ function MobileBottomNav({ user, lang }) {
 
 export default function App() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('smartbin_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('smartbin_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [lang, setLang] = useState('en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(() => {
-    return !sessionStorage.getItem('smartbin_intro_seen');
+    try {
+      return !sessionStorage.getItem('smartbin_intro_seen');
+    } catch (e) {
+      return false;
+    }
   });
 
   const handleCloseIntro = () => {
-    sessionStorage.setItem('smartbin_intro_seen', 'true');
+    try {
+      sessionStorage.setItem('smartbin_intro_seen', 'true');
+    } catch (e) {}
     setShowIntro(false);
   };
 
   const logout = () => {
-    localStorage.removeItem('smartbin_user');
+    try {
+      localStorage.removeItem('smartbin_user');
+    } catch (e) {}
     setUser(null);
     setMobileMenuOpen(false);
   };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-16 md:pb-0 selection:bg-emerald-500 selection:text-white">
-        
-        {/* Animated Intro Video Overlay */}
-        {showIntro && (
-          <IntroModal lang={lang} onClose={handleCloseIntro} />
-        )}
-
-        {/* Top Navbar Header */}
-        <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-[9999] w-full overflow-x-hidden">
-          <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-2.5 flex justify-between items-center gap-1.5">
-            
-            {/* Logo */}
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-1.5 font-black text-lg sm:text-xl tracking-tight shrink-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-800 rounded-xl flex items-center justify-center border border-emerald-500 shadow-sm">
-                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300" />
-              </div>
-              <span className="text-base sm:text-xl">SMARTBIN</span>
-              <span className="text-[9px] bg-emerald-800 text-emerald-200 px-1.5 py-0.5 rounded-lg border border-emerald-600 font-mono uppercase hidden xl:inline">PWA</span>
-            </Link>
-
-            {/* Desktop Navigation Links in Clean Uniform Box Shapes */}
-            <div className="hidden lg:flex items-center gap-2.5 text-xs font-extrabold">
-              <Link to="/" className="bg-emerald-800/60 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/60 flex items-center gap-1.5 transition shadow-sm">
-                <HomeIcon className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? 'होम' : 'Home'}</span>
-              </Link>
-
-              <Link to="/report-waste" className="bg-emerald-800/60 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/60 flex items-center gap-1.5 transition shadow-sm">
-                <Camera className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? 'कचरा रिपोर्ट' : 'Report Waste'}</span>
-              </Link>
-
-              <Link to="/citizen/dashboard" className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 px-3.5 py-2 rounded-xl border border-amber-400/40 flex items-center gap-1.5 transition shadow-sm">
-                <Gift className="w-4 h-4 text-amber-300" />
-                <span>{lang === 'hi' ? 'वाउचर व इनाम' : 'Rewards'}</span>
-              </Link>
-
-              <Link to="/sponsors" className="bg-emerald-800/60 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/60 flex items-center gap-1.5 transition shadow-sm">
-                <Building2 className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? 'प्रायोजक (CSR)' : 'Sponsors'}</span>
-              </Link>
-
-              {user?.role === 'driver' && (
-                <Link to="/driver/dashboard" className="bg-emerald-800/60 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/60 flex items-center gap-1.5 transition shadow-sm">
-                  <Truck className="w-4 h-4 text-emerald-300" />
-                  <span>{lang === 'hi' ? 'चालक पोर्टल' : 'Driver'}</span>
-                </Link>
-              )}
-
-              {user?.role === 'admin' && (
-                <Link to="/admin/dashboard" className="bg-emerald-800/60 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/60 flex items-center gap-1.5 transition shadow-sm">
-                  <LayoutDashboard className="w-4 h-4 text-emerald-300" />
-                  <span>{lang === 'hi' ? 'एडमिन' : 'Admin'}</span>
-                </Link>
-              )}
-            </div>
-
-            {/* Right Action Controls in Uniform Responsive Clean Boxes */}
-            <div className="flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-bold shrink-0">
-              {/* Play Intro Video Button */}
-              <button 
-                onClick={() => setShowIntro(true)}
-                title="Watch Video Intro"
-                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black p-2 sm:px-3 sm:py-2 rounded-xl border border-amber-300 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
-              >
-                <Play className="w-3.5 h-3.5 fill-slate-950" />
-                <span className="hidden md:inline">{lang === 'hi' ? 'इंट्रो देखें' : 'Watch Intro'}</span>
-              </button>
-
-              {/* Language Switcher Box */}
-              <button 
-                onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-                title="Switch Language"
-                className="bg-emerald-800 hover:bg-emerald-900 p-2 sm:px-3 sm:py-2 rounded-xl border border-emerald-500 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
-              >
-                <Languages className="w-3.5 h-3.5 text-emerald-300" />
-                <span className="hidden sm:inline">{lang === 'en' ? 'हिंदी' : 'English'}</span>
-              </button>
-
-              {user ? (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="bg-emerald-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-600 hidden sm:flex items-center gap-1.5 text-emerald-100 font-bold">
-                    <User className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>{user.name}</span>
-                  </div>
-
-                  <button onClick={logout} className="bg-emerald-900 hover:bg-emerald-950 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-700 font-extrabold flex items-center gap-1.5 transition shadow-sm active:scale-95">
-                    <LogOut className="w-3.5 h-3.5 text-emerald-300" />
-                    <span className="hidden sm:inline">{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-1 sm:gap-2">
-                  <Link to="/login" className="bg-emerald-800 hover:bg-emerald-900 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-600 text-white font-bold transition text-[11px] sm:text-xs">
-                    {lang === 'hi' ? 'लॉगिन' : 'Login'}
-                  </Link>
-                  <Link to="/register" className="bg-white text-emerald-800 font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl shadow hover:bg-emerald-50 transition text-[11px] sm:text-xs">
-                    {lang === 'hi' ? 'रजिस्टर' : 'Register'}
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Hamburger Menu Toggle Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden bg-emerald-800 hover:bg-emerald-900 p-2 rounded-xl border border-emerald-600 text-white transition active:scale-95 shadow-sm"
-              >
-                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </button>
-            </div>
-
-          </div>
-
-          {/* Mobile Dropdown Drawer (Clean Rounded Boxes) */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 p-4 space-y-2.5 text-xs font-extrabold shadow-2xl animate-in slide-in-from-top duration-200">
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
-              >
-                <HomeIcon className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? 'होम पेज' : 'Home Page'}</span>
-              </Link>
-
-              <Link
-                to="/report-waste"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
-              >
-                <Camera className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? '📷 कचरा रिपोर्ट करें' : '📷 Report Waste Now'}</span>
-              </Link>
-
-              <Link
-                to="/citizen/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full bg-amber-500/20 hover:bg-amber-500/30 p-3 rounded-xl border border-amber-400/50 flex items-center gap-2.5 text-amber-200 transition shadow-sm"
-              >
-                <Gift className="w-4 h-4 text-amber-300" />
-                <span>{lang === 'hi' ? '🎁 वाउचर व इनाम (Rewards Store)' : '🎁 Rewards & Vouchers Store'}</span>
-              </Link>
-
-              <Link
-                to="/sponsors"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
-              >
-                <Building2 className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'hi' ? '🏢 प्रायोजक कंपनी वाउचर (Sponsors & CSR)' : '🏢 Corporate Sponsors & Subsidies'}</span>
-              </Link>
-
-              {user?.role === 'driver' && (
-                <Link
-                  to="/driver/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
-                >
-                  <Truck className="w-4 h-4 text-emerald-300" />
-                  <span>{lang === 'hi' ? '🚛 चालक पोर्टल' : '🚛 Driver Portal'}</span>
-                </Link>
-              )}
-
-              {user?.role === 'admin' && (
-                <Link
-                  to="/admin/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-emerald-300" />
-                  <span>{lang === 'hi' ? '🏛️ म्यूनिसिपल एडमिन' : '🏛️ Municipal Admin'}</span>
-                </Link>
-              )}
-            </div>
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-16 md:pb-0 selection:bg-emerald-500 selection:text-white">
+          
+          {/* Animated Intro Video Overlay */}
+          {showIntro && (
+            <IntroModal lang={lang} onClose={handleCloseIntro} />
           )}
 
-        </header>
+          {/* Top Sticky Header */}
+          <header className="sticky top-0 z-40 bg-emerald-800 text-white shadow-md border-b border-emerald-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+              
+              {/* Brand Logo */}
+              <Link to="/" className="flex items-center gap-2.5 font-black text-xl tracking-tight text-white group">
+                <div className="w-10 h-10 bg-emerald-700 border border-emerald-500 rounded-xl flex items-center justify-center shadow-inner group-hover:bg-emerald-600 transition">
+                  <Trash2 className="w-6 h-6 text-emerald-200" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="flex items-center gap-1">
+                    SMARTBIN <span className="bg-emerald-950 text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-700">PWA</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300 font-bold tracking-normal leading-tight">Swachh Chhattisgarh</span>
+                </div>
+              </Link>
 
-        {/* Main Views */}
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home user={user} lang={lang} />} />
-            <Route path="/login" element={<Login setUser={setUser} />} />
-            <Route path="/register" element={<Register setUser={setUser} />} />
-            <Route path="/citizen/dashboard" element={user ? <CitizenDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
-            <Route path="/report-waste" element={<ReportWaste user={user} lang={lang} />} />
-            <Route path="/sponsors" element={<Sponsors user={user} lang={lang} />} />
-            <Route path="/driver/dashboard" element={user && user.role === 'driver' ? <DriverDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
-            <Route path="/admin/dashboard" element={user && user.role === 'admin' ? <AdminDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
-          </Routes>
-        </main>
+              {/* Desktop Nav Links */}
+              <nav className="hidden lg:flex items-center gap-2 font-bold text-xs">
+                <Link to="/" className="hover:bg-emerald-700 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                  <HomeIcon className="w-4 h-4 text-emerald-300" />
+                  <span>{lang === 'hi' ? 'होम' : 'Home'}</span>
+                </Link>
 
-        {/* Global Dark Black Footer with Corporate Sponsors Banner & Contact Us */}
-        <Footer lang={lang} />
+                <Link to="/report-waste" className="bg-emerald-700/80 hover:bg-emerald-700 text-white border border-emerald-500/50 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                  <Camera className="w-4 h-4 text-emerald-200" />
+                  <span>{lang === 'hi' ? '📷 कचरा रिपोर्ट करें' : '📷 Report Waste'}</span>
+                </Link>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <MobileBottomNav user={user} lang={lang} />
-      </div>
-    </Router>
+                <Link to="/citizen/dashboard" className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                  <Gift className="w-4 h-4 text-amber-300" />
+                  <span>{lang === 'hi' ? '🎁 वाउचर व इनाम' : '🎁 Rewards'}</span>
+                </Link>
+
+                <Link to="/sponsors" className="hover:bg-emerald-700 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-emerald-300" />
+                  <span>{lang === 'hi' ? '🏢 प्रायोजक कंपनी वाउचर' : '🏢 Sponsors'}</span>
+                </Link>
+
+                {user?.role === 'driver' && (
+                  <Link to="/driver/dashboard" className="bg-blue-900/60 text-blue-200 hover:bg-blue-900 px-3.5 py-2 rounded-xl border border-blue-500/40 transition flex items-center gap-1.5">
+                    <Truck className="w-4 h-4 text-blue-300" />
+                    <span>{lang === 'hi' ? '🚛 चालक पोर्टल' : '🚛 Driver'}</span>
+                  </Link>
+                )}
+
+                {user?.role === 'admin' && (
+                  <Link to="/admin/dashboard" className="bg-purple-900/60 text-purple-200 hover:bg-purple-900 px-3.5 py-2 rounded-xl border border-purple-500/40 transition flex items-center gap-1.5">
+                    <LayoutDashboard className="w-4 h-4 text-purple-300" />
+                    <span>{lang === 'hi' ? '🏛️ एडमिन' : '🏛️ Admin'}</span>
+                  </Link>
+                )}
+              </nav>
+
+              {/* Right Controls: Watch Intro, Language, Login/User */}
+              <div className="flex items-center gap-2">
+                
+                {/* Watch Intro Re-trigger Button */}
+                <button
+                  onClick={() => setShowIntro(true)}
+                  className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow transition active:scale-95 flex items-center gap-1"
+                  title="Watch SmartBin Video Intro"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current text-slate-950" />
+                  <span className="hidden sm:inline">{lang === 'hi' ? 'वीडियो इंट्रो देखें' : 'Watch Intro'}</span>
+                </button>
+
+                {/* Language Switcher */}
+                <button
+                  onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+                  className="bg-emerald-900/80 hover:bg-emerald-900 border border-emerald-600 text-emerald-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition flex items-center gap-1"
+                >
+                  <Languages className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{lang === 'en' ? 'हिन्दी' : 'English'}</span>
+                </button>
+
+                {/* User Profile / Auth */}
+                {user ? (
+                  <div className="flex items-center gap-2 bg-emerald-900/90 border border-emerald-600 px-3 py-1 rounded-xl text-xs font-bold">
+                    <User className="w-4 h-4 text-emerald-300" />
+                    <span className="hidden md:inline">{user.full_name || user.name || 'User'} ({user.role})</span>
+                    <button onClick={logout} className="hover:text-red-300 text-slate-300 transition ml-1" title="Logout">
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
+                  >
+                    {lang === 'hi' ? 'लॉगिन करें' : 'Login'}
+                  </Link>
+                )}
+
+                {/* Mobile Menu Toggle */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="lg:hidden bg-emerald-800 hover:bg-emerald-900 p-2 rounded-xl border border-emerald-600 text-white transition active:scale-95 shadow-sm"
+                >
+                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </button>
+              </div>
+
+            </div>
+
+            {/* Mobile Dropdown Drawer (Clean Rounded Boxes) */}
+            {mobileMenuOpen && (
+              <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 p-4 space-y-2.5 text-xs font-extrabold shadow-2xl animate-in slide-in-from-top duration-200">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
+                >
+                  <HomeIcon className="w-4 h-4 text-emerald-300" />
+                  <span>{lang === 'hi' ? 'होम पेज' : 'Home Page'}</span>
+                </Link>
+
+                <Link
+                  to="/report-waste"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
+                >
+                  <Camera className="w-4 h-4 text-emerald-300" />
+                  <span>{lang === 'hi' ? '📷 कचरा रिपोर्ट करें' : '📷 Report Waste Now'}</span>
+                </Link>
+
+                <Link
+                  to="/citizen/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full bg-amber-500/20 hover:bg-amber-500/30 p-3 rounded-xl border border-amber-400/50 flex items-center gap-2.5 text-amber-200 transition shadow-sm"
+                >
+                  <Gift className="w-4 h-4 text-amber-300" />
+                  <span>{lang === 'hi' ? '🎁 वाउचर व इनाम (Rewards Store)' : '🎁 Rewards & Vouchers Store'}</span>
+                </Link>
+
+                <Link
+                  to="/sponsors"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
+                >
+                  <Building2 className="w-4 h-4 text-emerald-300" />
+                  <span>{lang === 'hi' ? '🏢 प्रायोजक कंपनी वाउचर (Sponsors & CSR)' : '🏢 Corporate Sponsors & Subsidies'}</span>
+                </Link>
+
+                {user?.role === 'driver' && (
+                  <Link
+                    to="/driver/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
+                  >
+                    <Truck className="w-4 h-4 text-emerald-300" />
+                    <span>{lang === 'hi' ? '🚛 चालक पोर्टल' : '🚛 Driver Portal'}</span>
+                  </Link>
+                )}
+
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full bg-emerald-900/80 hover:bg-emerald-900 p-3 rounded-xl border border-emerald-600 flex items-center gap-2.5 text-white transition shadow-sm"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-emerald-300" />
+                    <span>{lang === 'hi' ? '🏛️ म्यूनिसिपल एडमिन' : '🏛️ Municipal Admin'}</span>
+                  </Link>
+                )}
+              </div>
+            )}
+
+          </header>
+
+          {/* Main Views */}
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home user={user} lang={lang} />} />
+              <Route path="/login" element={<Login setUser={setUser} />} />
+              <Route path="/register" element={<Register setUser={setUser} />} />
+              <Route path="/citizen/dashboard" element={user ? <CitizenDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
+              <Route path="/report-waste" element={<ReportWaste user={user} lang={lang} />} />
+              <Route path="/sponsors" element={<Sponsors user={user} lang={lang} />} />
+              <Route path="/driver/dashboard" element={user && user.role === 'driver' ? <DriverDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
+              <Route path="/admin/dashboard" element={user && user.role === 'admin' ? <AdminDashboard user={user} lang={lang} /> : <Navigate to="/login" />} />
+            </Routes>
+          </main>
+
+          {/* Global Dark Black Footer with Corporate Sponsors Banner & Contact Us */}
+          <Footer lang={lang} />
+
+          {/* Mobile Bottom Navigation Bar */}
+          <MobileBottomNav user={user} lang={lang} />
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
