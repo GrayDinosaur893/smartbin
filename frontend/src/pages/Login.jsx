@@ -18,6 +18,7 @@ export default function Login({ setUser }) {
   const [email, setEmail] = useState('citizen@smartbin.gov.in');
   const [password, setPassword] = useState('password123');
   
+  const [emailLoading, setEmailLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -28,6 +29,33 @@ export default function Login({ setUser }) {
       return raw.message || JSON.stringify(raw);
     }
     return fallback;
+  };
+
+  const handleQuickDemoLogin = (role) => {
+    setError('');
+    setEmailLoading(true);
+    let demoEmail = 'citizen@smartbin.gov.in';
+    if (role === 'driver') demoEmail = 'driver@smartbin.gov.in';
+    if (role === 'admin') demoEmail = 'admin@smartbin.gov.in';
+
+    axios.post(`${API_BASE}/auth/login`, { email: demoEmail, password: 'password123' })
+      .then(res => {
+        setEmailLoading(false);
+        if (res.data.success) {
+          const u = res.data.user;
+          setUser(u);
+          localStorage.setItem('smartbin_user', JSON.stringify(u));
+          if (u.role === 'admin') navigate('/admin/dashboard');
+          else if (u.role === 'driver') navigate('/driver/dashboard');
+          else navigate('/citizen/dashboard');
+        } else {
+          setError(res.data.error || 'Quick login failed');
+        }
+      })
+      .catch(err => {
+        setEmailLoading(false);
+        setError(extractStringError(err, 'Failed to login'));
+      });
   };
 
   const handleSendOtp = (e) => {
@@ -43,7 +71,6 @@ export default function Login({ setUser }) {
           setOtpEntered(res.data.demo_otp); // Pre-fill for ultra smooth demo!
           setOtpStep(2);
 
-          // Native Browser Toast Notification Trigger
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('SmartBin CG OTP Alert 📱', {
               body: `Your Mobile Login OTP is ${res.data.demo_otp}. Valid for 5 minutes.`,
@@ -91,9 +118,11 @@ export default function Login({ setUser }) {
   const handleEmailSubmit = (e) => {
     e.preventDefault();
     setError('');
+    setEmailLoading(true);
 
     axios.post(`${API_BASE}/auth/login`, { email, password })
       .then(res => {
+        setEmailLoading(false);
         if (res.data.success) {
           const u = res.data.user;
           setUser(u);
@@ -106,6 +135,7 @@ export default function Login({ setUser }) {
         }
       })
       .catch(err => {
+        setEmailLoading(false);
         setError(extractStringError(err, 'Failed to login'));
       });
   };
@@ -121,6 +151,42 @@ export default function Login({ setUser }) {
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">SmartBin CG Portal</h2>
           <p className="text-xs text-slate-500 font-semibold">Fast Mobile OTP & Single Sign-On Access</p>
+        </div>
+
+        {/* 1-Click Instant Demo Login Section */}
+        <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl space-y-2">
+          <p className="text-[11px] font-black text-emerald-900 text-center uppercase tracking-wider">
+            ⚡ 1-Click Instant Demo Sign-In
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('citizen')}
+              disabled={emailLoading || otpLoading}
+              className="bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 py-2.5 px-1 rounded-xl text-[11px] font-black text-center shadow-xs transition active:scale-95 flex flex-col items-center gap-0.5 cursor-pointer"
+            >
+              <span>🌱 Citizen</span>
+              <span className="text-[9px] text-emerald-600 font-semibold">(Divyansh)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('driver')}
+              disabled={emailLoading || otpLoading}
+              className="bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 py-2.5 px-1 rounded-xl text-[11px] font-black text-center shadow-xs transition active:scale-95 flex flex-col items-center gap-0.5 cursor-pointer"
+            >
+              <span>🚛 Driver</span>
+              <span className="text-[9px] text-amber-600 font-semibold">(Rajesh)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('admin')}
+              disabled={emailLoading || otpLoading}
+              className="bg-white hover:bg-blue-100 text-blue-900 border border-blue-300 py-2.5 px-1 rounded-xl text-[11px] font-black text-center shadow-xs transition active:scale-95 flex flex-col items-center gap-0.5 cursor-pointer"
+            >
+              <span>🏛️ Admin</span>
+              <span className="text-[9px] text-blue-600 font-semibold">(Govt HQ)</span>
+            </button>
+          </div>
         </div>
 
         {/* Tab Selector Buttons */}
@@ -257,9 +323,10 @@ export default function Login({ setUser }) {
 
             <button
               type="submit"
-              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm py-3.5 rounded-2xl shadow-lg transition active:scale-95"
+              disabled={emailLoading}
+              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm py-3.5 rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
-              Sign In to SmartBin
+              {emailLoading ? <span>Signing in...</span> : <span>Sign In to SmartBin</span>}
             </button>
           </form>
         )}
