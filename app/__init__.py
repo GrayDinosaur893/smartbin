@@ -13,7 +13,17 @@ except ImportError:
     pass
 
 def create_app():
-    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
+    possible_dirs = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), 'static')),
+        os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'api', 'static')),
+        os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'public'))
+    ]
+    dist_dir = possible_dirs[0]
+    for d in possible_dirs:
+        if os.path.exists(d) and os.path.exists(os.path.join(d, 'index.html')):
+            dist_dir = d
+            break
+
     app = Flask(__name__, static_folder=dist_dir, static_url_path='')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'smartbin_secret_key_2026_bilaspur')
     
@@ -45,14 +55,29 @@ def create_app():
     from app.routes.api_routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
+    @app.after_request
+    def add_cache_headers(response):
+        if response.content_type and 'text/html' in response.content_type:
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
+
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_spa(path):
         if path:
-            file_path = os.path.join(dist_dir, path)
+            # Check primary dist_dir first
+            file_path = os.path.normpath(os.path.join(dist_dir, path))
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 return send_from_directory(dist_dir, path)
             
+            # Check other possible static dirs for asset
+            for d in possible_dirs:
+                alt_path = os.path.normpath(os.path.join(d, path))
+                if os.path.exists(alt_path) and os.path.isfile(alt_path):
+                    return send_from_directory(d, path)
+
             # Guard: If path is for static asset, do not return index.html HTML
             ext = os.path.splitext(path)[1].lower()
             if ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.json', '.ico', '.woff', '.woff2', '.ttf']:
