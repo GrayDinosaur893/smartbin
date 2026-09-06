@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FastForward, Sparkles, ArrowRight, X } from 'lucide-react';
 
 export default function IntroModal({ lang, onClose }) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [captionIndex, setCaptionIndex] = useState(0);
 
   const captions = [
@@ -21,48 +20,28 @@ export default function IntroModal({ lang, onClose }) {
   ];
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       setCaptionIndex((prev) => (prev < captions.length - 1 ? prev + 1 : prev));
-    }, 3000);
+    }, 3200);
     return () => clearInterval(interval);
   }, [captions.length]);
-
-  const videoRef = React.useRef(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(err => console.log('Autoplay handled:', err));
-    }
-  }, [isMobile]);
 
   return (
     <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center overflow-hidden animate-in fade-in duration-300">
       
-      {/* Full-bleed Video Background */}
-      <video
-        ref={videoRef}
-        key={isMobile ? 'phone' : 'pc'}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src={isMobile ? '/assets/Video%20ProjectPhone.mp4' : '/assets/Video%20Projectpc.mp4'} type="video/mp4" />
-        <source src={isMobile ? '/assets/Video ProjectPhone.mp4' : '/assets/Video Projectpc.mp4'} type="video/mp4" />
-      </video>
+      {/* Full-bleed YouTube Video Embed Background (Shorts ID: 6RokjtDAIHY) */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+        <iframe
+          className="w-[180vw] h-[180vh] -translate-x-[20vw] -translate-y-[20vh] object-cover pointer-events-none border-0"
+          src="https://www.youtube.com/embed/6RokjtDAIHY?autoplay=1&mute=1&controls=0&loop=1&playlist=6RokjtDAIHY&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+          title="SmartBin Intro Video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
 
-      {/* Subtle Ambient Vignette Gradient */}
-      <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
+      {/* Subtle Ambient Vignette Tint for readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/65 pointer-events-none"></div>
 
       {/* Top Floating Skip Button & Badge */}
       <div className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto">
@@ -85,7 +64,7 @@ export default function IntroModal({ lang, onClose }) {
         
         {/* Animated Subtitle with CSS Mix-Blend-Mode & Backdrop Filter */}
         <div key={captionIndex} className="space-y-4 animate-text-float transition-all duration-700">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white mix-blend-difference backdrop-blur-[2px] tracking-tight leading-tight uppercase font-sans drop-shadow-[0_10px_35px_rgba(0,0,0,0.9)]">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white mix-blend-difference backdrop-blur-[2px] tracking-tight leading-tight uppercase font-sans drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)]">
             {captions[captionIndex][lang === 'hi' ? 'hi' : 'en']}
           </h1>
 
