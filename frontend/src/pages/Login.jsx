@@ -16,7 +16,7 @@ export default function Login({ setUser }) {
 
   // Email login state
   const [email, setEmail] = useState('citizen@smartbin.gov.in');
-  const [password, setPassword] = useState('citizen123');
+  const [password, setPassword] = useState('password123');
   
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -101,6 +101,8 @@ export default function Login({ setUser }) {
           if (u.role === 'admin') navigate('/admin/dashboard');
           else if (u.role === 'driver') navigate('/driver/dashboard');
           else navigate('/citizen/dashboard');
+        } else {
+          setError(res.data.error || 'Invalid email or password');
         }
       })
       .catch(err => {

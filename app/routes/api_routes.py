@@ -90,7 +90,7 @@ def login():
                     'lang': user.language_preference or 'en'
                 }
             })
-        return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+        return jsonify({'success': False, 'error': 'Invalid email or password'}), 200
     except Exception as e:
         print(f"[Login Exception] {e}")
         return jsonify({'success': False, 'error': f'Database Connection Error: {str(e)}'}), 500
