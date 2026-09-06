@@ -676,8 +676,8 @@ def get_admin_dashboard():
             'illegal_dumping_count': len(illegal_dumping_reports)
         },
         'zones': [{'city': z.city_name, 'corporation': z.corporation_name} for z in zones],
-        'dustbins': [{'id': b.id, 'code': b.bin_code, 'city': b.city_name, 'name': b.location_name, 'lat': b.latitude, 'lng': b.longitude} for b in dustbins],
-        'drivers': [{'id': d.id, 'name': d.name, 'city': d.city_zone} for d in drivers],
+        'dustbins': [{'id': b.id, 'code': b.bin_code, 'city': b.city_name, 'name': b.location_name, 'capacity': b.capacity_liters, 'lat': b.latitude, 'lng': b.longitude} for b in dustbins],
+        'drivers': [{'id': d.id, 'name': d.name, 'phone': d.phone, 'city': d.city_zone} for d in drivers],
         'reports': [{
             'id': r.id,
             'code': r.report_code,
@@ -688,9 +688,108 @@ def get_admin_dashboard():
             'ai_confidence': r.ai_confidence,
             'status': r.status,
             'lat': r.gps_lat_user,
-            'lng': r.gps_lng_user
+            'lng': r.gps_lng_user,
+            'image_url': f"/uploads/{os.path.basename(r.waste_image_path)}" if r.waste_image_path else None,
+            'selfie_url': f"/uploads/{os.path.basename(r.selfie_image_path)}" if r.selfie_image_path else None,
+            'created_at': r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else None,
+            'user_name': User.query.get(r.user_id).name if r.user_id and User.query.get(r.user_id) else 'Citizen',
+            'assigned_driver_id': r.task.driver_id if r.task else None,
+            'assigned_driver_name': User.query.get(r.task.driver_id).name if (r.task and r.task.driver_id and User.query.get(r.task.driver_id)) else None
         } for r in reports]
     })
+
+
+@api_bp.route('/admin/assign-driver', methods=['POST'])
+def admin_assign_driver_api():
+    """
+    Manually assign a specific waste report to a municipal driver.
+    """
+    try:
+        data = request.get_json() or {}
+        report_id = data.get('report_id')
+        driver_id = data.get('driver_id')
+
+        if not report_id or not driver_id:
+            return jsonify({'success': False, 'error': 'report_id and driver_id are required'}), 400
+
+        report = Report.query.get_or_404(int(report_id))
+        driver = User.query.get_or_404(int(driver_id))
+
+        existing_task = Task.query.filter_by(report_id=report.id).first()
+        if not existing_task:
+            task_code = f"#TSK-{1000 + Task.query.count() + 1}"
+            new_task = Task(
+                task_code=task_code,
+                report_id=report.id,
+                driver_id=driver.id,
+                city_name=report.city_name,
+                status='assigned'
+            )
+            db.session.add(new_task)
+        else:
+            existing_task.driver_id = driver.id
+            existing_task.status = 'assigned'
+
+        report.status = 'assigned'
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Report {report.report_code} assigned to Driver {driver.name} ({driver.city_zone})!',
+            'report_id': report.id,
+            'driver_name': driver.name
+        })
+    except Exception as e:
+        print(f"[Admin Assign Driver Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/admin/add-dustbin', methods=['POST'])
+def admin_add_dustbin_api():
+    """
+    Add a new official municipal dustbin / dump location station.
+    """
+    try:
+        data = request.get_json() or {}
+        city_name = data.get('city_name', 'Durg')
+        location_name = data.get('location_name')
+        lat = float(data.get('lat', 21.1904))
+        lng = float(data.get('lng', 81.2849))
+        capacity_liters = int(data.get('capacity_liters', 500))
+
+        if not location_name:
+            return jsonify({'success': False, 'error': 'location_name is required'}), 400
+
+        code_prefix = city_name[:3].upper()
+        bin_code = f"BIN-{code_prefix}-{100 + Dustbin.query.count() + 1}"
+
+        new_bin = Dustbin(
+            bin_code=bin_code,
+            city_name=city_name,
+            location_name=location_name,
+            latitude=lat,
+            longitude=lng,
+            capacity_liters=capacity_liters
+        )
+        db.session.add(new_bin)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Garbage station {bin_code} added in {city_name}!',
+            'dustbin': {
+                'id': new_bin.id,
+                'code': new_bin.bin_code,
+                'city': new_bin.city_name,
+                'name': new_bin.location_name,
+                'capacity': new_bin.capacity_liters,
+                'lat': new_bin.latitude,
+                'lng': new_bin.longitude
+            }
+        })
+    except Exception as e:
+        print(f"[Admin Add Dustbin Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @api_bp.route('/admin/optimize-routes', methods=['POST'])

@@ -57,6 +57,14 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+function ConditionalFooter({ lang }) {
+  const location = useLocation();
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <Footer lang={lang} />;
+}
+
 // Mobile Bottom Navigation Bar Component for Mobile Phones
 function MobileBottomNav({ user, lang }) {
   const location = useLocation();
@@ -364,8 +372,8 @@ export default function App() {
             </Routes>
           </main>
 
-          {/* Global Dark Black Footer with Corporate Sponsors Banner & Contact Us */}
-          <Footer lang={lang} />
+          {/* Global Dark Black Footer with Corporate Sponsors Banner & Contact Us (Suppressed on Admin Dashboard) */}
+          <ConditionalFooter lang={lang} />
 
           {/* Mobile Bottom Navigation Bar */}
           <MobileBottomNav user={user} lang={lang} />
