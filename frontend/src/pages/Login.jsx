@@ -340,11 +340,12 @@ export default function Login({ setUser }) {
         )}
 
         {/* Demo Logins Footer */}
-        <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500 space-y-1">
-          <p className="font-extrabold text-slate-700">⚡ Quick Demo Accounts:</p>
-          <div className="flex flex-wrap justify-center gap-2 text-[11px] font-bold text-slate-600">
-            <span className="bg-slate-100 px-2.5 py-1 rounded-lg">📱 9876543210 (Citizen OTP)</span>
-            <span className="bg-slate-100 px-2.5 py-1 rounded-lg">🚛 Driver: driver@smartbin.gov.in</span>
+        <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500 space-y-1.5">
+          <p className="font-extrabold text-slate-700">⚡ Demo Credentials (Click above or type):</p>
+          <div className="flex flex-wrap justify-center gap-1.5 text-[10px] font-bold text-slate-600">
+            <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">👑 Admin: admin@smartbin.gov.in / admin123</span>
+            <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">🚛 Driver: driver@smartbin.gov.in / driver123</span>
+            <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">📱 Mobile OTP: 9876543210</span>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <p className="text-slate-600 font-bold">
