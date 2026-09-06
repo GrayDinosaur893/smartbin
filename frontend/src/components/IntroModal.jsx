@@ -29,10 +29,10 @@ export default function IntroModal({ lang, onClose }) {
   return (
     <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center overflow-hidden animate-in fade-in duration-300">
       
-      {/* Full-bleed YouTube Video Embed Background (Shorts ID: 6RokjtDAIHY) */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+      {/* Perfectly Centered Full-bleed YouTube Video Background */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center pointer-events-none">
         <iframe
-          className="w-[180vw] h-[180vh] -translate-x-[20vw] -translate-y-[20vh] object-cover pointer-events-none border-0"
+          className="w-[220vw] h-[220vh] min-w-full min-h-full object-cover pointer-events-none border-0"
           src="https://www.youtube.com/embed/6RokjtDAIHY?autoplay=1&mute=1&controls=0&loop=1&playlist=6RokjtDAIHY&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&start=3"
           title="SmartBin Intro Video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -41,7 +41,7 @@ export default function IntroModal({ lang, onClose }) {
       </div>
 
       {/* Subtle Ambient Vignette Tint for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/65 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/65 pointer-events-none"></div>
 
       {/* Top Floating Skip Button & Badge */}
       <div className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto">
@@ -59,17 +59,17 @@ export default function IntroModal({ lang, onClose }) {
         </button>
       </div>
 
-      {/* Direct Blended Moving Text Overlay directly ON video */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center space-y-8 flex flex-col items-center justify-center h-full">
+      {/* Perfectly Centered Moving Text & Action Button Overlay */}
+      <div className="absolute inset-0 z-10 max-w-4xl mx-auto px-6 text-center flex flex-col items-center justify-center space-y-8">
         
         {/* Animated Subtitle with CSS Mix-Blend-Mode & Backdrop Filter */}
-        <div key={captionIndex} className="space-y-4 animate-text-float transition-all duration-700">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white mix-blend-difference backdrop-blur-[2px] tracking-tight leading-tight uppercase font-sans drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)]">
+        <div key={captionIndex} className="space-y-4 animate-text-float transition-all duration-700 w-full flex flex-col items-center justify-center">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white mix-blend-difference backdrop-blur-[2px] tracking-tight leading-tight uppercase font-sans drop-shadow-[0_10px_35px_rgba(0,0,0,0.95)] max-w-3xl mx-auto">
             {captions[captionIndex][lang === 'hi' ? 'hi' : 'en']}
           </h1>
 
           {/* Glowing Indicator Dots */}
-          <div className="flex justify-center gap-2 pt-4">
+          <div className="flex justify-center items-center gap-2 pt-4">
             {captions.map((_, idx) => (
               <div
                 key={idx}
@@ -81,11 +81,11 @@ export default function IntroModal({ lang, onClose }) {
           </div>
         </div>
 
-        {/* Big Action Button */}
-        <div className="pt-6">
+        {/* Centered Action Button */}
+        <div className="pt-4 flex justify-center w-full">
           <button
             onClick={onClose}
-            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition active:scale-95 text-sm sm:text-base border-2 border-emerald-300 backdrop-blur-md"
+            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-8 py-4 rounded-2xl shadow-2xl flex items-center justify-center gap-3 transition active:scale-95 text-sm sm:text-base border-2 border-emerald-300 backdrop-blur-md"
           >
             <span>{lang === 'hi' ? 'स्मार्टबिन ऐप शुरू करें' : "Let's Fix It with SmartBin"}</span>
             <ArrowRight className="w-5 h-5 text-slate-950" />
