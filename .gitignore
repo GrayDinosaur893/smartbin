@@ -28,6 +28,7 @@ cpp_engine/*.exe
 # Media Files
 assets/
 *.mp4
+!app/static/assets/*.mp4
 
 # IDE & OS
 .vscode/

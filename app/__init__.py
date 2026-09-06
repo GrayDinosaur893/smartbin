@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 def create_app():
-    dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'dist')
+    dist_dir = os.path.join(os.path.dirname(__file__), 'static')
     app = Flask(__name__, static_folder=dist_dir, static_url_path='')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'smartbin_secret_key_2026_bilaspur')
     
