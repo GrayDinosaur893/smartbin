@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, render_template
 from flask_cors import CORS
 from app.database import db
 
@@ -50,8 +50,11 @@ def create_app():
     def serve_spa(path):
         if path and os.path.exists(os.path.join(dist_dir, path)):
             return send_from_directory(dist_dir, path)
-        if os.path.exists(os.path.join(dist_dir, 'index.html')):
-            return send_from_directory(dist_dir, 'index.html')
-        return "SmartBin CG Server Active", 200
+        try:
+            return render_template('index.html')
+        except Exception as e:
+            if os.path.exists(os.path.join(dist_dir, 'index.html')):
+                return send_from_directory(dist_dir, 'index.html')
+            return f"SmartBin CG Portal - Error: {e}", 500
 
     return app
