@@ -35,27 +35,34 @@ export default function IntroModal({ lang, onClose }) {
     return () => clearInterval(interval);
   }, [captions.length]);
 
+  const videoRef = React.useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => console.log('Autoplay handled:', err));
+    }
+  }, [isMobile]);
+
   return (
     <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center overflow-hidden animate-in fade-in duration-300">
       
       {/* Full-bleed Video Background */}
       <video
+        ref={videoRef}
         key={isMobile ? 'phone' : 'pc'}
         autoPlay
         muted
         loop
         playsInline
+        preload="auto"
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source
-          src={isMobile ? '/assets/Video ProjectPhone.mp4' : '/assets/Video Projectpc.mp4'}
-          type="video/mp4"
-        />
-        Your browser does not support HTML5 video.
+        <source src={isMobile ? '/assets/Video%20ProjectPhone.mp4' : '/assets/Video%20Projectpc.mp4'} type="video/mp4" />
+        <source src={isMobile ? '/assets/Video ProjectPhone.mp4' : '/assets/Video Projectpc.mp4'} type="video/mp4" />
       </video>
 
       {/* Subtle Ambient Vignette Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/60 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
 
       {/* Top Floating Skip Button & Badge */}
       <div className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto">
