@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, render_template
+from flask import Flask, send_from_directory, render_template, jsonify, request, send_file
 from flask_cors import CORS
 from app.database import db
 
@@ -50,11 +50,18 @@ def create_app():
     def serve_spa(path):
         if path and os.path.exists(os.path.join(dist_dir, path)):
             return send_from_directory(dist_dir, path)
-        try:
-            return render_template('index.html')
-        except Exception as e:
-            if os.path.exists(os.path.join(dist_dir, 'index.html')):
-                return send_from_directory(dist_dir, 'index.html')
-            return f"SmartBin CG Portal - Error: {e}", 500
+        template_file = os.path.join(app.root_path, 'templates', 'index.html')
+        if os.path.exists(template_file):
+            return send_file(template_file)
+        return send_from_directory(dist_dir, 'index.html')
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'API Endpoint Not Found'}), 404
+        template_file = os.path.join(app.root_path, 'templates', 'index.html')
+        if os.path.exists(template_file):
+            return send_file(template_file)
+        return send_from_directory(dist_dir, 'index.html')
 
     return app
