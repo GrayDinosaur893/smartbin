@@ -100,16 +100,16 @@ export default function App() {
         )}
 
         {/* Top Navbar Header */}
-        <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-[9999]">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-[9999] w-full overflow-x-hidden">
+          <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-2.5 flex justify-between items-center gap-1.5">
             
             {/* Logo */}
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 font-black text-xl tracking-tight">
-              <div className="w-9 h-9 bg-emerald-800 rounded-xl flex items-center justify-center border border-emerald-500 shadow-sm">
-                <Trash2 className="w-5 h-5 text-emerald-300" />
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-1.5 font-black text-lg sm:text-xl tracking-tight shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-800 rounded-xl flex items-center justify-center border border-emerald-500 shadow-sm">
+                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300" />
               </div>
-              <span>SMARTBIN</span>
-              <span className="text-[9px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded-lg border border-emerald-600 font-mono uppercase hidden xl:inline">PWA</span>
+              <span className="text-base sm:text-xl">SMARTBIN</span>
+              <span className="text-[9px] bg-emerald-800 text-emerald-200 px-1.5 py-0.5 rounded-lg border border-emerald-600 font-mono uppercase hidden xl:inline">PWA</span>
             </Link>
 
             {/* Desktop Navigation Links in Clean Uniform Box Shapes */}
@@ -149,12 +149,13 @@ export default function App() {
               )}
             </div>
 
-            {/* Right Action Controls in Uniform Clean Boxes */}
-            <div className="flex items-center gap-2 text-xs font-bold">
+            {/* Right Action Controls in Uniform Responsive Clean Boxes */}
+            <div className="flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-bold shrink-0">
               {/* Play Intro Video Button */}
               <button 
                 onClick={() => setShowIntro(true)}
-                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-3 py-2 rounded-xl border border-amber-300 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
+                title="Watch Video Intro"
+                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black p-2 sm:px-3 sm:py-2 rounded-xl border border-amber-300 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
               >
                 <Play className="w-3.5 h-3.5 fill-slate-950" />
                 <span className="hidden md:inline">{lang === 'hi' ? 'इंट्रो देखें' : 'Watch Intro'}</span>
@@ -163,30 +164,31 @@ export default function App() {
               {/* Language Switcher Box */}
               <button 
                 onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-                className="bg-emerald-800 hover:bg-emerald-900 px-3 py-2 rounded-xl border border-emerald-500 flex items-center gap-1.5 transition shadow-sm active:scale-95"
+                title="Switch Language"
+                className="bg-emerald-800 hover:bg-emerald-900 p-2 sm:px-3 sm:py-2 rounded-xl border border-emerald-500 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
               >
-                <Languages className="w-4 h-4 text-emerald-300" />
-                <span>{lang === 'en' ? 'हिंदी' : 'English'}</span>
+                <Languages className="w-3.5 h-3.5 text-emerald-300" />
+                <span className="hidden sm:inline">{lang === 'en' ? 'हिंदी' : 'English'}</span>
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2">
-                  <div className="bg-emerald-800 px-3 py-2 rounded-xl border border-emerald-600 hidden sm:flex items-center gap-1.5 text-emerald-100 font-bold">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="bg-emerald-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-600 hidden sm:flex items-center gap-1.5 text-emerald-100 font-bold">
                     <User className="w-3.5 h-3.5 text-emerald-300" />
                     <span>{user.name}</span>
                   </div>
 
-                  <button onClick={logout} className="bg-emerald-900 hover:bg-emerald-950 px-3 py-2 rounded-xl border border-emerald-700 font-extrabold flex items-center gap-1.5 transition shadow-sm active:scale-95">
-                    <LogOut className="w-4 h-4 text-emerald-300" />
+                  <button onClick={logout} className="bg-emerald-900 hover:bg-emerald-950 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-700 font-extrabold flex items-center gap-1.5 transition shadow-sm active:scale-95">
+                    <LogOut className="w-3.5 h-3.5 text-emerald-300" />
                     <span className="hidden sm:inline">{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
                   </button>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Link to="/login" className="bg-emerald-800 hover:bg-emerald-900 px-3 py-2 rounded-xl border border-emerald-600 text-white font-bold transition">
+                <div className="flex gap-1 sm:gap-2">
+                  <Link to="/login" className="bg-emerald-800 hover:bg-emerald-900 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-emerald-600 text-white font-bold transition text-[11px] sm:text-xs">
                     {lang === 'hi' ? 'लॉगिन' : 'Login'}
                   </Link>
-                  <Link to="/register" className="bg-white text-emerald-800 font-extrabold px-3.5 py-2 rounded-xl shadow hover:bg-emerald-50 transition">
+                  <Link to="/register" className="bg-white text-emerald-800 font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl shadow hover:bg-emerald-50 transition text-[11px] sm:text-xs">
                     {lang === 'hi' ? 'रजिस्टर' : 'Register'}
                   </Link>
                 </div>
@@ -197,7 +199,7 @@ export default function App() {
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden bg-emerald-800 hover:bg-emerald-900 p-2 rounded-xl border border-emerald-600 text-white transition active:scale-95 shadow-sm"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
             </div>
 
