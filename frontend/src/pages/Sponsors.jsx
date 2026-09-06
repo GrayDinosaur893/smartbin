@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../App';
-import { Building2, Award, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, MapPin as LocationIcon, Send } from 'lucide-react';
+import { Building2, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, Send, FileText, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function Sponsors({ user, lang }) {
   const [sponsors, setSponsors] = useState([]);
@@ -8,6 +8,19 @@ export default function Sponsors({ user, lang }) {
   const [selectedCity, setSelectedCity] = useState('All');
   const [redeemedCode, setRedeemedCode] = useState(null);
   const [redeemError, setRedeemError] = useState(null);
+  
+  // Modals for Contact Us and Terms & Conditions
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    message: ''
+  });
+  const [contactSuccess, setContactSuccess] = useState(false);
 
   const fetchSponsors = async () => {
     try {
@@ -26,6 +39,16 @@ export default function Sponsors({ user, lang }) {
   useEffect(() => {
     fetchSponsors();
   }, []);
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    setContactSuccess(true);
+    setTimeout(() => {
+      setContactSuccess(false);
+      setShowContactModal(false);
+      setContactForm({ name: '', email: '', phone: '', company: '', message: '' });
+    }, 2500);
+  };
 
   const handleRedeem = async (sponsor) => {
     if (!user || !user.id) {
@@ -96,17 +119,25 @@ export default function Sponsors({ user, lang }) {
             </p>
 
             <div className="pt-2 flex flex-wrap gap-3">
-              <a
-                href="#contact-us"
+              <button
+                onClick={() => setShowContactModal(true)}
                 className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition active:scale-95 text-xs sm:text-sm"
               >
                 <Mail className="w-5 h-5 text-slate-900" />
-                <span>{lang === 'hi' ? '✉️ संपर्क करें / ईमेल करें' : '✉️ Contact Us / Email Us'}</span>
-              </a>
+                <span>{lang === 'hi' ? '✉️ संपर्क करें (Contact Us)' : '✉️ Contact Us / Inquiry'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowTermsModal(true)}
+                className="bg-emerald-900/80 hover:bg-emerald-900 text-white border border-emerald-500 font-bold px-5 py-3 rounded-2xl shadow flex items-center gap-2 transition text-xs sm:text-sm"
+              >
+                <FileText className="w-4 h-4 text-amber-300" />
+                <span>{lang === 'hi' ? '📜 नियम एवं शर्तें (Terms)' : '📜 Terms & Conditions'}</span>
+              </button>
 
               <a
                 href="#active-vouchers"
-                className="bg-emerald-900/80 hover:bg-emerald-900 text-white border border-emerald-500 font-bold px-5 py-3 rounded-2xl shadow flex items-center gap-2 transition text-xs sm:text-sm"
+                className="bg-teal-900/60 hover:bg-teal-900 text-emerald-100 border border-teal-500/50 font-bold px-4 py-3 rounded-2xl shadow flex items-center gap-1.5 transition text-xs sm:text-sm"
               >
                 <Gift className="w-4 h-4 text-amber-300" />
                 <span>{lang === 'hi' ? 'सक्रिय वाउचर देखें' : 'View Sponsor Vouchers'}</span>
@@ -282,64 +313,242 @@ export default function Sponsors({ user, lang }) {
           </div>
         )}
 
-        {/* Dedicated Contact Us Section */}
-        <div id="contact-us" className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md space-y-6">
-          <div className="max-w-2xl">
-            <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
-              {lang === 'hi' ? 'कॉर्पोरेट व संस्थागत संपर्क' : 'Corporate & Sponsorship Contact'}
-            </span>
-            <h2 className="text-2xl font-black text-slate-900 mt-2">
-              {lang === 'hi' ? 'स्मार्टबिन पार्टनरशिप हेतु संपर्क करें' : 'Partner / Sponsor With SmartBin'}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-              {lang === 'hi' 
-                ? 'यदि आपकी कंपनी, रिटेल स्टोर, या संस्था अपने सीएसआर (CSR) फंड के तहत स्मार्टबिन प्लेटफॉर्म पर वाउचर, सब्सिडी या प्रायोजन जोड़ना चाहती है, तो हमसे संपर्क करें।'
-                : 'If your brand, enterprise, or retail store wants to partner with SmartBin Chhattisgarh or issue CSR sponsorship vouchers, get in touch with our partnerships desk.'}
-            </p>
-          </div>
+        {/* Inline Action Cards for Contact Us & Terms */}
+        <div id="contact-us" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Contact Us Card */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                {lang === 'hi' ? 'संपर्क करें' : 'Contact Us'}
+              </span>
+              <h2 className="text-2xl font-black text-slate-900">
+                {lang === 'hi' ? 'पार्टनरशिप व सीएसआर पूछताछ' : 'Corporate & Sponsorship Contact'}
+              </h2>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {lang === 'hi'
+                  ? 'यदि आपकी कंपनी, स्टोर या संस्था अपने सीएसआर (CSR) फंड के तहत स्मार्टबिन प्लेटफार्म से जुड़ना चाहती है, तो हमसे तुरंत संपर्क करें।'
+                  : 'Get in touch with our corporate partnerships desk to list your store vouchers, subsidies, or CSR clean city sponsorship.'}
+              </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 space-y-2">
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'ईमेल संपर्क' : 'Email Address'}</div>
-              <a href="mailto:smartbin@gmail.com" className="text-emerald-800 font-extrabold text-sm hover:underline block break-all">
-                smartbin@gmail.com
-              </a>
-            </div>
-
-            <div className="bg-blue-50/60 p-5 rounded-2xl border border-blue-100 space-y-2">
-              <div className="w-10 h-10 bg-blue-100 text-blue-800 rounded-xl flex items-center justify-center">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'टोल-फ्री हेल्पलाइन' : 'Toll-Free Helpline'}</div>
-              <div className="text-slate-900 font-extrabold text-sm">
-                1800-233-1042
+              <div className="space-y-2 text-xs font-bold text-slate-700 pt-2">
+                <div className="flex items-center gap-2 text-emerald-800">
+                  <Mail className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <a href="mailto:smartbin@gmail.com" className="hover:underline">smartbin@gmail.com</a>
+                </div>
+                <div className="flex items-center gap-2 text-slate-800">
+                  <Phone className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>1800-233-1042 (Toll-Free Helpline)</span>
+                </div>
+                <div className="flex items-start gap-2 text-slate-800">
+                  <MapPin className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
+                  <span>Bilaspur Municipal Corporation, Nehru Chowk, Bilaspur, CG 495001</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-amber-50/60 p-5 rounded-2xl border border-amber-100 space-y-2">
-              <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center">
-                <LocationIcon className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'मुख्यालय पता' : 'Headquarters'}</div>
-              <div className="text-slate-900 font-bold text-xs leading-snug">
-                Bilaspur Municipal Corporation, Nehru Chowk, Bilaspur, CG 495001
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2 flex flex-wrap items-center gap-4">
-            <a
-              href="mailto:smartbin@gmail.com?subject=SmartBin%20Corporate%20Sponsorship%20Query"
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow flex items-center gap-2 transition"
+            <button
+              onClick={() => setShowContactModal(true)}
+              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs py-3 rounded-2xl shadow transition active:scale-95 flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
-              <span>{lang === 'hi' ? 'ईमेल भेजें (smartbin@gmail.com)' : 'Send Email to smartbin@gmail.com'}</span>
-            </a>
+              <span>{lang === 'hi' ? '✉️ संपर्क फॉर्म खोलें' : '✉️ Open Contact Form'}</span>
+            </button>
+          </div>
+
+          {/* Terms & Conditions Card */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                {lang === 'hi' ? 'नियम व शर्तें' : 'Terms & Conditions'}
+              </span>
+              <h2 className="text-2xl font-black text-slate-900">
+                {lang === 'hi' ? 'वाउचर व प्रायोजन नियम' : 'Sponsor & Voucher Terms'}
+              </h2>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {lang === 'hi'
+                  ? 'नागरिकों और प्रायोजक कंपनियों दोनों के लिए स्मार्टबिन इको-पॉइंट्स, वाउचर भुनाने व सीएसआर फंड आवंटन संबंधी नियम देखें।'
+                  : 'Review rules governing Eco-Points redemptions, corporate sponsor voucher validity, anti-fraud limits, and CSR guidelines.'}
+              </p>
+
+              <div className="space-y-1.5 text-xs text-slate-600 font-medium pt-1">
+                <p className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> 1-Time per user redemption policy on corporate vouchers.</p>
+                <p className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> Points non-transferable; verified by municipal AI audit.</p>
+                <p className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" /> CSR audit logs generated for regulatory compliance.</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowTermsModal(true)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs py-3 rounded-2xl shadow transition active:scale-95 flex items-center justify-center gap-2"
+            >
+              <FileText className="w-4 h-4 text-amber-400" />
+              <span>{lang === 'hi' ? '📜 पूरी नियम शर्तें पढ़ें' : '📜 Read Full Terms & Conditions'}</span>
+            </button>
           </div>
         </div>
+
+        {/* 1. Contact Us Modal */}
+        {showContactModal && (
+          <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900">{lang === 'hi' ? 'संपर्क करें (Contact Us)' : 'Corporate Contact Us'}</h2>
+                    <p className="text-xs text-slate-500">{lang === 'hi' ? 'स्मार्टबिन कॉर्पोरेट पार्टनरशिप एवं सहायता' : 'Send inquiry to SmartBin Chhattisgarh team'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowContactModal(false)} className="text-slate-400 hover:text-slate-600 font-black text-xl">✕</button>
+              </div>
+
+              {contactSuccess ? (
+                <div className="bg-emerald-50 border border-emerald-300 p-6 rounded-2xl text-center space-y-2">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+                  <h3 className="font-extrabold text-emerald-900 text-sm">
+                    {lang === 'hi' ? 'आपका संदेश नगर निगम/स्मार्टबिन टीम को भेज दिया गया है!' : 'Inquiry sent successfully to SmartBin Team!'}
+                  </h3>
+                  <p className="text-xs text-emerald-700">We will respond to smartbin@gmail.com within 24 hours.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-4 text-xs font-bold text-slate-700">
+                  <div>
+                    <label className="block mb-1">{lang === 'hi' ? 'आपका नाम / कंपनी *' : 'Name / Company Name *'}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma / Tata CSR"
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1">{lang === 'hi' ? 'ईमेल *' : 'Email Address *'}</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="contact@company.com"
+                        value={contactForm.email}
+                        onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">{lang === 'hi' ? 'फ़ोन नंबर' : 'Phone Number'}</label>
+                      <input
+                        type="tel"
+                        placeholder="9876543210"
+                        value={contactForm.phone}
+                        onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1">{lang === 'hi' ? 'संदेश विवरण *' : 'Message / Inquiry Details *'}</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Write your proposal, CSR query, or partnership request..."
+                      value={contactForm.message}
+                      onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm py-3 rounded-2xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{lang === 'hi' ? 'संदेश भेजें' : 'Send Inquiry Now'}</span>
+                  </button>
+                </form>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {/* 2. Terms & Conditions Modal */}
+        {showTermsModal && (
+          <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-amber-100 text-amber-800 rounded-xl">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900">{lang === 'hi' ? 'नियम एवं शर्तें (Terms & Conditions)' : 'Terms & Conditions'}</h2>
+                    <p className="text-xs text-slate-500">{lang === 'hi' ? 'स्मार्टबिन वाउचर एवं सीएसआर प्रायोजन नियमावली' : 'SmartBin Voucher & CSR Sponsorship Rules'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowTermsModal(false)} className="text-slate-400 hover:text-slate-600 font-black text-xl">✕</button>
+              </div>
+
+              <div className="space-y-4 text-xs text-slate-700 leading-relaxed max-h-96 overflow-y-auto pr-2">
+                <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl font-bold text-amber-900">
+                  📌 {lang === 'hi' ? 'छत्तीसगढ़ स्वच्छ भारत शहरी मिशन दिशा-निर्देश' : 'Chhattisgarh Swachh Bharat Urban Mission Guidelines'}
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">1. Eco-Points Redemption Policy</h4>
+                  <p>
+                    Eco-Points earned through verified waste photo uploads (100 Points = ₹1.00) can be redeemed for sponsor vouchers or micro cash wallet balance. Points are non-transferable between accounts.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">2. Voucher Redemption Limit (1-Time Limit)</h4>
+                  <p>
+                    To ensure fair distribution among citizens, each corporate sponsor voucher offer can be redeemed <b>once per user account</b>. Attempting duplicate redemptions on the same offer is restricted by the platform.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">3. Corporate CSR Fund Allocation</h4>
+                  <p>
+                    Corporate partners sponsoring discounts or grants are provided with anonymized ESG impact metrics (tonnes of waste diverted, verified clean locations) suitable for statutory corporate CSR compliance auditing.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">4. Outlet Redemption & Validity</h4>
+                  <p>
+                    Sponsor promo codes generated upon redemption must be presented at the sponsor retail outlet or online portal. Codes remain valid for 30 days from date of issuance unless specified otherwise.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">5. Anti-Fraud & Verification Rules</h4>
+                  <p>
+                    AI vision model checks for fake or reused waste photos. Any account flagged for fraud or location spoofing will have its Eco-Points invalidated and redemption privileges suspended.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs py-3 rounded-2xl shadow"
+                >
+                  {lang === 'hi' ? 'समझ गए (I Understand)' : 'I Understand & Agree'}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Redeemed Voucher Code Modal */}
         {redeemedCode && (

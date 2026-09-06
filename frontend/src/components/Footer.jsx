@@ -67,7 +67,7 @@ export default function Footer({ lang }) {
               className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-6 py-3.5 rounded-2xl shadow-xl transition active:scale-95 text-xs sm:text-sm flex items-center gap-2"
             >
               <Building2 className="w-4 h-4 text-slate-950" />
-              <span>{lang === 'hi' ? '🏢 अपनी कंपनी का वाउचर जोड़ें' : '🏢 Submit Company Voucher'}</span>
+              <span>{lang === 'hi' ? '🏢 संपर्क करें व वाउचर नियम' : '🏢 Contact Us & Terms'}</span>
             </Link>
           </div>
         </div>
