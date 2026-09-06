@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from app.database import db
 
@@ -13,7 +13,8 @@ except ImportError:
     pass
 
 def create_app():
-    app = Flask(__name__)
+    dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'dist')
+    app = Flask(__name__, static_folder=dist_dir, static_url_path='')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'smartbin_secret_key_2026_bilaspur')
     
     # Neon PostgreSQL Connection URI
@@ -43,5 +44,14 @@ def create_app():
     # Register REST API Blueprints
     from app.routes.api_routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_spa(path):
+        if path and os.path.exists(os.path.join(dist_dir, path)):
+            return send_from_directory(dist_dir, path)
+        if os.path.exists(os.path.join(dist_dir, 'index.html')):
+            return send_from_directory(dist_dir, 'index.html')
+        return "SmartBin CG Server Active", 200
 
     return app
