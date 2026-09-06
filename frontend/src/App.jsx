@@ -11,7 +11,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import Sponsors from './pages/Sponsors';
 import Footer from './components/Footer';
 
-export const API_BASE = 'http://localhost:5000/api';
+import IntroModal from './components/IntroModal';
+import { Play } from 'lucide-react';
+
+export const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 // Mobile Bottom Navigation Bar Component for Mobile Phones
 function MobileBottomNav({ user, lang }) {
@@ -72,6 +75,14 @@ export default function App() {
 
   const [lang, setLang] = useState('en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('smartbin_intro_seen');
+  });
+
+  const handleCloseIntro = () => {
+    sessionStorage.setItem('smartbin_intro_seen', 'true');
+    setShowIntro(false);
+  };
 
   const logout = () => {
     localStorage.removeItem('smartbin_user');
@@ -83,6 +94,11 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col pb-16 md:pb-0 selection:bg-emerald-500 selection:text-white">
         
+        {/* Animated Intro Video Overlay */}
+        {showIntro && (
+          <IntroModal lang={lang} onClose={handleCloseIntro} />
+        )}
+
         {/* Top Navbar Header */}
         <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-[9999]">
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -135,6 +151,15 @@ export default function App() {
 
             {/* Right Action Controls in Uniform Clean Boxes */}
             <div className="flex items-center gap-2 text-xs font-bold">
+              {/* Play Intro Video Button */}
+              <button 
+                onClick={() => setShowIntro(true)}
+                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-3 py-2 rounded-xl border border-amber-300 flex items-center gap-1.5 transition shadow-sm active:scale-95 text-[11px]"
+              >
+                <Play className="w-3.5 h-3.5 fill-slate-950" />
+                <span className="hidden md:inline">{lang === 'hi' ? 'इंट्रो देखें' : 'Watch Intro'}</span>
+              </button>
+
               {/* Language Switcher Box */}
               <button 
                 onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}

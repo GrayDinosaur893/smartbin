@@ -26,7 +26,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    CORS(app) # Enable Cross-Origin Resource Sharing for Vite React Frontend
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True) # Enable Cross-Origin Resource Sharing for Vite React Frontend
     db.init_app(app)
 
     # Register REST API Blueprints

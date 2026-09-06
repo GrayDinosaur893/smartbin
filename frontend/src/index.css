@@ -37,3 +37,24 @@
   transform: translateY(-2px) scale(0.99);
   box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.15);
 }
+
+/* Kinetic Video Overlay Moving Text Animations */
+@keyframes textFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+  }
+  50% {
+    transform: translateY(-14px) scale(1.03);
+    text-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+  }
+}
+
+.animate-text-float {
+  animation: textFloat 3.8s ease-in-out infinite;
+}
+

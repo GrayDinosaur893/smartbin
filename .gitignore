@@ -26,6 +26,10 @@ cpp_engine/build/
 cpp_engine/*.o
 cpp_engine/*.exe
 
+# Media Files
+assets/
+*.mp4
+
 # IDE & OS
 .vscode/
 .idea/
