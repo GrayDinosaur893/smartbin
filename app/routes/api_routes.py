@@ -759,6 +759,33 @@ def apply_sponsor_offer():
     })
 
 
+@api_bp.route('/sponsors/redeem', methods=['POST'])
+def redeem_sponsor_api():
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    sponsor_id = data.get('sponsor_id')
+
+    if not user_id or not sponsor_id:
+        return jsonify({'success': False, 'error': 'User ID and Sponsor Offer ID are required'}), 400
+
+    result = RewardService.redeem_sponsor_voucher(user_id=int(user_id), sponsor_offer_id=int(sponsor_id))
+
+    if result.get('success'):
+        # Log audit activity
+        user = User.query.get(int(user_id))
+        if user:
+            log_user_activity(
+                user_id=user.id,
+                user_name=user.name,
+                phone_or_email=user.phone or user.email,
+                action_type='VOUCHER_REDEEMED',
+                description=f"Redeemed voucher {result['voucher_code']} (-{result['points_spent']} Pts)"
+            )
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 400
+
+
 @api_bp.route('/public/test-sms', methods=['GET', 'POST'])
 def test_sms_api():
     phone = request.args.get('phone') or (request.json.get('phone') if request.is_json else '8085668669')
@@ -774,5 +801,6 @@ def test_sms_api():
         'message': f'1-Click Free Cellular SMS dispatched for +91 {phone}!',
         'sms_logs': results
     })
+
 
 

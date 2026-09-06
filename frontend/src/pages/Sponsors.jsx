@@ -71,9 +71,43 @@ export default function Sponsors({ user, lang }) {
     }
   };
 
-  const handleRedeem = (sponsor) => {
-    const code = `${sponsor.voucher_code_prefix}${Math.floor(1000 + Math.random() * 9000)}`;
-    setRedeemedCode({ sponsor, code });
+  const [redeemError, setRedeemError] = useState(null);
+
+  const handleRedeem = async (sponsor) => {
+    if (!user || !user.id) {
+      setRedeemError(lang === 'hi' ? 'वाउचर भुनाने के लिए कृपया पहले अपने खाते में लॉगिन करें!' : 'Please login to your citizen account first to redeem sponsor vouchers!');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/sponsors/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, sponsor_id: sponsor.id })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update user state & localStorage immediately
+        const updatedUser = {
+          ...user,
+          eco_points: data.remaining_points,
+          cash_wallet_balance: data.remaining_wallet
+        };
+        localStorage.setItem('smartbin_user', JSON.stringify(updatedUser));
+
+        setRedeemedCode({
+          sponsor,
+          code: data.voucher_code,
+          points_spent: data.points_spent,
+          remaining_points: data.remaining_points
+        });
+      } else {
+        setRedeemError(data.error || 'Unable to redeem voucher');
+      }
+    } catch (err) {
+      setRedeemError('Network error while redeeming voucher. Please try again.');
+    }
   };
 
   const filteredSponsors = selectedCity === 'All' 
@@ -450,6 +484,10 @@ export default function Sponsors({ user, lang }) {
                 </div>
               </div>
 
+              <div className="bg-emerald-50 text-emerald-800 text-[11px] font-bold py-2 rounded-xl border border-emerald-200">
+                🎉 -{redeemedCode.points_spent} Eco-Points Deducted! (Remaining: {redeemedCode.remaining_points} Pts)
+              </div>
+
               <p className="text-[11px] text-slate-500 leading-tight">
                 {lang === 'hi' ? 'इस कोड को काउंटर पर दिखाएं या चेकआउट के दौरान इस्तेमाल करें।' : 'Show this promo code at the sponsor outlet or online checkout to redeem.'}
               </p>
@@ -459,6 +497,30 @@ export default function Sponsors({ user, lang }) {
                 className="w-full bg-slate-900 text-white font-extrabold text-xs py-2.5 rounded-xl"
               >
                 {lang === 'hi' ? 'बंद करें' : 'Close'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Redemption Error / 1-Time Limit Warning Modal */}
+        {redeemError && (
+          <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl space-y-4 animate-in zoom-in-95 border-2 border-amber-400">
+              <div className="w-14 h-14 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              
+              <h3 className="font-extrabold text-slate-900 text-base">{lang === 'hi' ? 'वाउचर भुनाने में सूचना' : 'Voucher Redemption Notice'}</h3>
+
+              <div className="bg-amber-50 text-amber-900 p-4 rounded-2xl text-xs font-bold leading-relaxed border border-amber-200">
+                {redeemError}
+              </div>
+
+              <button
+                onClick={() => setRedeemError(null)}
+                className="w-full bg-slate-900 text-white font-extrabold text-xs py-2.5 rounded-xl"
+              >
+                {lang === 'hi' ? 'ठीक है (OK)' : 'Got it'}
               </button>
             </div>
           </div>

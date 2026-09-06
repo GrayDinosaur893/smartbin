@@ -9,7 +9,10 @@ app = create_app()
 def seed_database():
     with app.app_context():
         # Ensure database tables exist in Neon PostgreSQL
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            print(f"[SmartBin Notice] Table creation check: {e}")
 
         if MunicipalZone.query.count() > 0:
             print("[SmartBin] Neon PostgreSQL Database already initialized & seeded!")

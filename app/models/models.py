@@ -167,3 +167,18 @@ class UserActivityLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class VoucherRedemption(db.Model):
+    __tablename__ = 'voucher_redemptions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sponsor_offer_id = db.Column(db.Integer, db.ForeignKey('sponsor_offers.id'), nullable=False)
+    voucher_code = db.Column(db.String(100), unique=True, nullable=False)
+    points_spent = db.Column(db.Integer, nullable=False)
+    redeemed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sponsor_offer = db.relationship('SponsorOffer', backref='redemptions', lazy=True)
+    user = db.relationship('User', backref='redemptions', lazy=True)
+
+
+
