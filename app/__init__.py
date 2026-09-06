@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 def create_app():
-    dist_dir = os.path.join(os.path.dirname(__file__), 'static')
+    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
     app = Flask(__name__, static_folder=dist_dir, static_url_path='')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'smartbin_secret_key_2026_bilaspur')
     
@@ -32,7 +32,7 @@ def create_app():
         "pool_timeout": 20,
     }
 
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True) # Enable Cross-Origin Resource Sharing for Vite React Frontend
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
     db.init_app(app)
 
     with app.app_context():
@@ -48,8 +48,16 @@ def create_app():
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_spa(path):
-        if path and os.path.exists(os.path.join(dist_dir, path)):
-            return send_from_directory(dist_dir, path)
+        if path:
+            file_path = os.path.normpath(os.path.join(dist_dir, path))
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                return send_from_directory(dist_dir, path)
+            
+            # Guard: If request is for a static asset file extension, DO NOT fall back to index.html HTML
+            ext = os.path.splitext(path)[1].lower()
+            if ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.json', '.ico', '.woff', '.woff2', '.ttf']:
+                return jsonify({'error': f'Static asset {path} missing'}), 404
+
         template_file = os.path.join(app.root_path, 'templates', 'index.html')
         if os.path.exists(template_file):
             return send_file(template_file)
@@ -59,6 +67,11 @@ def create_app():
     def handle_404(e):
         if request.path.startswith('/api/'):
             return jsonify({'success': False, 'error': 'API Endpoint Not Found'}), 404
+        
+        ext = os.path.splitext(request.path)[1].lower()
+        if ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.json', '.ico', '.woff', '.woff2', '.ttf']:
+            return jsonify({'error': 'Static asset missing'}), 404
+
         template_file = os.path.join(app.root_path, 'templates', 'index.html')
         if os.path.exists(template_file):
             return send_file(template_file)
