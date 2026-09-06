@@ -33,7 +33,7 @@ export default function IntroModal({ lang, onClose }) {
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
         <iframe
           className="w-[180vw] h-[180vh] -translate-x-[20vw] -translate-y-[20vh] object-cover pointer-events-none border-0"
-          src="https://www.youtube.com/embed/6RokjtDAIHY?autoplay=1&mute=1&controls=0&loop=1&playlist=6RokjtDAIHY&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+          src="https://www.youtube.com/embed/6RokjtDAIHY?autoplay=1&mute=1&controls=0&loop=1&playlist=6RokjtDAIHY&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&start=3"
           title="SmartBin Intro Video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
