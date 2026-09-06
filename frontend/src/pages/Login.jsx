@@ -35,10 +35,18 @@ export default function Login({ setUser }) {
     setError('');
     setEmailLoading(true);
     let demoEmail = 'citizen@smartbin.gov.in';
-    if (role === 'driver') demoEmail = 'driver@smartbin.gov.in';
-    if (role === 'admin') demoEmail = 'admin@smartbin.gov.in';
+    let demoPassword = 'citizen123';
+    
+    if (role === 'driver') {
+      demoEmail = 'driver@smartbin.gov.in';
+      demoPassword = 'driver123';
+    }
+    if (role === 'admin') {
+      demoEmail = 'admin@smartbin.gov.in';
+      demoPassword = 'admin123';
+    }
 
-    axios.post(`${API_BASE}/auth/login`, { email: demoEmail, password: 'password123' })
+    axios.post(`${API_BASE}/auth/login`, { email: demoEmail, password: demoPassword })
       .then(res => {
         setEmailLoading(false);
         if (res.data.success) {
