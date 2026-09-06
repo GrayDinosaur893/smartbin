@@ -40,18 +40,29 @@ def log_user_activity(user_id, user_name, phone_or_email, action_type, descripti
 
 @api_bp.route('/public/municipal-zones', methods=['GET'])
 def get_municipal_zones():
-    zones = MunicipalZone.query.all()
-    return jsonify({
-        'state': 'Chhattisgarh',
-        'zones': [{
-            'id': z.id,
-            'city_name': z.city_name,
-            'corporation_name': z.corporation_name,
-            'depot_lat': z.depot_lat,
-            'depot_lng': z.depot_lng,
-            'radius_km': z.radius_km
-        } for z in zones]
-    })
+    try:
+        zones = MunicipalZone.query.all()
+        return jsonify({
+            'state': 'Chhattisgarh',
+            'zones': [{
+                'id': z.id,
+                'city_name': z.city_name,
+                'corporation_name': z.corporation_name,
+                'depot_lat': z.depot_lat,
+                'depot_lng': z.depot_lng,
+                'radius_km': z.radius_km
+            } for z in zones]
+        })
+    except Exception as e:
+        print(f"[Municipal Zones API Exception] {e}")
+        return jsonify({
+            'state': 'Chhattisgarh',
+            'zones': [
+                {'id': 1, 'city_name': 'Bilaspur', 'corporation_name': 'Bilaspur Municipal Corporation', 'depot_lat': 22.0797, 'depot_lng': 82.1391, 'radius_km': 15.0},
+                {'id': 2, 'city_name': 'Raipur', 'corporation_name': 'Raipur Municipal Corporation', 'depot_lat': 21.2514, 'depot_lng': 81.6296, 'radius_km': 18.0},
+                {'id': 3, 'city_name': 'Durg', 'corporation_name': 'Durg Municipal Corporation', 'depot_lat': 21.1904, 'depot_lng': 81.2849, 'radius_km': 12.0}
+            ]
+        })
 
 # --------------------------------------------------
 # 2. AUTHENTICATION REST APIS
@@ -59,26 +70,30 @@ def get_municipal_zones():
 
 @api_bp.route('/auth/login', methods=['POST'])
 def login():
-    data = request.get_json() or {}
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.get_json() or {}
+        email = data.get('email')
+        password = data.get('password')
 
-    user = User.query.filter_by(email=email).first()
-    if user and check_password_hash(user.password_hash, password):
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': user.id,
-                'name': user.name,
-                'email': user.email,
-                'role': user.role,
-                'city_zone': user.city_zone or 'Durg',
-                'eco_points': user.eco_points,
-                'cash_wallet_balance': user.cash_wallet_balance,
-                'lang': user.language_preference or 'en'
-            }
-        })
-    return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password_hash, password):
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'name': user.name,
+                    'email': user.email,
+                    'role': user.role,
+                    'city_zone': user.city_zone or 'Durg',
+                    'eco_points': user.eco_points,
+                    'cash_wallet_balance': user.cash_wallet_balance,
+                    'lang': user.language_preference or 'en'
+                }
+            })
+        return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+    except Exception as e:
+        print(f"[Login Exception] {e}")
+        return jsonify({'success': False, 'error': f'Database Connection Error: {str(e)}'}), 500
 
 
 # In-Memory OTP Store for Mobile OTP Authentication
