@@ -29,6 +29,12 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True) # Enable Cross-Origin Resource Sharing for Vite React Frontend
     db.init_app(app)
 
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception as e:
+            print(f"[Database Init Notice] {e}")
+
     # Register REST API Blueprints
     from app.routes.api_routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
