@@ -1,8 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, MapPin, Zap, Building2, Truck, ShieldAlert, CheckCircle2, Clock, Trash2, Camera, Eye, PlusCircle, User, Check, Sparkles, Filter, X, Send } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMapEvents, useMap } from 'react-leaflet';
 import axios from 'axios';
 import { API_BASE } from '../App';
+
+function LocationPicker({ position, setPosition }) {
+  useMapEvents({
+    click(e) {
+      setPosition({ lat: e.latlng.lat.toFixed(6), lng: e.latlng.lng.toFixed(6) });
+    },
+  });
+
+  return position.lat === '' || position.lng === '' ? null : (
+    <Marker
+      position={[parseFloat(position.lat), parseFloat(position.lng)]}
+      draggable={true}
+      eventHandlers={{
+        dragend(e) {
+          const marker = e.target;
+          const pos = marker.getLatLng();
+          setPosition({ lat: pos.lat.toFixed(6), lng: pos.lng.toFixed(6) });
+        },
+      }}
+    />
+  );
+}
+
+function ChangeMapView({ coords }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords && coords[0] && coords[1]) {
+      map.setView(coords, map.getZoom());
+    }
+  }, [coords, map]);
+  return null;
+}
 
 export default function AdminDashboard({ user, lang }) {
   const [adminData, setAdminData] = useState({
@@ -665,6 +697,17 @@ export default function AdminDashboard({ user, lang }) {
                   </div>
                 </div>
 
+                <div className="h-40 w-full border border-slate-300 rounded-xl overflow-hidden shadow-inner relative z-0">
+                  <MapContainer center={[parseFloat(newBinForm.lat) || 21.1904, parseFloat(newBinForm.lng) || 81.2849]} zoom={14} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <ChangeMapView coords={[parseFloat(newBinForm.lat) || 21.1904, parseFloat(newBinForm.lng) || 81.2849]} />
+                    <LocationPicker position={{lat: newBinForm.lat, lng: newBinForm.lng}} setPosition={(pos) => setNewBinForm({...newBinForm, lat: pos.lat, lng: pos.lng})} />
+                  </MapContainer>
+                  <div className="absolute top-2 left-2 right-2 bg-white/90 backdrop-blur-sm text-[10px] font-bold text-emerald-800 px-2 py-1 rounded-lg shadow-sm border border-emerald-200 z-[400] text-center pointer-events-none">
+                    👇 Tap on the map to place the dustbin pin
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block mb-1">Latitude</label>
@@ -672,7 +715,7 @@ export default function AdminDashboard({ user, lang }) {
                       type="text"
                       value={newBinForm.lat}
                       onChange={e => setNewBinForm({...newBinForm, lat: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-[11px]"
                     />
                   </div>
 
@@ -682,7 +725,7 @@ export default function AdminDashboard({ user, lang }) {
                       type="text"
                       value={newBinForm.lng}
                       onChange={e => setNewBinForm({...newBinForm, lng: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-[11px]"
                     />
                   </div>
                 </div>
