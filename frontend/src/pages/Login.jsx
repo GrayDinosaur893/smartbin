@@ -21,6 +21,15 @@ export default function Login({ setUser }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const extractStringError = (err, fallback) => {
+    const raw = err.response?.data?.error || err.message;
+    if (typeof raw === 'string') return raw;
+    if (raw && typeof raw === 'object') {
+      return raw.message || JSON.stringify(raw);
+    }
+    return fallback;
+  };
+
   const handleSendOtp = (e) => {
     e.preventDefault();
     setError('');
@@ -52,7 +61,7 @@ export default function Login({ setUser }) {
       })
       .catch(err => {
         setOtpLoading(false);
-        setError(err.response?.data?.error || 'Failed to send OTP to mobile number');
+        setError(extractStringError(err, 'Failed to send OTP to mobile number'));
       });
   };
 
@@ -75,7 +84,7 @@ export default function Login({ setUser }) {
       })
       .catch(err => {
         setOtpLoading(false);
-        setError(err.response?.data?.error || 'Invalid OTP entered. Please try again.');
+        setError(extractStringError(err, 'Invalid OTP entered. Please try again.'));
       });
   };
 
@@ -95,7 +104,7 @@ export default function Login({ setUser }) {
         }
       })
       .catch(err => {
-        setError(err.response?.data?.error || 'Failed to login');
+        setError(extractStringError(err, 'Failed to login'));
       });
   };
 

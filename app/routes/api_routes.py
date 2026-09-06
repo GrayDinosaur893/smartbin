@@ -86,96 +86,104 @@ OTP_STORE = {}
 
 @api_bp.route('/auth/send-otp', methods=['POST'])
 def send_otp():
-    data = request.get_json() or {}
-    phone = data.get('phone', '').strip()
+    try:
+        data = request.get_json() or {}
+        phone = data.get('phone', '').strip()
 
-    if not phone:
-        return jsonify({'success': False, 'error': 'Phone number is required'}), 400
+        if not phone:
+            return jsonify({'success': False, 'error': 'Phone number is required'}), 400
 
-    clean_phone = phone.replace('+91', '').replace('-', '').strip()
-    if len(clean_phone) < 10:
-        return jsonify({'success': False, 'error': 'Please enter a valid 10-digit Indian mobile number'}), 400
+        clean_phone = phone.replace('+91', '').replace('-', '').strip()
+        if len(clean_phone) < 10:
+            return jsonify({'success': False, 'error': 'Please enter a valid 10-digit Indian mobile number'}), 400
 
-    import random
-    otp = str(random.randint(100000, 999999))
-    OTP_STORE[clean_phone] = {
-        'otp': otp,
-        'created_at': datetime.utcnow().timestamp()
-    }
+        import random
+        otp = str(random.randint(100000, 999999))
+        OTP_STORE[clean_phone] = {
+            'otp': otp,
+            'created_at': datetime.utcnow().timestamp()
+        }
 
-    # Dispatch SMS & Free Mobile Links via SMSService
-    sms_msg = f"[SMARTBIN CG] Your Mobile Login OTP is {otp}. Valid for 5 minutes. Clean Chhattisgarh Helpline: 1800-233-1042"
-    sms_res = SMSService.send_sms(recipient_phone=clean_phone, message_body=sms_msg)
+        # Dispatch SMS & Free Mobile Links via SMSService
+        sms_msg = f"[SMARTBIN CG] Your Mobile Login OTP is {otp}. Valid for 5 minutes. Clean Chhattisgarh Helpline: 1800-233-1042"
+        sms_res = SMSService.send_sms(recipient_phone=clean_phone, message_body=sms_msg)
 
-    return jsonify({
-        'success': True,
-        'message': f'OTP sent successfully to mobile +91 {clean_phone}!',
-        'phone': clean_phone,
-        'demo_otp': otp,
-        'sms_details': sms_res
-    })
+        return jsonify({
+            'success': True,
+            'message': f'OTP sent successfully to mobile +91 {clean_phone}!',
+            'phone': clean_phone,
+            'demo_otp': otp,
+            'sms_details': sms_res
+        })
+    except Exception as e:
+        print(f"[send_otp Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @api_bp.route('/auth/verify-otp', methods=['POST'])
 def verify_otp():
-    data = request.get_json() or {}
-    phone = data.get('phone', '').strip()
-    otp_entered = data.get('otp', '').strip()
-    name = data.get('name', 'Mobile Citizen')
-    city_zone = data.get('city_zone', 'Bilaspur')
+    try:
+        data = request.get_json() or {}
+        phone = data.get('phone', '').strip()
+        otp_entered = data.get('otp', '').strip()
+        name = data.get('name', 'Mobile Citizen')
+        city_zone = data.get('city_zone', 'Bilaspur')
 
-    clean_phone = phone.replace('+91', '').replace('-', '').strip()
-    record = OTP_STORE.get(clean_phone)
+        clean_phone = phone.replace('+91', '').replace('-', '').strip()
+        record = OTP_STORE.get(clean_phone)
 
-    if not record or record['otp'] != otp_entered:
-        return jsonify({'success': False, 'error': 'Invalid OTP entered. Please try again.'}), 400
+        if not record or record['otp'] != otp_entered:
+            return jsonify({'success': False, 'error': 'Invalid OTP entered. Please try again.'}), 400
 
-    # Search for existing user with this phone or email
-    user = User.query.filter((User.phone == clean_phone) | (User.email == f"{clean_phone}@smartbin.cg.gov.in")).first()
+        # Search for existing user with this phone or email
+        user = User.query.filter((User.phone == clean_phone) | (User.email == f"{clean_phone}@smartbin.cg.gov.in")).first()
 
-    if not user:
-        # Auto-Register New Mobile User
-        hashed_pw = generate_password_hash("otp_login_2026")
-        user = User(
-            name=name if name != 'Mobile Citizen' else f"Citizen ({clean_phone[-4:]})",
-            email=f"{clean_phone}@smartbin.cg.gov.in",
-            phone=clean_phone,
-            password_hash=hashed_pw,
-            role='citizen',
-            city_zone=city_zone,
-            eco_points=100,
-            cash_wallet_balance=1.00
+        if not user:
+            # Auto-Register New Mobile User
+            hashed_pw = generate_password_hash("otp_login_2026")
+            user = User(
+                name=name if name != 'Mobile Citizen' else f"Citizen ({clean_phone[-4:]})",
+                email=f"{clean_phone}@smartbin.cg.gov.in",
+                phone=clean_phone,
+                password_hash=hashed_pw,
+                role='citizen',
+                city_zone=city_zone,
+                eco_points=100,
+                cash_wallet_balance=1.00
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        # Clear used OTP
+        OTP_STORE.pop(clean_phone, None)
+
+        # Record User Audit Activity Log in Database
+        log_user_activity(
+            user_id=user.id,
+            user_name=user.name,
+            phone_or_email=user.phone or user.email,
+            action_type='LOGIN_OTP',
+            description=f"Successful Mobile OTP login/registration for {user.phone} in {user.city_zone}"
         )
-        db.session.add(user)
-        db.session.commit()
 
-    # Clear used OTP
-    OTP_STORE.pop(clean_phone, None)
-
-    # Record User Audit Activity Log in Database
-    log_user_activity(
-        user_id=user.id,
-        user_name=user.name,
-        phone_or_email=user.phone or user.email,
-        action_type='LOGIN_OTP',
-        description=f"Successful Mobile OTP login/registration for {user.phone} in {user.city_zone}"
-    )
-
-    return jsonify({
-        'success': True,
-        'message': f'Welcome back, {user.name}!',
-        'user': {
-            'id': user.id,
-            'name': user.name,
-            'email': user.email,
-            'phone': user.phone,
-            'role': user.role,
-            'city_zone': user.city_zone or 'Bilaspur',
-            'eco_points': user.eco_points,
-            'cash_wallet_balance': user.cash_wallet_balance,
-            'lang': user.language_preference or 'en'
-        }
-    })
+        return jsonify({
+            'success': True,
+            'message': f'Welcome back, {user.name}!',
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'phone': user.phone,
+                'role': user.role,
+                'city_zone': user.city_zone or 'Bilaspur',
+                'eco_points': user.eco_points,
+                'cash_wallet_balance': user.cash_wallet_balance,
+                'lang': user.language_preference or 'en'
+            }
+        })
+    except Exception as e:
+        print(f"[verify_otp Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @api_bp.route('/auth/register', methods=['POST'])
