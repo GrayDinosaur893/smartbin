@@ -69,7 +69,7 @@ export default function Home({ user, lang }) {
     return R * c;
   };
 
-  // Find nearest dustbin from current user coordinates
+  // Find nearest dustbin from current user or map center coordinates
   const findNearestDustbin = (coords) => {
     const userLat = coords[0];
     const userLng = coords[1];
@@ -99,17 +99,12 @@ export default function Home({ user, lang }) {
     }
   };
 
-  // Handler for Nearest Dustbin Button
+  // Handler for Nearest Dustbin Button (Seamless fallback without error alert)
   const handleFindNearestClick = () => {
     if (userLocation) {
       findNearestDustbin(userLocation);
-    } else {
+    } else if (navigator.geolocation) {
       setLocating(true);
-      if (!navigator.geolocation) {
-        alert(lang === 'hi' ? 'जीपीएस आपके डिवाइस में समर्थित नहीं है' : 'GPS not supported on your browser');
-        setLocating(false);
-        return;
-      }
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLocating(false);
@@ -119,10 +114,13 @@ export default function Home({ user, lang }) {
         },
         (err) => {
           setLocating(false);
-          alert(lang === 'hi' ? 'निकटतम डस्टबिन खोजने हेतु कृपया जीपीएस अनुमति दें।' : 'Please enable GPS location to find nearest dustbin');
+          // Seamless fallback to current map center location without showing an error popup
+          findNearestDustbin(mapCenter);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
       );
+    } else {
+      findNearestDustbin(mapCenter);
     }
   };
 
@@ -140,7 +138,7 @@ export default function Home({ user, lang }) {
       (err) => {
         setLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
     );
   };
 
