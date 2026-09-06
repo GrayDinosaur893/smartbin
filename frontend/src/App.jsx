@@ -239,12 +239,20 @@ export default function App() {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
-                  >
-                    {lang === 'hi' ? 'लॉगिन करें' : 'Login'}
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to="/login"
+                      className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
+                    >
+                      {lang === 'hi' ? 'लॉगिन' : 'Login'}
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
+                    >
+                      {lang === 'hi' ? 'साइन अप' : 'Register'}
+                    </Link>
+                  </div>
                 )}
 
                 {/* Mobile Menu Toggle */}
@@ -296,6 +304,25 @@ export default function App() {
                   <Building2 className="w-4 h-4 text-emerald-300" />
                   <span>{lang === 'hi' ? '🏢 प्रायोजक कंपनी वाउचर (Sponsors & CSR)' : '🏢 Corporate Sponsors & Subsidies'}</span>
                 </Link>
+
+                {!user && (
+                  <div className="pt-2 flex gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex-1 bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-center py-2.5 rounded-xl shadow text-xs"
+                    >
+                      {lang === 'hi' ? 'लॉगिन' : 'Login'}
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-center py-2.5 rounded-xl shadow text-xs"
+                    >
+                      {lang === 'hi' ? 'साइन अप' : 'Register'}
+                    </Link>
+                  </div>
+                )}
 
                 {user?.role === 'driver' && (
                   <Link
