@@ -65,54 +65,59 @@ function ConditionalFooter({ lang }) {
   return <Footer lang={lang} />;
 }
 
-// Mobile Bottom Navigation Bar Component for Mobile Phones
+// Mobile Bottom Navigation Bar Component for Mobile Phones & Tablets
 function MobileBottomNav({ user, lang }) {
   const location = useLocation();
   const currentPath = location.pathname;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex justify-around items-center md:hidden shadow-2xl">
-      <Link to="/" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath === '/' ? 'text-emerald-600' : 'text-slate-500'}`}>
+    <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-2 flex justify-around items-center lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <Link to="/" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath === '/' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
         <HomeIcon className="w-5 h-5" />
         <span>{lang === 'hi' ? 'होम' : 'Home'}</span>
       </Link>
 
-      <Link to="/report-waste" className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-emerald-600 -mt-5">
-        <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white transform active:scale-95 transition">
-          <Camera className="w-6 h-6" />
-        </div>
-        <span className="font-extrabold text-emerald-700">{lang === 'hi' ? 'रिपोर्ट' : 'Report'}</span>
+      <Link to="/sponsors" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath === '/sponsors' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
+        <Building2 className="w-5 h-5" />
+        <span>{lang === 'hi' ? 'वाउचर' : 'Sponsors'}</span>
       </Link>
 
-      <Link to="/citizen/dashboard" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath.includes('citizen') ? 'text-emerald-600' : 'text-slate-500'}`}>
+      <Link to="/report-waste" className="flex flex-col items-center gap-1 text-[10px] font-bold text-emerald-700 -mt-5 group">
+        <div className="w-12 h-12 bg-emerald-600 group-hover:bg-emerald-700 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white transform active:scale-95 transition">
+          <Camera className="w-6 h-6" />
+        </div>
+        <span className="font-extrabold">{lang === 'hi' ? 'रिपोर्ट' : 'Report'}</span>
+      </Link>
+
+      <Link to="/citizen/dashboard" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath.includes('citizen') ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
         <Gift className="w-5 h-5" />
         <span>{lang === 'hi' ? 'इनाम' : 'Rewards'}</span>
       </Link>
 
       {user ? (
         user.role === 'admin' ? (
-          <Link to="/admin/dashboard" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath.includes('admin') ? 'text-emerald-600' : 'text-slate-500'}`}>
+          <Link to="/admin/dashboard" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath.includes('admin') ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
             <LayoutDashboard className="w-5 h-5" />
             <span>{lang === 'hi' ? 'एडमिन' : 'Admin'}</span>
           </Link>
         ) : user.role === 'driver' ? (
-          <Link to="/driver/dashboard" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath.includes('driver') ? 'text-emerald-600' : 'text-slate-500'}`}>
+          <Link to="/driver/dashboard" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath.includes('driver') ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
             <Truck className="w-5 h-5" />
             <span>{lang === 'hi' ? 'चालक' : 'Driver'}</span>
           </Link>
         ) : (
-          <Link to="/citizen/dashboard" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath.includes('citizen') ? 'text-emerald-600' : 'text-slate-500'}`}>
+          <Link to="/citizen/dashboard" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath.includes('citizen') ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
             <User className="w-5 h-5" />
             <span>{lang === 'hi' ? 'प्रोफ़ाइल' : 'Profile'}</span>
           </Link>
         )
       ) : (
-        <Link to="/login" className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${currentPath === '/login' ? 'text-emerald-600' : 'text-slate-500'}`}>
+        <Link to="/login" className={`flex flex-col items-center gap-1 text-[10px] font-bold ${currentPath === '/login' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>
           <User className="w-5 h-5" />
           <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
         </Link>
       )}
-    </div>
+    </nav>
   );
 }
 
@@ -239,24 +244,25 @@ export default function App() {
 
                 {/* User Profile / Auth */}
                 {user ? (
-                  <div className="hidden md:flex items-center gap-2 bg-emerald-900/90 border border-emerald-600 px-3 py-1 rounded-xl text-xs font-bold">
-                    <User className="w-4 h-4 text-emerald-300" />
-                    <span>{user.full_name || user.name || 'User'} ({user.role})</span>
+                  <div className="flex items-center gap-1.5 bg-emerald-900/90 border border-emerald-600 px-2.5 py-1 rounded-xl text-xs font-bold">
+                    <User className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                    <span className="hidden md:inline max-w-[120px] truncate">{user.full_name || user.name || 'User'} ({user.role})</span>
+                    <span className="md:hidden capitalize text-[11px] text-emerald-200">{user.role}</span>
                     <button onClick={logout} className="hover:text-red-300 text-slate-300 transition ml-1" title="Logout">
                       <LogOut className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <div className="hidden md:flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     <Link
                       to="/login"
-                      className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
+                      className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-3 py-1.5 rounded-xl shadow transition active:scale-95"
                     >
                       {lang === 'hi' ? 'लॉगिन' : 'Login'}
                     </Link>
                     <Link
                       to="/register"
-                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow transition active:scale-95"
+                      className="hidden sm:inline-block bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl shadow transition active:scale-95"
                     >
                       {lang === 'hi' ? 'साइन अप' : 'Register'}
                     </Link>
@@ -266,9 +272,10 @@ export default function App() {
                 {/* Mobile Menu Toggle */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="lg:hidden bg-emerald-800 hover:bg-emerald-900 p-2 rounded-xl border border-emerald-600 text-white transition active:scale-95 shadow-sm"
+                  className="lg:hidden bg-emerald-900 hover:bg-emerald-950 p-2 rounded-xl border border-emerald-600 text-white transition active:scale-95 shadow-sm flex items-center gap-1"
+                  aria-label="Toggle navigation menu"
                 >
-                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                  {mobileMenuOpen ? <X className="w-4 h-4 text-amber-300" /> : <Menu className="w-4 h-4 text-emerald-200" />}
                 </button>
               </div>
 
@@ -359,7 +366,7 @@ export default function App() {
           </header>
 
           {/* Main Views */}
-          <main className="flex-grow">
+          <main className="flex-grow pb-20 lg:pb-0">
             <Routes>
               <Route path="/" element={<Home user={user} lang={lang} />} />
               <Route path="/login" element={<Login setUser={setUser} />} />
