@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin, Search, Crosshair, Trash2 } from 'lucide-react';
+import { Camera, MapPin, Search, Crosshair, Trash2, Navigation, Compass, Sparkles } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
@@ -11,7 +11,7 @@ function ChangeMapView({ coords }) {
   const map = useMap();
   useEffect(() => {
     if (coords && coords[0] && coords[1]) {
-      map.setView(coords, 15);
+      map.setView(coords, 16);
     }
   }, [coords, map]);
   return null;
@@ -38,22 +38,86 @@ export default function Home({ user, lang }) {
   const [userLocation, setUserLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [locating, setLocating] = useState(false);
+  const [nearestBin, setNearestBin] = useState(null);
 
   useEffect(() => {
     axios.get(`${API_BASE}/public/waste-map`)
       .then(res => setData(res.data))
       .catch(err => console.error("Failed to load map data", err));
 
-    // Dominos / Rapido style instant automatic live GPS permission prompt on load
     getLiveUserLocation();
   }, []);
 
-  // Get user's live current location & update home map
-  const getLiveUserLocation = () => {
-    if (!navigator.geolocation) {
-      alert(lang === 'hi' ? 'ब्राउज़र में जीपीएस समर्थित नहीं है' : 'Geolocation not supported');
+  // Haversine formula calculation (returns distance in km)
+  const calculateHaversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth radius in KM
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Find nearest dustbin from current user coordinates
+  const findNearestDustbin = (coords) => {
+    const userLat = coords[0];
+    const userLng = coords[1];
+
+    if (!data.dustbins || data.dustbins.length === 0) {
+      alert(lang === 'hi' ? 'कोई डस्टबिन डेटा उपलब्ध नहीं है' : 'No dustbins available on map');
       return;
     }
+
+    let minDistance = Infinity;
+    let closestBin = null;
+
+    data.dustbins.forEach(bin => {
+      const dist = calculateHaversineDistance(userLat, userLng, bin.lat, bin.lng);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestBin = { ...bin, distanceKm: dist };
+      }
+    });
+
+    if (closestBin) {
+      setNearestBin(closestBin);
+      setMapCenter([closestBin.lat, closestBin.lng]);
+    }
+  };
+
+  // Handler for Nearest Dustbin Button
+  const handleFindNearestClick = () => {
+    if (userLocation) {
+      findNearestDustbin(userLocation);
+    } else {
+      setLocating(true);
+      if (!navigator.geolocation) {
+        alert(lang === 'hi' ? 'जीपीएस आपके डिवाइस में समर्थित नहीं है' : 'GPS not supported on your browser');
+        setLocating(false);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocating(false);
+          const coords = [pos.coords.latitude, pos.coords.longitude];
+          setUserLocation(coords);
+          findNearestDustbin(coords);
+        },
+        (err) => {
+          setLocating(false);
+          alert(lang === 'hi' ? 'निकटतम डस्टबिन खोजने हेतु कृपया जीपीएस अनुमति दें।' : 'Please enable GPS location to find nearest dustbin');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+  };
+
+  // Get user's live current location & update home map
+  const getLiveUserLocation = () => {
+    if (!navigator.geolocation) return;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -64,7 +128,6 @@ export default function Home({ user, lang }) {
       },
       (err) => {
         setLocating(false);
-        alert(lang === 'hi' ? 'लाइव जीपीएस लोकेशन प्राप्त करने में विफल। कृपया जीपीएस अनुमति दें।' : 'Failed to get live location');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
@@ -106,22 +169,87 @@ export default function Home({ user, lang }) {
                 ? 'अपने शहर को स्वच्छ रखें। फोटो खींचकर कचरा रिपोर्ट करें, AI से सत्यापन करवाएं, और पुरस्कार अर्जित करें।'
                 : 'Keep your city clean. Snap a photo of overflowing bins, verify with AI, and earn micro cash rewards & government vouchers.'}
             </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/report-waste"
+                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-extrabold px-6 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm transition transform hover:-translate-y-0.5"
+              >
+                <Camera className="w-5 h-5" />
+                <span>{lang === 'hi' ? '📷 कचरा रिपोर्ट करें' : '📷 Report Waste Now'}</span>
+              </Link>
+
+              <button
+                onClick={handleFindNearestClick}
+                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-6 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm transition transform hover:-translate-y-0.5"
+              >
+                <Compass className="w-5 h-5" />
+                <span>{lang === 'hi' ? '📍 मेरे पास निकटतम डस्टबिन खोजें' : '📍 Nearest Dustbin Near Me'}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="w-full md:w-auto">
-            <Link
-              to="/report-waste"
-              className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-8 py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 text-lg transition transform hover:-translate-y-0.5"
-            >
-              <Camera className="w-6 h-6" />
-              <span>{lang === 'hi' ? '📷 कचरा रिपोर्ट करें' : '📷 Report Waste Now'}</span>
-            </Link>
+          <div className="w-full md:w-auto flex justify-center">
+            <div className="bg-emerald-900/60 border border-emerald-500/40 p-5 rounded-2xl max-w-xs text-center space-y-2">
+              <Sparkles className="w-8 h-8 text-amber-300 mx-auto" />
+              <h3 className="font-extrabold text-sm text-white">{lang === 'hi' ? 'स्मार्ट सिटी जीआईएस ट्रैकिंग' : 'Smart City GIS Tracking'}</h3>
+              <p className="text-xs text-emerald-200">
+                {lang === 'hi' ? '1-क्लिक में अपने निकटतम डस्टबिन तक Google दिशा-निर्देश प्राप्त करें।' : 'Get 1-click turn-by-turn Google Maps navigation to your nearest bin.'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Section: Interactive GIS Map & Snapshot */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+
+        {/* Nearest Dustbin Highlight Card */}
+        {nearestBin && (
+          <div className="mb-6 bg-gradient-to-r from-emerald-900 to-teal-900 rounded-3xl p-6 text-white shadow-xl border border-emerald-400/40 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 text-xs font-black px-3 py-1 rounded-full uppercase">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>{lang === 'hi' ? '📍 आपका निकटतम डस्टबिन' : '📍 Nearest Dustbin Found!'}</span>
+                </div>
+                <h3 className="text-xl font-extrabold text-white mt-2">
+                  {nearestBin.location_name || `Dustbin #${nearestBin.code}`}
+                </h3>
+                <p className="text-xs text-emerald-200 flex items-center gap-3 font-semibold">
+                  <span>Code: {nearestBin.code}</span>
+                  <span>•</span>
+                  <span>Capacity: {nearestBin.capacity}L</span>
+                  <span>•</span>
+                  <span className="text-amber-300 font-bold text-sm">
+                    {nearestBin.distanceKm < 1 
+                      ? `${Math.round(nearestBin.distanceKm * 1000)} meters away` 
+                      : `${nearestBin.distanceKm.toFixed(2)} km away`}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${nearestBin.lat},${nearestBin.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm px-5 py-3 rounded-2xl shadow-md flex items-center gap-2 transition active:scale-95"
+                >
+                  <Navigation className="w-4 h-4 fill-current" />
+                  <span>{lang === 'hi' ? 'Google Maps पर रास्ता देखें 🧭' : 'Google Maps Directions 🧭'}</span>
+                </a>
+                <button
+                  onClick={() => setNearestBin(null)}
+                  className="text-emerald-300 hover:text-white font-bold text-xs px-2 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Leaflet Map with OpenStreetMap Controls */}
@@ -135,29 +263,39 @@ export default function Home({ user, lang }) {
                 </h2>
                 <p className="text-xs text-slate-500">
                   {lang === 'hi' 
-                    ? 'दुर्ग क्षेत्र में रिपोर्ट किए गए कचरे के डिब्बों और अवैध डंपिंग की वास्तविक समय स्थिति।' 
-                    : 'Real-time status of reported dustbins & illegal dumping in Durg Zone.'}
+                    ? 'दुर्ग-बिलासपुर क्षेत्र में रिपोर्ट किए गए कचरे के डिब्बों और अवैध डंपिंग की वास्तविक समय स्थिति।' 
+                    : 'Real-time status of reported dustbins & illegal dumping across Chhattisgarh.'}
                 </p>
               </div>
 
-              {/* Live Location Button */}
-              <button
-                onClick={getLiveUserLocation}
-                disabled={locating}
-                className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition border border-emerald-300 shadow-sm shrink-0"
-              >
-                <Crosshair className={`w-4 h-4 ${locating ? 'animate-spin' : ''}`} />
-                {locating 
-                  ? (lang === 'hi' ? 'जीपीएस लिया जा रहा है...' : 'Locating...') 
-                  : (lang === 'hi' ? '📍 मेरी लाइव लोकेशन लें' : '📍 Use Live GPS Location')}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleFindNearestClick}
+                  className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition border border-amber-300 shadow-sm shrink-0"
+                >
+                  <Compass className="w-4 h-4 text-amber-700" />
+                  <span>{lang === 'hi' ? '📍 निकटतम डिब्बा' : '📍 Nearest Dustbin'}</span>
+                </button>
+
+                {/* Live Location Button */}
+                <button
+                  onClick={getLiveUserLocation}
+                  disabled={locating}
+                  className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition border border-emerald-300 shadow-sm shrink-0"
+                >
+                  <Crosshair className={`w-4 h-4 ${locating ? 'animate-spin' : ''}`} />
+                  {locating 
+                    ? (lang === 'hi' ? 'जीपीएस लिया जा रहा है...' : 'Locating...') 
+                    : (lang === 'hi' ? '📍 मेरी लाइव लोकेशन' : '📍 Live GPS')}
+                </button>
+              </div>
             </div>
 
             {/* OpenStreetMap Search Bar */}
             <form onSubmit={handleOsmSearch} className="flex gap-2 mb-3">
               <input
                 type="text"
-                placeholder={lang === 'hi' ? 'OpenStreetMap पर जगह खोजें (उदा: दुर्ग बस स्टैंड)...' : 'Search place on OpenStreetMap...'}
+                placeholder={lang === 'hi' ? 'OpenStreetMap पर जगह खोजें (उदा: बिलासपुर नेहरू चौक)...' : 'Search place on OpenStreetMap...'}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="flex-grow px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500"
@@ -191,7 +329,15 @@ export default function Home({ user, lang }) {
                     <Popup>
                       <b>{lang === 'hi' ? 'डस्टबिन' : 'Dustbin'} {b.code}</b><br />
                       {b.location_name}<br />
-                      {lang === 'hi' ? 'क्षमता' : 'Capacity'}: {b.capacity}L
+                      {lang === 'hi' ? 'क्षमता' : 'Capacity'}: {b.capacity}L<br />
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 font-bold underline text-xs mt-1 block"
+                      >
+                        🧭 {lang === 'hi' ? 'रास्ता देखें' : 'Get Directions'}
+                      </a>
                     </Popup>
                   </Marker>
                 ))}
@@ -220,7 +366,7 @@ export default function Home({ user, lang }) {
 
             {/* Map Legend */}
             <div className="flex flex-wrap gap-4 text-xs font-semibold mt-3 text-slate-700 bg-slate-50 p-2.5 rounded-xl border">
-              <span className="flex items-center gap-1.5"><span class="text-base">🗑️</span> {lang === 'hi' ? 'सरकारी डस्टबिन' : 'Municipal Dustbin'}</span>
+              <span className="flex items-center gap-1.5"><span className="text-base">🗑️</span> {lang === 'hi' ? 'सरकारी डस्टबिन' : 'Municipal Dustbin'}</span>
               <span className="flex items-center gap-1.5 text-red-600">🔴 {lang === 'hi' ? 'ओवरफ्लो कचरा' : 'Overflow Waste'}</span>
               <span className="flex items-center gap-1.5 text-purple-600">🟣 {lang === 'hi' ? 'अवैध डंपिंग' : 'Illegal Dumping'}</span>
               <span className="flex items-center gap-1.5 text-emerald-600">🟢 {lang === 'hi' ? 'साफ किया गया' : 'Cleaned'}</span>

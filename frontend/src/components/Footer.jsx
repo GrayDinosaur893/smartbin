@@ -126,7 +126,7 @@ export default function Footer({ lang }) {
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-500 block">{lang === 'hi' ? 'ईमेल सपोर्ट' : 'Support Email'}</span>
-                  <a href="mailto:support@smartbin.cg.gov.in" className="text-white font-bold hover:text-emerald-400 transition">support@smartbin.cg.gov.in</a>
+                  <a href="mailto:smartbin@gmail.com" className="text-white font-bold hover:text-emerald-400 transition">smartbin@gmail.com</a>
                 </div>
               </div>
 
@@ -134,7 +134,7 @@ export default function Footer({ lang }) {
                 <Building2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-500 block">{lang === 'hi' ? 'मुख्य मुख्यालय' : 'Headquarters'}</span>
-                  <span className="text-slate-300 font-medium">Bilaspur Municipal HQ, Station Road, Bilaspur, CG</span>
+                  <span className="text-slate-300 font-medium">Bilaspur Municipal HQ, Nehru Chowk, Bilaspur, CG 495001</span>
                 </div>
               </div>
             </div>

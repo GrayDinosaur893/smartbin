@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../App';
-import { Building2, Award, Gift, Sparkles, CheckCircle2, HeartHandshake, ShieldCheck, Tag, PlusCircle, ArrowRight, Zap, Filter, MapPin, Check, AlertCircle } from 'lucide-react';
+import { Building2, Award, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, MapPin as LocationIcon, Send } from 'lucide-react';
 
 export default function Sponsors({ user, lang }) {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState('All');
-  const [showApplyModal, setShowApplyModal] = useState(false);
   const [redeemedCode, setRedeemedCode] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(false);
-
-  const [formData, setFormData] = useState({
-    company_name: '',
-    contact_email: '',
-    offer_title: '',
-    offer_type: 'Voucher',
-    description: '',
-    city_scope: 'All Chhattisgarh',
-    points_required: 50,
-    voucher_code_prefix: 'CSR-'
-  });
+  const [redeemError, setRedeemError] = useState(null);
 
   const fetchSponsors = async () => {
     try {
@@ -39,40 +27,6 @@ export default function Sponsors({ user, lang }) {
     fetchSponsors();
   }, []);
 
-  const handleSubmitSponsor = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/sponsors/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFormSuccess(data.message);
-        fetchSponsors();
-        setTimeout(() => {
-          setShowApplyModal(false);
-          setFormSuccess(false);
-          setFormData({
-            company_name: '',
-            contact_email: '',
-            offer_title: '',
-            offer_type: 'Voucher',
-            description: '',
-            city_scope: 'All Chhattisgarh',
-            points_required: 50,
-            voucher_code_prefix: 'CSR-'
-          });
-        }, 2000);
-      }
-    } catch (err) {
-      alert('Error submitting sponsor offer');
-    }
-  };
-
-  const [redeemError, setRedeemError] = useState(null);
-
   const handleRedeem = async (sponsor) => {
     if (!user || !user.id) {
       setRedeemError(lang === 'hi' ? 'वाउचर भुनाने के लिए कृपया पहले अपने खाते में लॉगिन करें!' : 'Please login to your citizen account first to redeem sponsor vouchers!');
@@ -88,7 +42,6 @@ export default function Sponsors({ user, lang }) {
       const data = await res.json();
 
       if (data.success) {
-        // Update user state & localStorage immediately
         const updatedUser = {
           ...user,
           eco_points: data.remaining_points,
@@ -143,13 +96,13 @@ export default function Sponsors({ user, lang }) {
             </p>
 
             <div className="pt-2 flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowApplyModal(true)}
+              <a
+                href="#contact-us"
                 className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition active:scale-95 text-xs sm:text-sm"
               >
-                <PlusCircle className="w-5 h-5 text-slate-900" />
-                <span>{lang === 'hi' ? '🏢 अपनी कंपनी का वाउचर/सब्सिडी जोड़ें' : '🏢 Submit Corporate Voucher / Subsidy'}</span>
-              </button>
+                <Mail className="w-5 h-5 text-slate-900" />
+                <span>{lang === 'hi' ? '✉️ संपर्क करें / ईमेल करें' : '✉️ Contact Us / Email Us'}</span>
+              </a>
 
               <a
                 href="#active-vouchers"
@@ -329,138 +282,64 @@ export default function Sponsors({ user, lang }) {
           </div>
         )}
 
-        {/* Corporate Sponsor Form Modal */}
-        {showApplyModal && (
-          <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-              
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">{lang === 'hi' ? 'कंपनी वाउचर/सब्सिडी फॉर्म' : 'Corporate Voucher Submission'}</h2>
-                    <p className="text-xs text-slate-500">{lang === 'hi' ? 'छत्तीसगढ़ के नागरिकों हेतु अपनी छूट या वाउचर जोड़ें' : 'Add your company voucher or CSR subsidy offer'}</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowApplyModal(false)} className="text-slate-400 hover:text-slate-600 font-black text-xl">✕</button>
+        {/* Dedicated Contact Us Section */}
+        <div id="contact-us" className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md space-y-6">
+          <div className="max-w-2xl">
+            <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+              {lang === 'hi' ? 'कॉर्पोरेट व संस्थागत संपर्क' : 'Corporate & Sponsorship Contact'}
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mt-2">
+              {lang === 'hi' ? 'स्मार्टबिन पार्टनरशिप हेतु संपर्क करें' : 'Partner / Sponsor With SmartBin'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+              {lang === 'hi' 
+                ? 'यदि आपकी कंपनी, रिटेल स्टोर, या संस्था अपने सीएसआर (CSR) फंड के तहत स्मार्टबिन प्लेटफॉर्म पर वाउचर, सब्सिडी या प्रायोजन जोड़ना चाहती है, तो हमसे संपर्क करें।'
+                : 'If your brand, enterprise, or retail store wants to partner with SmartBin Chhattisgarh or issue CSR sponsorship vouchers, get in touch with our partnerships desk.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 space-y-2">
+              <div className="w-10 h-10 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center">
+                <Mail className="w-5 h-5" />
               </div>
+              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'ईमेल संपर्क' : 'Email Address'}</div>
+              <a href="mailto:smartbin@gmail.com" className="text-emerald-800 font-extrabold text-sm hover:underline block break-all">
+                smartbin@gmail.com
+              </a>
+            </div>
 
-              {formSuccess ? (
-                <div className="bg-emerald-50 border border-emerald-300 p-6 rounded-2xl text-center space-y-2">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                  <h3 className="font-extrabold text-emerald-900 text-sm">{formSuccess}</h3>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitSponsor} className="space-y-4 text-xs font-bold text-slate-700">
-                  <div>
-                    <label className="block mb-1">{lang === 'hi' ? 'कंपनी / स्टोर का नाम *' : 'Company / Store Name *'}</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Bhilai Retail Hub / Jindal CSR"
-                      value={formData.company_name}
-                      onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
+            <div className="bg-blue-50/60 p-5 rounded-2xl border border-blue-100 space-y-2">
+              <div className="w-10 h-10 bg-blue-100 text-blue-800 rounded-xl flex items-center justify-center">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'टोल-फ्री हेल्पलाइन' : 'Toll-Free Helpline'}</div>
+              <div className="text-slate-900 font-extrabold text-sm">
+                1800-233-1042
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block mb-1">{lang === 'hi' ? 'संपर्क ईमेल *' : 'Contact Email *'}</label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="csr@company.com"
-                        value={formData.contact_email}
-                        onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">{lang === 'hi' ? 'प्रकार (Type)' : 'Category / Type'}</label>
-                      <select
-                        value={formData.offer_type}
-                        onChange={(e) => setFormData({...formData, offer_type: e.target.value})}
-                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      >
-                        <option value="Voucher">Store Voucher</option>
-                        <option value="Subsidy">CSR Subsidy</option>
-                        <option value="Discount">Store Discount</option>
-                        <option value="EV Charging">EV Pass</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1">{lang === 'hi' ? 'वाउचर/सब्सिडी का शीर्षक *' : 'Offer Title *'}</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. ₹500 Discount on Green Products"
-                      value={formData.offer_title}
-                      onChange={(e) => setFormData({...formData, offer_title: e.target.value})}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block mb-1">{lang === 'hi' ? 'विवरण (Description) *' : 'Offer Details & Rules *'}</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Explain how citizens can redeem this at your store or office..."
-                      value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block mb-1">{lang === 'hi' ? 'शहर की सीमा' : 'Targeted City Scope'}</label>
-                      <select
-                        value={formData.city_scope}
-                        onChange={(e) => setFormData({...formData, city_scope: e.target.value})}
-                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      >
-                        <option value="All Chhattisgarh">All Chhattisgarh (समस्त छत्तीसगढ़)</option>
-                        <option value="Durg">Durg (दुर्ग)</option>
-                        <option value="Bhilai">Bhilai (भिलाई)</option>
-                        <option value="Raipur">Raipur (रायपुर)</option>
-                        <option value="Bilaspur">Bilaspur (बिलासपुर)</option>
-                        <option value="Korba">Korba (कोरबा)</option>
-                        <option value="Rajnandgaon">Rajnandgaon (राजनांदगांव)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">{lang === 'hi' ? 'आवश्यक इको-अंक (Points)' : 'Required Eco-Points'}</label>
-                      <input
-                        type="number"
-                        min={10}
-                        max={1000}
-                        value={formData.points_required}
-                        onChange={(e) => setFormData({...formData, points_required: e.target.value})}
-                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm py-3 rounded-2xl shadow-lg transition active:scale-95 mt-2"
-                  >
-                    {lang === 'hi' ? 'वाउचर प्रकाशित करें' : 'Publish Voucher Now'}
-                  </button>
-                </form>
-              )}
-
+            <div className="bg-amber-50/60 p-5 rounded-2xl border border-amber-100 space-y-2">
+              <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center">
+                <LocationIcon className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-slate-500">{lang === 'hi' ? 'मुख्यालय पता' : 'Headquarters'}</div>
+              <div className="text-slate-900 font-bold text-xs leading-snug">
+                Bilaspur Municipal Corporation, Nehru Chowk, Bilaspur, CG 495001
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="pt-2 flex flex-wrap items-center gap-4">
+            <a
+              href="mailto:smartbin@gmail.com?subject=SmartBin%20Corporate%20Sponsorship%20Query"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow flex items-center gap-2 transition"
+            >
+              <Send className="w-4 h-4" />
+              <span>{lang === 'hi' ? 'ईमेल भेजें (smartbin@gmail.com)' : 'Send Email to smartbin@gmail.com'}</span>
+            </a>
+          </div>
+        </div>
 
         {/* Redeemed Voucher Code Modal */}
         {redeemedCode && (
@@ -502,7 +381,7 @@ export default function Sponsors({ user, lang }) {
           </div>
         )}
 
-        {/* Redemption Error / 1-Time Limit Warning Modal */}
+        {/* Redemption Error / Warning Modal */}
         {redeemError && (
           <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl space-y-4 animate-in zoom-in-95 border-2 border-amber-400">
