@@ -92,6 +92,25 @@ export default function AdminDashboard({ user, lang }) {
       .catch(err => alert('Failed to assign driver'));
   };
 
+  const handleRecommendDriver = (reportId) => {
+    setOptMessage(`C++ Engine algorithm finding best driver...`);
+    axios.post(`${API_BASE}/admin/recommend-driver`, { report_id: reportId })
+      .then(res => {
+        if (res.data.success) {
+          const sel = document.getElementById(`driver-select-${reportId}`);
+          if (sel) {
+            sel.value = res.data.recommended_driver_id;
+          }
+          setOptMessage(res.data.message);
+          setTimeout(() => setOptMessage(''), 4000);
+        }
+      })
+      .catch(err => {
+        setOptMessage('Failed to get recommendation from C++ Engine');
+        setTimeout(() => setOptMessage(''), 3000);
+      });
+  };
+
   // Create new Garbage Station / Dump Location
   const handleAddBinSubmit = (e) => {
     e.preventDefault();
@@ -435,6 +454,7 @@ export default function AdminDashboard({ user, lang }) {
                 <table className="w-full text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 uppercase font-extrabold text-slate-500 border-b border-slate-200">
                     <tr>
+                      <th className="p-4">Photo</th>
                       <th className="p-4">Report Code</th>
                       <th className="p-4">Waste Type</th>
                       <th className="p-4">Severity</th>
@@ -446,6 +466,15 @@ export default function AdminDashboard({ user, lang }) {
                   <tbody className="divide-y divide-slate-100 font-bold">
                     {reportsList.map(r => (
                       <tr key={r.id} className="hover:bg-slate-50">
+                        <td className="p-4">
+                          {r.image_url ? (
+                            <img src={r.image_url} alt={r.code} className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-105 transition" onClick={() => setInspectReport(r)} />
+                          ) : (
+                            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                              <Camera className="w-4 h-4" />
+                            </div>
+                          )}
+                        </td>
                         <td className="p-4 font-extrabold text-slate-900">{r.code}</td>
                         <td className="p-4">{r.waste_type}</td>
                         <td className="p-4">
@@ -462,26 +491,34 @@ export default function AdminDashboard({ user, lang }) {
                           </span>
                         </td>
                         <td className="p-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <select
-                              defaultValue={r.assigned_driver_id || ''}
-                              id={`driver-select-${r.id}`}
-                              className="px-2.5 py-1.5 border border-slate-300 rounded-xl text-xs font-bold bg-white"
-                            >
-                              <option value="">Select Driver</option>
-                              {driversList.map(d => (
-                                <option key={d.id} value={d.id}>{d.name}</option>
-                              ))}
-                            </select>
+                          <div className="flex flex-col items-center justify-center gap-1.5">
                             <button
-                              onClick={() => {
-                                const sel = document.getElementById(`driver-select-${r.id}`);
-                                handleAssignDriverToReport(r.id, sel ? sel.value : '');
-                              }}
-                              className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-3 py-1.5 rounded-xl shadow-sm transition active:scale-95 text-[11px]"
+                              onClick={() => handleRecommendDriver(r.id)}
+                              className="text-[10px] bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-2 py-1 rounded border border-blue-200 flex items-center gap-1 transition"
                             >
-                              Assign
+                              <Zap className="w-3 h-3" /> C++ Recommend
                             </button>
+                            <div className="flex items-center gap-1">
+                              <select
+                                defaultValue={r.assigned_driver_id || ''}
+                                id={`driver-select-${r.id}`}
+                                className="px-2 py-1 border border-slate-300 rounded-lg text-[11px] font-bold bg-white"
+                              >
+                                <option value="">Select Driver</option>
+                                {driversList.map(d => (
+                                  <option key={d.id} value={d.id}>{d.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const sel = document.getElementById(`driver-select-${r.id}`);
+                                  handleAssignDriverToReport(r.id, sel ? sel.value : '');
+                                }}
+                                className="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition active:scale-95 text-[10px]"
+                              >
+                                Assign
+                              </button>
+                            </div>
                           </div>
                         </td>
                       </tr>

@@ -338,6 +338,14 @@ export default function Login({ setUser }) {
             <span className="bg-slate-100 px-2.5 py-1 rounded-lg">📱 9876543210 (Citizen OTP)</span>
             <span className="bg-slate-100 px-2.5 py-1 rounded-lg">🚛 Driver: driver@smartbin.gov.in</span>
           </div>
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <p className="text-slate-600 font-bold">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-emerald-700 font-black hover:underline">
+                Register Now
+              </Link>
+            </p>
+          </div>
         </div>
 
       </div>
