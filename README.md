@@ -109,9 +109,9 @@ pip install -r requirements.txt
 ### 2️⃣ Configure Environment Variables
 Create a `.env` file in the root directory:
 ```env
-DATABASE_URL=postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-muddy-glade...aws.neon.tech/neondb?sslmode=require
-SECRET_KEY=smartbin_super_secret_cg_2026
-TARGET_SMS_PHONE=8085668669
+DATABASE_URL=postgresql://username:password@your-neon-db-host.neon.tech/neondb?sslmode=require
+SECRET_KEY=your_secret_key_here
+TARGET_SMS_PHONE=9876543210
 ```
 
 ### 3️⃣ Run Backend Server
@@ -136,8 +136,8 @@ npm run dev
 2. Go to **[Vercel Dashboard](https://vercel.com/dashboard)** $\rightarrow$ **Add New Project**.
 3. Import `GrayDinosaur893/smartbin`.
 4. Add the following **Environment Variables** in Vercel:
-   - `DATABASE_URL`: `postgresql://neondb_owner:...@ep-muddy-glade-ae3omptd-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require`
-   - `SECRET_KEY`: `smartbin_cg_key_2026`
+   - `DATABASE_URL`: `postgresql://username:password@your-neon-db-host/neondb?sslmode=require`
+   - `SECRET_KEY`: `your_secret_key_here`
 5. Click **Deploy**! 🚀
 
 ---
