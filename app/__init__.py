@@ -13,7 +13,17 @@ except ImportError:
     pass
 
 def create_app():
-    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
+    possible_dirs = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), 'static')),
+        os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'api', 'static')),
+        os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app', 'static'))
+    ]
+    dist_dir = possible_dirs[0]
+    for d in possible_dirs:
+        if os.path.exists(d) and os.path.exists(os.path.join(d, 'index.html')):
+            dist_dir = d
+            break
+
     app = Flask(__name__, static_folder=dist_dir, static_url_path='')
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'smartbin_secret_key_2026_bilaspur')
     
@@ -53,6 +63,12 @@ def create_app():
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 return send_from_directory(dist_dir, path)
             
+            # Check other possible static dirs for asset
+            for d in possible_dirs:
+                alt_path = os.path.normpath(os.path.join(d, path))
+                if os.path.exists(alt_path) and os.path.isfile(alt_path):
+                    return send_from_directory(d, path)
+
             # Guard: If request is for a static asset file extension, DO NOT fall back to index.html HTML
             ext = os.path.splitext(path)[1].lower()
             if ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.json', '.ico', '.woff', '.woff2', '.ttf']:

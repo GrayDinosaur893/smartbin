@@ -3,13 +3,26 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["app/**", "api/**"]
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/api/static/assets/$1"
+    },
+    {
+      "src": "/favicon.svg",
+      "dest": "/api/static/favicon.svg"
+    },
+    {
+      "src": "/icons.svg",
+      "dest": "/api/static/icons.svg"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
+    },
     {
       "src": "/(.*)",
       "dest": "api/index.py"
