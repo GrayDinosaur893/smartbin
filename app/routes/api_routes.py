@@ -613,15 +613,16 @@ def driver_submit_cleaning_api(task_id):
         driver_lat=driver_lat,
         driver_lng=driver_lng,
         gps_verified=gps_verified,
-        citizen_approved=False
+        citizen_approved=True
     )
     db.session.add(proof)
 
-    task.status = 'cleaned_pending_approval'
-    report.status = 'cleaned_pending_approval'
+    task.status = 'cleaned'
+    task.completed_at = datetime.utcnow()
+    report.status = 'completed'
     db.session.commit()
 
-    return jsonify({'success': True, 'message': 'Proof submitted for citizen verification!'})
+    return jsonify({'success': True, 'message': 'Work completed and verified successfully!'})
 
 # --------------------------------------------------
 # 6. MUNICIPAL ADMIN CONTROL CENTER REST APIS (STRICTLY CITY SCOPED C++ VRP)
