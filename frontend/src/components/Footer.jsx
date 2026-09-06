@@ -126,7 +126,7 @@ export default function Footer({ lang }) {
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-500 block">{lang === 'hi' ? 'ईमेल सपोर्ट' : 'Support Email'}</span>
-                  <a href="mailto:smartbin@gmail.com" className="text-white font-bold hover:text-emerald-400 transition">smartbin@gmail.com</a>
+                  <a href="mailto:smartbin985@gmail.com" className="text-white font-bold hover:text-emerald-400 transition">smartbin985@gmail.com</a>
                 </div>
               </div>
 

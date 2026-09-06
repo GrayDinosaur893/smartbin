@@ -146,7 +146,7 @@ npm run dev
 
 **Bilaspur Municipal Corporation HQ**  
 Nehru Chowk, Bilaspur, Chhattisgarh — 495001  
-**Helpline**: 1800-233-1042 | **Control Room Email**: `smartbin@gmail.com`
+**Helpline**: 1800-233-1042 | **Control Room Email**: `smartbin985@gmail.com`
 
 ---
 *Built with ❤️ for a Cleaner & Greener Chhattisgarh.*

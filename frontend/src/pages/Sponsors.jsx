@@ -333,7 +333,7 @@ export default function Sponsors({ user, lang }) {
               <div className="space-y-2 text-xs font-bold text-slate-700 pt-2">
                 <div className="flex items-center gap-2 text-emerald-800">
                   <Mail className="w-4 h-4 shrink-0 text-emerald-600" />
-                  <a href="mailto:smartbin@gmail.com" className="hover:underline">smartbin@gmail.com</a>
+                  <a href="mailto:smartbin985@gmail.com" className="hover:underline">smartbin985@gmail.com</a>
                 </div>
                 <div className="flex items-center gap-2 text-slate-800">
                   <Phone className="w-4 h-4 shrink-0 text-emerald-600" />
@@ -411,7 +411,7 @@ export default function Sponsors({ user, lang }) {
                   <h3 className="font-extrabold text-emerald-900 text-sm">
                     {lang === 'hi' ? 'आपका संदेश नगर निगम/स्मार्टबिन टीम को भेज दिया गया है!' : 'Inquiry sent successfully to SmartBin Team!'}
                   </h3>
-                  <p className="text-xs text-emerald-700">We will respond to smartbin@gmail.com within 24 hours.</p>
+                  <p className="text-xs text-emerald-700">We will respond to smartbin985@gmail.com within 24 hours.</p>
                 </div>
               ) : (
                 <form onSubmit={handleContactSubmit} className="space-y-4 text-xs font-bold text-slate-700">
