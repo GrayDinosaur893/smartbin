@@ -1,4 +1,16 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #105a39;
+  --color-primary-dark: #0b452a;
+  --color-primary-light: #168b52;
+  --color-background-gray: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+}
 @import "leaflet/dist/leaflet.css";
 
 /* Leaflet Z-Index Isolation Fix to prevent map bleeding over header/navbar */
