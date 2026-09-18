@@ -4,7 +4,7 @@ import { Search, MapPin, Filter } from 'lucide-react';
 // A simple mock map to match the visual of the UI since we don't have the real tiles set up yet.
 const MockMap = () => {
   return (
-    <div className="w-full h-full bg-[#f0ede5] relative rounded-xl overflow-hidden border border-slate-200">
+    <div className="w-full h-full min-h-[300px] bg-[#f0ede5] relative rounded-xl overflow-hidden border border-slate-200">
       {/* Fake map lines */}
       <div className="absolute inset-0" style={{
         backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 50L100 50M50 0L50 100\' stroke=\'%23e5e0d8\' stroke-width=\'2\' fill=\'none\'/%3E%3C/svg%3E")',
@@ -47,10 +47,10 @@ export default function MapPage() {
   ];
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6">
+    <div className="h-auto lg:h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6">
       {/* Map Area */}
       <div className="flex-1 flex flex-col gap-4">
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
@@ -59,7 +59,7 @@ export default function MapPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
             />
           </div>
-          <div className="relative w-48">
+          <div className="relative w-full md:w-48">
             <select className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none shadow-sm cursor-pointer font-medium text-slate-700">
               <option>All Bins</option>
               <option>Overflowing</option>
@@ -69,13 +69,13 @@ export default function MapPage() {
           </div>
         </div>
         
-        <div className="flex-1 rounded-xl shadow-sm">
+        <div className="flex-1 rounded-xl shadow-sm min-h-[400px]">
            <MockMap />
         </div>
       </div>
 
       {/* Sidebar */}
-      <div className="w-80 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+      <div className="w-full lg:w-80 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden max-h-[500px] lg:max-h-full">
         <div className="p-5 border-b border-slate-100">
           <h2 className="font-bold text-slate-800 text-lg">Nearby Bins</h2>
         </div>
