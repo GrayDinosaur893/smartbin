@@ -63,6 +63,14 @@ def create_app():
             response.headers['Expires'] = '0'
         return response
 
+    @app.route('/assets/<path:filename>')
+    def serve_assets(filename):
+        for d in possible_dirs:
+            asset_dir = os.path.join(d, 'assets')
+            if os.path.exists(os.path.join(asset_dir, filename)):
+                return send_from_directory(asset_dir, filename)
+        return send_from_directory(os.path.join(dist_dir, 'assets'), filename)
+
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_spa(path):
