@@ -1,7 +1,13 @@
 from datetime import datetime
 from app.database import db
 
-class MunicipalZone(db.Model):
+class BaseModel(db.Model):
+    __abstract__ = True
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class MunicipalZone(BaseModel):
     __tablename__ = 'municipal_zones'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +19,7 @@ class MunicipalZone(db.Model):
     radius_km = db.Column(db.Float, default=25.0)
 
 
-class User(db.Model):
+class User(BaseModel):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -32,7 +38,7 @@ class User(db.Model):
     driver_profile = db.relationship('DriverProfile', backref='user', uselist=False, lazy=True)
 
 
-class DriverProfile(db.Model):
+class DriverProfile(BaseModel):
     __tablename__ = 'driver_profiles'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -45,7 +51,7 @@ class DriverProfile(db.Model):
     last_clock_in = db.Column(db.DateTime, nullable=True)
 
 
-class Dustbin(db.Model):
+class Dustbin(BaseModel):
     __tablename__ = 'dustbins'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -58,7 +64,7 @@ class Dustbin(db.Model):
     status = db.Column(db.String(20), default='active')
 
 
-class Report(db.Model):
+class Report(BaseModel):
     __tablename__ = 'reports'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -82,7 +88,7 @@ class Report(db.Model):
     task = db.relationship('Task', backref='report', uselist=False, lazy=True)
 
 
-class Task(db.Model):
+class Task(BaseModel):
     __tablename__ = 'tasks'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -98,7 +104,7 @@ class Task(db.Model):
     cleaning_proof = db.relationship('CleaningProof', backref='task', uselist=False, lazy=True)
 
 
-class CleaningProof(db.Model):
+class CleaningProof(BaseModel):
     __tablename__ = 'cleaning_proofs'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -113,7 +119,7 @@ class CleaningProof(db.Model):
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class Attendance(db.Model):
+class Attendance(BaseModel):
     __tablename__ = 'attendance'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -125,7 +131,7 @@ class Attendance(db.Model):
     clock_out_time = db.Column(db.DateTime, nullable=True)
 
 
-class RewardsLedger(db.Model):
+class RewardsLedger(BaseModel):
     __tablename__ = 'rewards_ledger'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -137,7 +143,7 @@ class RewardsLedger(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class SponsorOffer(db.Model):
+class SponsorOffer(BaseModel):
     __tablename__ = 'sponsor_offers'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -153,7 +159,7 @@ class SponsorOffer(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class UserActivityLog(db.Model):
+class UserActivityLog(BaseModel):
     __tablename__ = 'user_activity_logs'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -167,7 +173,7 @@ class UserActivityLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class VoucherRedemption(db.Model):
+class VoucherRedemption(BaseModel):
     __tablename__ = 'voucher_redemptions'
 
     id = db.Column(db.Integer, primary_key=True)
