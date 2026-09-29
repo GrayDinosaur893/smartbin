@@ -36,7 +36,7 @@ class VRPService:
                 except Exception:
                     pass
 
-            if os.path.exists(self.dll_path):
+            if sys.platform.startswith('win') and os.path.exists(self.dll_path):
                 self.lib = ctypes.CDLL(self.dll_path)
                 self.lib.optimize_driver_route.argtypes = [CLocation, ctypes.POINTER(CLocation), ctypes.c_int]
                 self.lib.optimize_driver_route.restype = CRouteResult
@@ -44,7 +44,7 @@ class VRPService:
                 self.lib.free_route_result.restype = None
                 print(f"[C++ VRP Engine] Loaded DLL successfully from: {self.dll_path}")
             else:
-                print(f"[VRP Engine Warning] C++ Shared Library not found at {self.dll_path}. Using fallback solver.")
+                print(f"[VRP Engine] Running on non-Windows/serverless. Using Python route solver.")
         except Exception as e:
             print(f"[VRP Engine Warning] Failed to load C++ DLL: {e}. Using fallback solver.")
             self.lib = None
