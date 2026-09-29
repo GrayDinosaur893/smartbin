@@ -3,13 +3,79 @@ import os
 import numpy as np
 from PIL import Image
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Tier 1: HuggingFace ML Model — prithivMLmods/Augmented-Waste-Classifier-SigLIP2
+# Classifies: Cardboard, Food Waste, Glass, Medical, Metal, Paper, Plastic, Other
+# Tier 2: OpenCV rule-based heuristics (fallback if model not loaded)
+# Tier 3: Pillow grayscale std-dev (final serverless fallback)
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── ML Model lazy-load (only when first request comes) ──
+_ml_model = None
+_ml_processor = None
+_ML_MODEL_NAME = "prithivMLmods/Augmented-Waste-Classifier-SigLIP2"
+
+# Waste categories from this model that count as actual waste
+_WASTE_LABELS = {
+    "cardboard", "food_organic_waste", "food waste", "glass", "medical", "metal",
+    "paper", "plastic", "other trash", "other", "trash", "garbage", "waste",
+    "biological", "brown-glass", "green-glass", "white-glass",
+}
+
+# Labels that clearly mean NO waste (clean, non-waste)
+_NON_WASTE_LABELS = {
+    "clothes", "shoes", "battery", "vegetation", "green vegetation",
+    "background", "clean", "person", "selfie",
+}
+
+# Severity mapping by waste category
+_SEVERITY_MAP = {
+    "medical": "high",
+    "glass": "high",
+    "metal": "medium",
+    "plastic": "medium",
+    "food waste": "medium",
+    "food_organic_waste": "medium",
+    "cardboard": "low",
+    "paper": "low",
+    "other": "medium",
+    "other trash": "medium",
+}
+
+
+def _load_ml_model():
+    """Lazy-load the HuggingFace SigLIP2 waste classifier model."""
+    global _ml_model, _ml_processor
+    if _ml_model is not None:
+        return True  # Already loaded
+
+    try:
+        from transformers import AutoImageProcessor, SiglipForImageClassification
+        import torch
+
+        print(f"[AIService] Loading HuggingFace ML model: {_ML_MODEL_NAME}")
+        _ml_processor = AutoImageProcessor.from_pretrained(_ML_MODEL_NAME)
+        _ml_model = SiglipForImageClassification.from_pretrained(_ML_MODEL_NAME)
+        _ml_model.eval()
+        print(f"[AIService] ✅ ML model loaded successfully.")
+        return True
+    except ImportError:
+        print("[AIService] ⚠️ transformers/torch not installed. Using OpenCV/Pillow fallback.")
+        return False
+    except Exception as e:
+        print(f"[AIService] ⚠️ ML model load failed: {e}. Using OpenCV/Pillow fallback.")
+        return False
+
+
 try:
     import cv2
 except Exception as _cv_err:
     cv2 = None
-    print(f"[AIService Notice] OpenCV not available in serverless environment: {_cv_err}. Using Pillow fallback.")
+    print(f"[AIService Notice] OpenCV not available: {_cv_err}. Using Pillow fallback.")
+
 
 class AIService:
+
     @staticmethod
     def calculate_haversine_distance(lat1, lon1, lat2, lon2):
         """Calculate distance between two GPS coordinates in meters."""
@@ -25,11 +91,88 @@ class AIService:
 
         return R * c
 
+    # ──────────────────────────────────────────────────────────────────────
+    # TIER 1: HuggingFace ML Model Classification
+    # ──────────────────────────────────────────────────────────────────────
+
     @classmethod
-    def analyze_image_with_vision_ai(cls, image_path):
+    def _analyze_with_ml_model(cls, image_path):
         """
-        Actual Multimodal Computer Vision Feature Analyzer:
-        Uses OpenCV (or Pillow fallback) to analyze image clutter and color variance.
+        Uses prithivMLmods/Augmented-Waste-Classifier-SigLIP2 (SigLIP2)
+        to classify waste type from image.
+
+        Returns dict with:
+          waste_detected (bool), confidence (float 0-100),
+          waste_category (str), reason (str)
+        """
+        try:
+            import torch
+
+            model_loaded = _load_ml_model()
+            if not model_loaded or _ml_model is None:
+                return None  # Signal to fall back to OpenCV
+
+            with Image.open(image_path).convert("RGB") as img:
+                inputs = _ml_processor(images=img, return_tensors="pt")
+
+            with torch.no_grad():
+                outputs = _ml_model(**inputs)
+                logits = outputs.logits
+
+            # Softmax to get probabilities
+            probs = torch.nn.functional.softmax(logits, dim=-1)[0]
+            top_idx = probs.argmax().item()
+            top_conf = float(probs[top_idx]) * 100.0
+
+            # Get label from model's id2label
+            id2label = _ml_model.config.id2label
+            raw_label = id2label.get(top_idx, "unknown").lower().strip()
+
+            # Top-5 predictions for logging
+            top5 = sorted(
+                [(float(probs[i]) * 100.0, id2label.get(i, str(i))) for i in range(len(probs))],
+                reverse=True
+            )[:5]
+            print(f"[AIService ML] Top predictions: {top5}")
+
+            # Determine if it's waste
+            is_waste = any(wl in raw_label for wl in _WASTE_LABELS) or \
+                       any(raw_label in wl for wl in _WASTE_LABELS)
+            is_non_waste = any(nl in raw_label for nl in _NON_WASTE_LABELS)
+
+            if is_non_waste and not is_waste:
+                return {
+                    "waste_detected": False,
+                    "confidence": round(top_conf, 1),
+                    "waste_category": raw_label,
+                    "reason": f"ML Model: Non-waste detected — '{raw_label}' ({top_conf:.1f}% confidence)"
+                }
+
+            if top_conf < 30.0:
+                # Very low confidence — treat as uncertain, use OpenCV to confirm
+                return None
+
+            return {
+                "waste_detected": True,
+                "overflow_detected": top_conf > 80.0,  # High confidence = likely overflow/significant waste
+                "confidence": round(top_conf, 1),
+                "waste_category": raw_label,
+                "reason": f"ML Model (SigLIP2): '{raw_label}' waste identified ({top_conf:.1f}% confidence)"
+            }
+
+        except Exception as e:
+            print(f"[AIService ML] Inference error: {e}")
+            return None  # Fall back to OpenCV
+
+    # ──────────────────────────────────────────────────────────────────────
+    # TIER 2: OpenCV Rule-Based Heuristics (Fallback)
+    # ──────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def _analyze_with_opencv(cls, image_path):
+        """
+        Original OpenCV + Pillow computer vision fallback.
+        Preserves all existing logic unchanged.
         """
         if not os.path.exists(image_path):
             return {"waste_detected": True, "confidence": 92.0, "reason": "Standard report verification"}
@@ -38,7 +181,6 @@ class AIService:
             if cv2 is None:
                 # Pillow fallback for serverless environment
                 with Image.open(image_path) as pil_img:
-                    w, h = pil_img.size
                     img_gray = pil_img.convert('L')
                     arr = np.array(img_gray)
                     std_dev = float(np.std(arr))
@@ -68,27 +210,25 @@ class AIService:
             skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
             skin_ratio = np.sum(skin_mask > 0) / float(total_pixels)
 
-            if skin_ratio > 0.35: # More than 35% skin tone -> Likely a selfie/person photo, NOT waste
+            if skin_ratio > 0.35:
                 return {
                     "waste_detected": False,
                     "confidence": 15.0,
                     "reason": "Person/Selfie detected instead of waste location"
                 }
 
-            # 2. Texture & Edge Clutter Analysis (Laplacian Variance + Canny Edge Density)
+            # 2. Texture & Edge Clutter Analysis
             laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
             edges = cv2.Canny(gray, 50, 150)
             edge_density = np.sum(edges > 0) / float(total_pixels)
 
-            # 3. Contour Clutter Count (Waste heaps generate hundreds of irregular small contours)
+            # 3. Contour Clutter Count
             contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contour_count = len(contours)
 
-            # 4. Color Variance Analysis (Garbage heaps have high chaotic color variance)
+            # 4. Color Variance Analysis
             std_dev = np.std(gray)
 
-            # Decision Logic based on Computer Vision Feature Extraction
-            # Smooth walls, blank surfaces, document screenshots have very low edge density (<0.02) and few contours (<50)
             if edge_density < 0.025 or contour_count < 40 or std_dev < 15.0:
                 return {
                     "waste_detected": False,
@@ -96,11 +236,9 @@ class AIService:
                     "reason": "Image lacks visual waste clutter features (smooth background or non-waste photo)"
                 }
 
-            # Genuine waste detected: Calculate confidence based on visual complexity
             raw_confidence = min(0.98, 0.70 + (edge_density * 2.0) + (contour_count / 2000.0))
-            
-            # Determine overflow condition based on top-heavy edge distribution
-            top_half_edges = edges[0:int(height/2), :]
+
+            top_half_edges = edges[0:int(height / 2), :]
             top_edge_ratio = np.sum(top_half_edges > 0) / float(edges.size / 2)
             overflow_detected = top_edge_ratio > 0.08
 
@@ -110,19 +248,48 @@ class AIService:
                 "confidence": round(float(raw_confidence * 100), 1),
                 "edge_density": edge_density,
                 "contour_count": contour_count,
-                "reason": "Verified waste clutter & heap patterns detected"
+                "reason": "Verified waste clutter & heap patterns detected (OpenCV)"
             }
 
         except Exception as e:
-            # Safe fallback if OpenCV encounters unexpected image formats
             return {"waste_detected": False, "confidence": 20.0, "reason": f"Analysis error: {str(e)}"}
+
+    # ──────────────────────────────────────────────────────────────────────
+    # MAIN ENTRY: analyze_image_with_vision_ai (3-tier cascade)
+    # ──────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def analyze_image_with_vision_ai(cls, image_path):
+        """
+        3-Tier Cascade AI Analysis:
+        1. HuggingFace SigLIP2 ML Model (most accurate)
+        2. OpenCV heuristics (fallback)
+        3. Pillow std-dev (serverless fallback)
+        """
+        if not os.path.exists(image_path):
+            return {"waste_detected": True, "confidence": 92.0, "reason": "Standard report verification"}
+
+        # ── Tier 1: Try ML Model first ──
+        ml_result = cls._analyze_with_ml_model(image_path)
+        if ml_result is not None:
+            print(f"[AIService] ✅ ML Model result used: {ml_result.get('waste_category', 'N/A')}")
+            return ml_result
+
+        # ── Tier 2 & 3: Fall back to OpenCV / Pillow ──
+        print(f"[AIService] ⚠️ ML Model unavailable, using OpenCV/Pillow fallback.")
+        return cls._analyze_with_opencv(image_path)
+
+    # ──────────────────────────────────────────────────────────────────────
+    # MAIN ENTRY: analyze_waste_report (GIS + Vision combined)
+    # ──────────────────────────────────────────────────────────────────────
 
     @classmethod
     def analyze_waste_report(cls, image_path, lat, lng, registered_dustbins):
         """
-        Integrates Actual Computer Vision Model with GIS Proximity Engine.
+        Integrates ML Vision Model with GIS Proximity Engine.
+        Determines waste type, severity, illegal dumping status.
         """
-        # Run Vision AI Analysis
+        # Run Vision AI Analysis (3-tier cascade)
         vision_res = cls.analyze_image_with_vision_ai(image_path)
 
         if not vision_res["waste_detected"]:
@@ -136,10 +303,11 @@ class AIService:
                 "severity": "none",
                 "nearest_bin_code": "N/A",
                 "distance_to_nearest_bin_m": 0.0,
-                "reason": vision_res.get("reason", "No waste identified")
+                "reason": vision_res.get("reason", "No waste identified"),
+                "ml_category": vision_res.get("waste_category", "N/A")
             }
 
-        # Waste IS detected -> Proceed to GIS Dustbin Haversine Distance Check
+        # Waste IS detected → GIS Dustbin Haversine Distance Check
         min_distance_meters = float('inf')
         nearest_bin = None
 
@@ -150,12 +318,22 @@ class AIService:
                 nearest_bin = bin_obj
 
         is_illegal_dumping = False
-        waste_type = "Roadside Overflow Waste"
-        severity = "medium"
+
+        # Determine waste_type from ML category or GPS
+        ml_category = vision_res.get("waste_category", "")
+        if ml_category:
+            # Format nicely for display: "food_organic_waste" → "Food / Organic Waste"
+            display_type = ml_category.replace("_", " ").replace("-", " ").title()
+            waste_type = f"{display_type} Waste"
+        else:
+            waste_type = "Roadside Overflow Waste"
+
+        # Severity from ML category, else GPS-based default
+        severity = _SEVERITY_MAP.get(ml_category.lower(), "medium")
 
         if min_distance_meters > 50.0:
             is_illegal_dumping = True
-            waste_type = "Illegal Dumping / Unauthorized Heap"
+            waste_type = f"Illegal Dumping — {waste_type}" if ml_category else "Illegal Dumping / Unauthorized Heap"
             severity = "high"
 
         if vision_res.get("overflow_detected"):
@@ -179,5 +357,7 @@ class AIService:
             "severity": severity,
             "nearest_bin_code": nearest_bin.bin_code if nearest_bin else "NONE",
             "distance_to_nearest_bin_m": round(min_distance_meters, 1) if min_distance_meters != float('inf') else 999.0,
-            "reason": "Waste verified by Vision AI Engine"
+            "reason": vision_res.get("reason", "Waste verified by AI Engine"),
+            "ml_category": ml_category or "N/A",
+            "analysis_engine": "HuggingFace SigLIP2" if ml_category else "OpenCV/Pillow Heuristics"
         }
