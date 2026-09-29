@@ -57,13 +57,13 @@ def _load_ml_model():
         _ml_processor = AutoImageProcessor.from_pretrained(_ML_MODEL_NAME)
         _ml_model = SiglipForImageClassification.from_pretrained(_ML_MODEL_NAME)
         _ml_model.eval()
-        print(f"[AIService] ✅ ML model loaded successfully.")
+        print(f"[AIService] [OK] ML model loaded successfully.")
         return True
     except ImportError:
-        print("[AIService] ⚠️ transformers/torch not installed. Using OpenCV/Pillow fallback.")
+        print("[AIService] [INFO] transformers/torch not installed. Using OpenCV/Pillow fallback.")
         return False
     except Exception as e:
-        print(f"[AIService] ⚠️ ML model load failed: {e}. Using OpenCV/Pillow fallback.")
+        print(f"[AIService] [WARN] ML model load failed: {e}. Using OpenCV/Pillow fallback.")
         return False
 
 
