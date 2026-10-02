@@ -49,10 +49,16 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 mt-auto border-t border-emerald-800/50">
-        <Link to="/login" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition-colors">
+        <button 
+          onClick={() => {
+            localStorage.removeItem('smartbin_user');
+            window.location.href = '/login';
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer text-left"
+        >
           <LogOut size={18} />
           Logout
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -121,6 +127,18 @@ const MobileBottomNav = () => {
 
 const MobileTopbar = () => {
   const location = useLocation();
+  const [initial, setInitial] = React.useState('A');
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name) setInitial(u.name[0].toUpperCase());
+      }
+    } catch (e) {}
+  }, []);
+
   const pageTitles = {
     '/dashboard': 'Dashboard',
     '/dashboard/map': 'Live Map',
@@ -148,9 +166,9 @@ const MobileTopbar = () => {
           <Bell size={20} />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-        <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-sm">
-          A
-        </div>
+        <Link to="/dashboard/profile" className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-sm">
+          {initial}
+        </Link>
       </div>
     </header>
   );
