@@ -251,85 +251,124 @@ class AIService:
                 r_mean, g_mean, b_mean = stat_rgb.mean[0], stat_rgb.mean[1], stat_rgb.mean[2]
                 r_std, g_std, b_std = stat_rgb.stddev[0], stat_rgb.stddev[1], stat_rgb.stddev[2]
 
-                # 1. Blank / Uniform surface check
-                if edge_density < 0.035 and std_dev < 18.0:
+                # 1. Blank / Uniform / Clean surface check
+                if edge_density < 0.04 and std_dev < 20.0:
                     return {
                         "waste_detected": False,
                         "confidence": 88.0,
                         "waste_category": "Non-Waste (Blank / Smooth Surface)",
                         "recommended_bin": "N/A",
                         "disposal_tip": "Please upload a clear photo showing physical garbage or litter.",
-                        "reason": "Image lacks physical waste or clutter features.",
+                        "reason": "Image lacks physical waste, garbage textures, or clutter features.",
                         "engine": "CV Waste Authenticator"
                     }
 
-                # 2. Check for AI / CGI / Digital Art vs Real World Camera Photo
-                # Real camera waste photos have natural color spread and textured edge variation
-                # Digital vector art / anime illustrations typically have extremely high edge density (>0.32)
-                # or overly flat color palettes with high color saturation extremes.
-                if np is not None:
-                    try:
-                        r_arr = np.array(img_rgb.getchannel('R'), dtype=np.float32)
-                        g_arr = np.array(img_rgb.getchannel('G'), dtype=np.float32)
-                        b_arr = np.array(img_rgb.getchannel('B'), dtype=np.float32)
-                        max_c = np.maximum(np.maximum(r_arr, g_arr), b_arr)
-                        min_c = np.minimum(np.minimum(r_arr, g_arr), b_arr)
-                        sat = np.where(max_c > 0, (max_c - min_c) / (max_c + 1e-5), 0)
-                        high_sat_ratio = float(np.sum(sat > 0.45) / total_pixels)
+                # 2. Pure Pillow Color & Clutter Histogram Analysis
+                # Sample image at 64x64 for lightning-fast, numpy-independent per-pixel spatial inspection
+                thumb = img_rgb.resize((64, 64), Image.Resampling.BOX)
+                pixels = list(thumb.getdata())
+                num_sample_pixels = float(len(pixels))
 
-                        # High-frequency Camera Sensor Grain / Noise Test
-                        blurred = np.array(gray_img.filter(ImageFilter.GaussianBlur(radius=1.5)), dtype=np.float32)
-                        noise_mean = float(np.mean(np.abs(np.array(gray_img, dtype=np.float32) - blurred)))
+                green_count = 0
+                cardboard_count = 0
+                plastic_count = 0
+                metal_count = 0
+                dark_count = 0
+                skin_count = 0
+                high_sat_count = 0
 
-                        # Anime / CGI digital vector check
-                        if edge_density > 0.28 or (high_sat_ratio > 0.55 and noise_mean < 5.0):
-                            return {
-                                "waste_detected": False,
-                                "is_ai_or_cgi": True,
-                                "waste_category": "AI / CGI Generated Art (Non-Waste)",
-                                "confidence": 96.0,
-                                "recommended_bin": "N/A",
-                                "disposal_tip": "AI / CGI generated art is not accepted. Please upload an authentic real camera photo of physical waste.",
-                                "severity": "none",
-                                "reason": "AI / CGI generated digital illustration detected. Only authentic real camera photos of physical waste are valid.",
-                                "engine": "AI/CGI Vision Authenticator"
-                            }
-                    except Exception:
-                        pass
+                for pr, pg, pb in pixels:
+                    # Skin tone check
+                    if pr > 95 and pg > 40 and pb > 20 and pr > pg and pr > pb and (pr - pg > 15):
+                        skin_count += 1
+                    
+                    # Saturation estimate
+                    cmax = max(pr, pg, pb)
+                    cmin = min(pr, pg, pb)
+                    if cmax > 0 and (cmax - cmin) / cmax > 0.45:
+                        high_sat_count += 1
 
-                # 3. Real Waste Multi-Category Spectral & Color Distribution Classifier
-                # Organic / Green Waste (Leaves, food leftovers, vegetable peels)
-                if g_mean > r_mean * 1.05 and g_mean > b_mean * 1.15 and g_mean > 50:
+                    # Organic / Food / Green waste
+                    if pg > pr * 1.08 and pg > pb * 1.15 and pg > 45:
+                        green_count += 1
+                    # Cardboard / Brown Kraft Paper
+                    elif pr > 115 and pg > 85 and pb < 90 and (pr - pb > 35) and (pr - pg < 65):
+                        cardboard_count += 1
+                    # Vibrant synthetic plastic wrappers / bottles
+                    elif (cmax - cmin) > 40 and not (pg > pr and pg > pb):
+                        plastic_count += 1
+                    # Shiny metal / beverage cans
+                    elif abs(pr - pg) < 18 and abs(pg - pb) < 18 and 120 < pr < 230:
+                        metal_count += 1
+                    elif cmax < 45:
+                        dark_count += 1
+
+                skin_ratio = skin_count / num_sample_pixels
+                green_ratio = green_count / num_sample_pixels
+                cardboard_ratio = cardboard_count / num_sample_pixels
+                plastic_ratio = plastic_count / num_sample_pixels
+                metal_ratio = metal_count / num_sample_pixels
+                high_sat_ratio = high_sat_count / num_sample_pixels
+
+                # 3. Reject Portraits / Selfies
+                if skin_ratio > 0.42:
+                    return {
+                        "waste_detected": False,
+                        "confidence": 92.0,
+                        "waste_category": "Non-Waste (Person / Portrait)",
+                        "recommended_bin": "N/A",
+                        "disposal_tip": "Please upload a photo of garbage or overflowing bin instead of a portrait.",
+                        "reason": "Person or face detected instead of waste location.",
+                        "engine": "CV Waste Authenticator"
+                    }
+
+                # 4. Reject Digital Art / Flat vector cartoons
+                if high_sat_ratio > 0.65 and edge_density > 0.35 and std_dev < 35.0:
+                    return {
+                        "waste_detected": False,
+                        "is_ai_or_cgi": True,
+                        "waste_category": "AI / CGI Generated Art (Non-Waste)",
+                        "confidence": 94.0,
+                        "recommended_bin": "N/A",
+                        "disposal_tip": "AI / CGI generated art is not accepted. Please upload an authentic real camera photo of physical waste.",
+                        "severity": "none",
+                        "reason": "AI / CGI digital illustration detected.",
+                        "engine": "AI/CGI Vision Authenticator"
+                    }
+
+                # 5. Waste Category Assignment based on dominant signature
+                overflow_detected = edge_density > 0.12 or std_dev > 45.0
+
+                if green_ratio >= 0.16:
                     cat = "Organic / Food Waste"
                     bin_col = "Green Bin (Wet / Compostable)"
                     tip = "Dispose in green bin for municipal composting."
-                # Cardboard / Kraft Paper (Brownish earthy tone: R > G > B)
-                elif r_mean > 115 and g_mean > 85 and b_mean < 80 and (r_mean - b_mean > 35):
+                    confidence_score = 86.0 + round(green_ratio * 20, 1)
+                elif cardboard_ratio >= 0.15:
                     cat = "Paper / Cardboard"
                     bin_col = "Blue Bin (Dry Recyclables)"
                     tip = "Flatten cardboard boxes to optimize dry-bin space."
-                # Metal / Cans (Low color divergence, reflective gray/silver)
-                elif abs(r_mean - g_mean) < 15 and abs(g_mean - b_mean) < 15 and r_mean > 130 and r_mean < 230:
+                    confidence_score = 84.0 + round(cardboard_ratio * 25, 1)
+                elif metal_ratio >= 0.22 and plastic_ratio < 0.15:
                     cat = "Metal / Beverage Cans"
                     bin_col = "Blue Bin (Dry Recyclables)"
                     tip = "Rinse metal cans before dry disposal."
-                # Plastic / Mixed packaging
-                elif max(r_mean, g_mean, b_mean) - min(r_mean, g_mean, b_mean) > 30:
+                    confidence_score = 82.0 + round(metal_ratio * 25, 1)
+                elif plastic_ratio >= 0.14:
                     cat = "Plastic (Bottles & Packaging)"
                     bin_col = "Blue Bin (Dry Recyclables)"
                     tip = "Segregate clean plastics for city recycling center."
+                    confidence_score = 85.0 + round(plastic_ratio * 25, 1)
                 else:
                     cat = "Mixed Roadside Waste"
                     bin_col = "Blue Bin (Dry Recyclables)"
                     tip = "Segregate wet and dry items before dumping."
-
-                overflow_detected = edge_density > 0.12 or std_dev > 45.0
-                confidence_score = round(min(95.0, max(78.0, 72.0 + (edge_density * 80))), 1)
+                    confidence_score = 78.0 + round(min(14.0, edge_density * 40), 1)
 
                 return {
                     "waste_detected": True,
                     "overflow_detected": overflow_detected,
-                    "confidence": confidence_score,
+                    "confidence": min(95.0, confidence_score),
                     "waste_category": cat,
                     "recommended_bin": bin_col,
                     "disposal_tip": tip,
