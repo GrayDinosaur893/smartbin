@@ -205,141 +205,158 @@ class AIService:
             return None  # Fall back to OpenCV
 
     # ──────────────────────────────────────────────────────────────────────
-    # TIER 2: OpenCV Rule-Based Heuristics (Fallback)
+    # TIER 2: Computer Vision Pipeline (AI/CGI & Multi-Category Classifier)
     # ──────────────────────────────────────────────────────────────────────
 
     @classmethod
     def _analyze_with_opencv(cls, image_path):
         """
-        Original OpenCV + Pillow computer vision fallback.
-        Preserves all existing logic unchanged.
+        Multi-Stage Computer Vision Pipeline:
+        1. Authenticity: AI / CGI / Digital Art / Drawing / Wallpaper rejection
+        2. Non-Waste Filtering: Selfie / Portrait / Blank / Clean area rejection
+        3. Real Waste Multi-Category Classification: Organic, Paper/Cardboard, Metal, Plastic, Glass, Mixed
         """
         if not os.path.exists(image_path):
-            return {"waste_detected": True, "confidence": 92.0, "reason": "Standard report verification"}
+            return {
+                "waste_detected": False,
+                "confidence": 0.0,
+                "waste_category": "Invalid Image",
+                "reason": "Image file not found"
+            }
 
         try:
-            if cv2 is None or np is None:
-                # Pillow pure python fallback for serverless environment
-                with Image.open(image_path) as pil_img:
-                    img_gray = pil_img.convert('L')
-                    stat = ImageStat.Stat(img_gray) if ImageStat else None
-                    std_dev = float(stat.stddev[0]) if stat and stat.stddev else 25.0
+            from PIL import ImageFilter
+            with Image.open(image_path) as pil_img:
+                img_rgb = pil_img.convert('RGB')
+                w, h = img_rgb.size
+                total_pixels = float(w * h)
 
-                    # Check color variance and saturation if RGB
-                    is_rgb = pil_img.mode in ('RGB', 'RGBA')
-                    if is_rgb:
-                        r, g, b = pil_img.convert('RGB').split()
-                        r_stat, g_stat, b_stat = ImageStat.Stat(r), ImageStat.Stat(g), ImageStat.Stat(b)
-                        color_diff = abs(r_stat.mean[0] - b_stat.mean[0]) + abs(g_stat.mean[0] - b_stat.mean[0])
-                    else:
-                        color_diff = 10.0
+                # Grayscale & Edges
+                gray_img = img_rgb.convert('L')
+                gray = np.array(gray_img, dtype=np.float32)
+                edges = np.array(gray_img.filter(ImageFilter.FIND_EDGES), dtype=np.float32)
+                edge_density = float(np.sum(edges > 40) / total_pixels)
 
-                    # If image is too uniform, dark, or lacks noise typical of real waste
-                    if std_dev < 18.0 or std_dev > 85.0:
-                        return {
-                            "waste_detected": False,
-                            "confidence": 15.0,
-                            "waste_category": "Non-Waste / Invalid Image",
-                            "reason": "Image lacks texture variance characteristic of real garbage."
-                        }
+                # Color & Saturation Analysis
+                r, g, b = img_rgb.split()
+                r_arr = np.array(r, dtype=np.float32)
+                g_arr = np.array(g, dtype=np.float32)
+                b_arr = np.array(b, dtype=np.float32)
 
+                max_c = np.maximum(np.maximum(r_arr, g_arr), b_arr)
+                min_c = np.minimum(np.minimum(r_arr, g_arr), b_arr)
+                sat = np.where(max_c > 0, (max_c - min_c) / (max_c + 1e-5), 0)
+                mean_sat = float(np.mean(sat))
+                high_sat_ratio = float(np.sum(sat > 0.35) / total_pixels)
+
+                # High-frequency Camera Sensor Grain / Noise Test
+                blurred = np.array(gray_img.filter(ImageFilter.GaussianBlur(radius=1.5)), dtype=np.float32)
+                noise_mean = float(np.mean(np.abs(gray - blurred)))
+
+                # 1. Selfie / Face Check
+                skin_mask = (r_arr > 95) & (g_arr > 40) & (b_arr > 20) & (r_arr > g_arr) & (r_arr > b_arr) & (r_arr - g_arr > 15) & (np.abs(r_arr - g_arr) > 15)
+                skin_ratio = float(np.sum(skin_mask) / total_pixels)
+
+                if skin_ratio > 0.38:
                     return {
-                        "waste_detected": True,
-                        "overflow_detected": std_dev > 45.0,
-                        "confidence": round(min(92.0, max(70.0, 65.0 + std_dev)), 1),
-                        "waste_category": "Plastic",
-                        "recommended_bin": "Blue Bin (Dry Recyclables)",
-                        "disposal_tip": "Segregate dry waste before municipal disposal.",
-                        "reason": "Verified waste clutter patterns via Vision Analyzer"
+                        "waste_detected": False,
+                        "confidence": 90.0,
+                        "waste_category": "Non-Waste (Selfie / Person)",
+                        "recommended_bin": "N/A",
+                        "disposal_tip": "Please upload a photo of garbage or overflowing bin instead of a portrait.",
+                        "reason": "Person or selfie detected instead of waste location.",
+                        "engine": "CV Waste Authenticator"
                     }
 
-            # Read image with OpenCV
-            img = cv2.imread(image_path)
-            if img is None:
-                return {"waste_detected": True, "confidence": 90.0, "reason": "Verified upload"}
+                # 2. AI / CGI / Cartoon / Anime / Digital Illustration Check
+                if edge_density > 0.18 or (high_sat_ratio > 0.45 and noise_mean < 8.0):
+                    return {
+                        "waste_detected": False,
+                        "is_ai_or_cgi": True,
+                        "waste_category": "AI / CGI Generated Art (Non-Waste)",
+                        "confidence": 96.0,
+                        "recommended_bin": "N/A",
+                        "disposal_tip": "AI / CGI generated art is not accepted. Please upload an authentic real camera photo of physical waste.",
+                        "severity": "none",
+                        "reason": "AI / CGI generated digital illustration detected. Only authentic real camera photos of physical waste are valid.",
+                        "engine": "AI/CGI Vision Authenticator"
+                    }
 
-            height, width, channels = img.shape
-            total_pixels = height * width
+                # 3. Blank / Uniform surface check
+                std_dev = float(np.std(gray))
+                if edge_density < 0.035 and std_dev < 18.0:
+                    return {
+                        "waste_detected": False,
+                        "confidence": 88.0,
+                        "waste_category": "Non-Waste (Blank / Smooth Surface)",
+                        "recommended_bin": "N/A",
+                        "disposal_tip": "Please upload a clear photo showing physical garbage or litter.",
+                        "reason": "Image lacks physical waste or clutter features.",
+                        "engine": "CV Waste Authenticator"
+                    }
 
-            # Convert to HSV and Grayscale
-            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                # 4. Real Waste Multi-Category Spectral & Textural Classifier
+                # Organic / Food / Bio
+                green_mask = (g_arr > r_arr * 1.05) & (g_arr > b_arr * 1.15) & (g_arr > 40)
+                green_ratio = float(np.sum(green_mask) / total_pixels)
 
-            # 1. Skin Tone / Face Detection (Filters out selfies/faces accidentally uploaded)
-            lower_skin = np.array([0, 20, 70], dtype=np.uint8)
-            upper_skin = np.array([20, 255, 255], dtype=np.uint8)
-            skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
-            skin_ratio = np.sum(skin_mask > 0) / float(total_pixels)
+                # Cardboard / Kraft Paper
+                cardboard_mask = (r_arr > 120) & (g_arr > 90) & (b_arr < 90) & (r_arr - b_arr > 40) & (r_arr - g_arr < 60)
+                cardboard_ratio = float(np.sum(cardboard_mask) / total_pixels)
 
-            if skin_ratio > 0.35:
+                # Metal / Cans
+                gray_diff = np.abs(r_arr - g_arr) + np.abs(g_arr - b_arr)
+                metal_mask = (gray_diff < 20) & (r_arr > 140) & (r_arr < 240)
+                metal_ratio = float(np.sum(metal_mask) / total_pixels)
+
+                # Plastic / Synthetic Packaging
+                vibrant_plastic_mask = (sat > 0.45) & (~green_mask)
+                plastic_ratio = float(np.sum(vibrant_plastic_mask) / total_pixels)
+
+                overflow_detected = edge_density > 0.12 or std_dev > 50.0
+
+                if green_ratio > 0.18:
+                    cat = "Organic / Food Waste"
+                    bin_col = "Green Bin (Wet / Compostable)"
+                    tip = "Dispose in green bin for municipal composting."
+                elif cardboard_ratio > 0.20:
+                    cat = "Paper / Cardboard"
+                    bin_col = "Blue Bin (Dry Recyclables)"
+                    tip = "Flatten cardboard boxes to optimize dry-bin space."
+                elif metal_ratio > 0.25 and plastic_ratio < 0.15:
+                    cat = "Metal / Beverage Cans"
+                    bin_col = "Blue Bin (Dry Recyclables)"
+                    tip = "Rinse metal cans before dry disposal."
+                elif plastic_ratio > 0.15:
+                    cat = "Plastic (Bottles & Packaging)"
+                    bin_col = "Blue Bin (Dry Recyclables)"
+                    tip = "Segregate clean plastics for city recycling center."
+                else:
+                    cat = "Mixed Roadside Waste"
+                    bin_col = "Blue Bin (Dry Recyclables)"
+                    tip = "Segregate wet and dry items before dumping."
+
                 return {
-                    "waste_detected": False,
-                    "confidence": 15.0,
-                    "waste_category": "Non-Waste (Person/Selfie)",
-                    "reason": "Person or selfie detected instead of waste/garbage."
+                    "waste_detected": True,
+                    "overflow_detected": overflow_detected,
+                    "confidence": round(min(94.0, max(75.0, 70.0 + (edge_density * 100))), 1),
+                    "waste_category": cat,
+                    "recommended_bin": bin_col,
+                    "disposal_tip": tip,
+                    "severity": "high" if overflow_detected else "medium",
+                    "reason": f"Real-world physical waste identified ({cat})",
+                    "engine": "Physical Waste Multi-Feature Classifier"
                 }
-
-            # 2. Digital Illustration / Anime / Wallpaper Detection (High saturation / low noise)
-            sat = hsv[:, :, 1]
-            val = hsv[:, :, 2]
-            mean_sat = np.mean(sat)
-            std_sat = np.std(sat)
-            
-            # 3. Texture & Edge Clutter Analysis
-            laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-            edges = cv2.Canny(gray, 50, 150)
-            edge_density = np.sum(edges > 0) / float(total_pixels)
-
-            # 4. Contour Clutter Count
-            contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            contour_count = len(contours)
-
-            # 5. Color Variance Analysis
-            std_dev = np.std(gray)
-
-            # Detect low texture, graphic art, smooth backgrounds or non-waste
-            if edge_density < 0.035 or contour_count < 55 or std_dev < 20.0 or laplacian_var < 45.0:
-                return {
-                    "waste_detected": False,
-                    "confidence": round(float(min(30.0, edge_density * 400)), 1),
-                    "waste_category": "Non-Waste / Invalid Image",
-                    "reason": "Image lacks visual physical waste clutter (appears to be digital graphic, wallpaper, or non-garbage object)."
-                }
-
-            raw_confidence = min(0.96, 0.70 + (edge_density * 1.8) + (contour_count / 2500.0))
-
-            top_half_edges = edges[0:int(height / 2), :]
-            top_edge_ratio = np.sum(top_half_edges > 0) / float(edges.size / 2)
-            overflow_detected = top_edge_ratio > 0.08
-
-            # Estimate waste category from dominant color/texture heuristics
-            green_mask = cv2.inRange(hsv, np.array([35, 40, 40]), np.array([85, 255, 255]))
-            green_ratio = np.sum(green_mask > 0) / float(total_pixels)
-
-            if green_ratio > 0.25:
-                cat = "Organic"
-                bin_col = "Green Bin (Wet / Compostable)"
-            else:
-                cat = "Plastic"
-                bin_col = "Blue Bin (Dry Recyclables)"
-
-            return {
-                "waste_detected": True,
-                "overflow_detected": overflow_detected,
-                "confidence": round(float(raw_confidence * 100), 1),
-                "waste_category": cat,
-                "recommended_bin": bin_col,
-                "disposal_tip": "Segregate recyclables into proper municipal dustbin.",
-                "severity": "high" if overflow_detected else "medium",
-                "reason": "Physical waste clutter & heap patterns verified by Computer Vision"
-            }
 
         except Exception as e:
             return {
                 "waste_detected": False,
                 "confidence": 10.0,
                 "waste_category": "Non-Waste / Invalid Image",
-                "reason": f"Analysis could not verify waste: {str(e)}"
+                "recommended_bin": "N/A",
+                "disposal_tip": "Please upload a clear real photo of garbage.",
+                "reason": f"Image analysis could not verify waste: {str(e)}",
+                "engine": "CV Analyzer"
             }
 
     # ──────────────────────────────────────────────────────────────────────
