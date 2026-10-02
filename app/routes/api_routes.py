@@ -906,10 +906,25 @@ def classify_waste_api():
 
         res = AIService.analyze_image_with_vision_ai(file_path)
 
+        is_waste = res.get('waste_detected', True)
         category = res.get('waste_category', 'Mixed Waste')
         confidence = res.get('confidence', 92.0)
         recommended_bin = res.get('recommended_bin')
         disposal_tip = res.get('disposal_tip')
+
+        if not is_waste:
+            return jsonify({
+                'success': True,
+                'waste_detected': False,
+                'category': 'Non-Waste / Invalid',
+                'confidence': round(float(confidence), 1),
+                'recommended_bin': 'N/A',
+                'disposal_tip': 'Please upload a photo showing physical garbage, litter, or an overflowing dustbin.',
+                'severity': 'none',
+                'reason': res.get('reason', 'No physical waste or garbage detected in this image.'),
+                'engine': res.get('engine', 'Vision AI ML Engine'),
+                'image_url': f"/uploads/{filename}"
+            })
 
         # Clean fallback tips & bins if not returned by vision LLM
         if not recommended_bin:
@@ -929,7 +944,7 @@ def classify_waste_api():
 
         return jsonify({
             'success': True,
-            'waste_detected': res.get('waste_detected', True),
+            'waste_detected': True,
             'category': category.replace('_', ' ').title(),
             'confidence': round(float(confidence), 1),
             'recommended_bin': recommended_bin,
@@ -942,15 +957,10 @@ def classify_waste_api():
     except Exception as e:
         print(f"[Classify Waste API Exception] {e}")
         return jsonify({
-            'success': True,
-            'waste_detected': True,
-            'category': 'Plastic (Recyclable)',
-            'confidence': 94.0,
-            'recommended_bin': 'Blue Bin (Dry Recyclables)',
-            'disposal_tip': 'Please dispose in the dry-waste bin to enable recycling.',
-            'severity': 'medium',
-            'engine': 'Pillow Edge Analyzer'
-        })
+            'success': False,
+            'waste_detected': False,
+            'error': f'Image analysis error: {str(e)}'
+        }), 500
 
 
 @api_bp.route('/citizen/report-waste', methods=['POST'])
@@ -961,6 +971,11 @@ def report_waste_api():
     lat_user = float(request.form.get('lat_user', lat_detected))
     lng_user = float(request.form.get('lng_user', lng_detected))
     user_notes = request.form.get('user_notes', '')
+    landmark = request.form.get('landmark', '').strip()
+    city_selected = request.form.get('city_name', '').strip()
+
+    if landmark:
+        user_notes = f"📍 Location: {landmark} | {user_notes}".strip()
 
     # Validate Chhattisgarh State Boundaries (Lat: 17.70 to 24.15, Lng: 80.20 to 84.40)
     if not (17.70 <= lat_user <= 24.15 and 80.20 <= lng_user <= 84.40):
@@ -982,17 +997,26 @@ def report_waste_api():
     file_path = os.path.join(upload_folder, filename)
     file.save(file_path)
 
-    # Determine City Municipal Zone based on GPS coordinates
-    closest_zone = "Durg"
-    min_dist = float('inf')
-    for zone in MunicipalZone.query.all():
-        dist = AIService.calculate_haversine_distance(lat_user, lng_user, zone.depot_lat, zone.depot_lng)
-        if dist < min_dist:
-            min_dist = dist
-            closest_zone = zone.city_name
+    # Determine City Municipal Zone based on GPS coordinates or user selection
+    closest_zone = city_selected or "Bilaspur"
+    if not city_selected:
+        min_dist = float('inf')
+        for zone in MunicipalZone.query.all():
+            dist = AIService.calculate_haversine_distance(lat_user, lng_user, zone.depot_lat, zone.depot_lng)
+            if dist < min_dist:
+                min_dist = dist
+                closest_zone = zone.city_name
 
     registered_dustbins = Dustbin.query.all()
     ai_res = AIService.analyze_waste_report(file_path, lat_user, lng_user, registered_dustbins)
+
+    # Strict Validation: If AI detects this is NOT waste, reject the submission!
+    if not ai_res.get('waste_detected', True):
+        return jsonify({
+            'success': False,
+            'waste_detected': False,
+            'error': f"⚠️ AI Rejection: {ai_res.get('reason', 'No physical garbage or litter was detected in this photo.')} Please upload a real photo of garbage, litter, or an overflowing dustbin."
+        }), 400
 
     report_code = f"#SB{1000 + Report.query.count() + 1}"
 

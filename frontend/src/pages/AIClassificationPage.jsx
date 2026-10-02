@@ -6,12 +6,14 @@ export default function AIClassificationPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState({
+    waste_detected: true,
     category: 'Plastic',
     confidence: 94,
     recommended_bin: 'Dry Waste (Recyclable)',
     disposal_tip: 'Please dispose of plastic waste in the blue dry-waste bin to help recycling.',
     severity: 'medium',
-    engine: 'Vision LLM Model'
+    engine: 'Vision LLM Model',
+    reason: 'Verified real waste'
   });
 
   const handleImageSelect = async (e) => {
@@ -35,12 +37,14 @@ export default function AIClassificationPage() {
       const data = await res.json();
       if (data.success) {
         setResult({
+          waste_detected: data.waste_detected !== false,
           category: data.category || 'Plastic',
-          confidence: data.confidence || 94,
+          confidence: data.confidence || 90,
           recommended_bin: data.recommended_bin || 'Dry Waste (Recyclable)',
-          disposal_tip: data.disposal_tip || 'Dispose in blue dry-waste bin to help recycling.',
+          disposal_tip: data.disposal_tip || (data.waste_detected === false ? 'Upload a photo showing real physical trash or garbage.' : 'Dispose in blue dry-waste bin to help recycling.'),
           severity: data.severity || 'medium',
-          engine: data.engine || 'Vision AI Model'
+          engine: data.engine || 'Vision AI Model',
+          reason: data.reason || (data.waste_detected === false ? 'No physical garbage detected in image.' : 'Real waste verified.')
         });
       }
     } catch (err) {
@@ -50,8 +54,9 @@ export default function AIClassificationPage() {
     }
   };
 
-  const isDry = result.recommended_bin.toLowerCase().includes('dry') || result.recommended_bin.toLowerCase().includes('blue');
-  const isWet = result.recommended_bin.toLowerCase().includes('wet') || result.recommended_bin.toLowerCase().includes('green');
+  const isNonWaste = result.waste_detected === false || result.category?.toLowerCase().includes('non-waste');
+  const isDry = result.recommended_bin?.toLowerCase().includes('dry') || result.recommended_bin?.toLowerCase().includes('blue');
+  const isWet = result.recommended_bin?.toLowerCase().includes('wet') || result.recommended_bin?.toLowerCase().includes('green');
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -130,19 +135,31 @@ export default function AIClassificationPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-slate-800 text-base">Classification Result</h3>
-              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase">
-                {result.engine || 'Vision AI'}
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                isNonWaste ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                {isNonWaste ? 'Rejection / Non-Waste' : result.engine || 'Vision AI'}
               </span>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shrink-0 ${
+                isNonWaste 
+                  ? 'bg-red-50 text-red-600 border-red-200' 
+                  : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+              }`}>
+                {isNonWaste ? (
+                  <Trash2 size={30} className="text-red-500 opacity-60" />
+                ) : (
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                )}
               </div>
               <div>
-                <p className="font-bold text-2xl text-slate-800 leading-tight">{result.category}</p>
-                <p className="text-emerald-600 text-sm font-bold mt-1 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Confidence: {result.confidence}%
+                <p className={`font-bold text-xl sm:text-2xl leading-tight ${isNonWaste ? 'text-red-700' : 'text-slate-800'}`}>
+                  {result.category}
+                </p>
+                <p className={`text-xs font-bold mt-1 flex items-center gap-1 ${isNonWaste ? 'text-red-500' : 'text-emerald-600'}`}>
+                  <CheckCircle2 size={14} /> {isNonWaste ? 'Verification Status: Not Waste' : `Confidence: ${result.confidence}%`}
                 </p>
               </div>
             </div>
@@ -153,25 +170,35 @@ export default function AIClassificationPage() {
           {/* Recommended Bin */}
           <div>
             <h3 className="font-bold text-slate-800 text-sm mb-3">Recommended Bin Color</h3>
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-14 ${isDry ? 'bg-blue-500 border-b-4 border-blue-700' : isWet ? 'bg-emerald-500 border-b-4 border-emerald-700' : 'bg-red-500 border-b-4 border-red-700'} rounded-t-lg rounded-b flex flex-col items-center justify-center shrink-0 relative shadow-sm`}>
-                 <div className={`absolute -top-1.5 w-full h-2 ${isDry ? 'bg-blue-600' : isWet ? 'bg-emerald-600' : 'bg-red-600'} rounded-t-lg`}></div>
-                 <Trash2 size={24} className="text-white opacity-90 mt-1" />
+            {isNonWaste ? (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 font-medium">
+                ⚠️ N/A — No physical waste recognized. Please upload a clear photo of garbage or recycling items.
               </div>
-              <div>
-                <p className="font-bold text-base text-slate-800 leading-tight">{result.recommended_bin}</p>
-                <p className="text-xs text-slate-500 mt-0.5">Municipal segregation standard</p>
+            ) : (
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-14 ${isDry ? 'bg-blue-500 border-b-4 border-blue-700' : isWet ? 'bg-emerald-500 border-b-4 border-emerald-700' : 'bg-red-500 border-b-4 border-red-700'} rounded-t-lg rounded-b flex flex-col items-center justify-center shrink-0 relative shadow-sm`}>
+                   <div className={`absolute -top-1.5 w-full h-2 ${isDry ? 'bg-blue-600' : isWet ? 'bg-emerald-600' : 'bg-red-600'} rounded-t-lg`}></div>
+                   <Trash2 size={24} className="text-white opacity-90 mt-1" />
+                </div>
+                <div>
+                  <p className="font-bold text-base text-slate-800 leading-tight">{result.recommended_bin}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Municipal segregation standard</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Tip Card */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex gap-3">
-            <div className="text-amber-500 shrink-0 mt-0.5">
+          <div className={`border rounded-xl p-3.5 flex gap-3 ${
+            isNonWaste ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+          }`}>
+            <div className={`shrink-0 mt-0.5 ${isNonWaste ? 'text-red-500' : 'text-amber-500'}`}>
               <Lightbulb size={18} fill="currentColor" />
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-xs mb-0.5">Disposal Tip</p>
+              <p className="font-bold text-slate-800 text-xs mb-0.5">
+                {isNonWaste ? 'Upload Requirement' : 'Disposal Tip'}
+              </p>
               <p className="text-slate-600 text-xs leading-relaxed">
                 {result.disposal_tip}
               </p>
