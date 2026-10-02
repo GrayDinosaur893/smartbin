@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Wifi, Truck, CheckCircle2, MapPin, Camera, BarChart2, MessageSquare, ArrowRight, Star, FileText } from 'lucide-react';
+import { Trash2, Wifi, Truck, CheckCircle2, MapPin, Camera, BarChart2, MessageSquare, ArrowRight, Star, FileText, Gift, Sparkles, Shield, Award, Navigation, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function DashboardMainPage() {
-  const [userName, setUserName] = useState('Divyansh');
+  const [userName, setUserName] = useState('Citizen');
+  const [userRole, setUserRole] = useState('citizen');
+  const [userCity, setUserCity] = useState('Bilaspur');
   const [userPoints, setUserPoints] = useState(250);
   const [reportsCount, setReportsCount] = useState(12);
 
@@ -13,6 +15,8 @@ export default function DashboardMainPage() {
       if (stored) {
         const u = JSON.parse(stored);
         if (u.name) setUserName(u.name.split(' ')[0]);
+        if (u.role) setUserRole(u.role.toLowerCase());
+        if (u.city_zone) setUserCity(u.city_zone);
         if (u.eco_points !== undefined) setUserPoints(u.eco_points);
         if (u.id) {
           fetch(`/api/citizen/dashboard/${u.id}`)
@@ -42,110 +46,124 @@ export default function DashboardMainPage() {
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             {getGreeting()}, {userName}! <span className="text-2xl">👋</span>
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">Let's keep our city clean together.</p>
+          <p className="text-slate-500 mt-1 text-sm">
+            {userRole === 'admin' 
+              ? `${userCity} Municipal Administration & Control Room` 
+              : userRole === 'driver'
+              ? `${userCity} Waste Collection Fleet Operator`
+              : `Together keeping ${userCity} clean and green.`}
+          </p>
         </div>
         
-        {/* Contribution Badge */}
-        <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1.5 self-start sm:self-auto min-w-[180px]">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Your Contribution</span>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
-                <FileText size={14} />
+        {/* Contribution / Role Badge */}
+        {userRole === 'citizen' ? (
+          <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1.5 self-start sm:self-auto min-w-[180px]">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Your Eco Contribution</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
+                  <FileText size={14} />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-800 leading-tight">{reportsCount}</p>
+                  <p className="text-[9px] text-slate-500 font-medium">Reports</p>
+                </div>
               </div>
-              <div>
-                <p className="text-base font-bold text-slate-800 leading-tight">{reportsCount}</p>
-                <p className="text-[9px] text-slate-500 font-medium">Reports</p>
-              </div>
-            </div>
-            <div className="w-px h-6 bg-slate-200"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center shrink-0">
-                <Star size={14} fill="currentColor" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-slate-800 leading-tight">{userPoints}</p>
-                <p className="text-[9px] text-slate-500 font-medium">Points</p>
+              <div className="w-px h-6 bg-slate-200"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center shrink-0">
+                  <Star size={14} fill="currentColor" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-800 leading-tight">{userPoints}</p>
+                  <p className="text-[9px] text-slate-500 font-medium">Points</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-emerald-900 text-white px-4 py-2 rounded-xl border border-emerald-700 shadow-sm flex items-center gap-2 self-start sm:self-auto">
+            <Shield size={18} className="text-emerald-300" />
+            <div>
+              <span className="text-[10px] uppercase tracking-wider text-emerald-300 block font-bold">Logged In As</span>
+              <span className="text-sm font-black capitalize">{userRole}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Stats Grid - 2 cols on mobile, 4 on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Total Bins</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-1">56</h3>
+      {/* Citizen Special: Clean City Community Summary Banner ("इतना साफ़ हुआ है") */}
+      <div className="bg-gradient-to-r from-emerald-800 via-teal-900 to-[#0d402b] text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <Sparkles size={12} /> {userCity} Clean City Impact
+              </span>
             </div>
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-              <Trash2 size={20} />
-            </div>
+            <h2 className="text-xl sm:text-2xl font-black">
+              {userRole === 'admin' 
+                ? 'Municipal Sanitation Overview' 
+                : 'Over 1,240 kg Waste Successfully Cleaned & Recycled! 🌿'}
+            </h2>
+            <p className="text-xs text-emerald-100/80 mt-1 max-w-xl">
+              {userRole === 'admin'
+                ? 'Real-time telemetry and waste collection efficiency across all wards.'
+                : 'Every report you submit directly powers municipal dispatch and cleans neighborhood blackspots.'}
+            </p>
           </div>
-          <p className="text-xs font-medium text-emerald-600 bg-emerald-50 inline-block px-2 py-1 rounded">
-            +12% from last month
-          </p>
+
+          {userRole === 'citizen' && (
+            <Link
+              to="/dashboard/rewards"
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 transition active:scale-95 shrink-0"
+            >
+              <Gift size={14} /> Redeem {userPoints} Pts Vouchers
+            </Link>
+          )}
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Bins Online</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-1">48</h3>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-              <Wifi size={20} />
-            </div>
+        {/* Clean Impact Metric Pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-4 border-t border-white/10 relative z-10">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Total Waste Cleaned</span>
+            <span className="text-xl sm:text-2xl font-black text-white mt-0.5 block">1,240 <span className="text-xs font-normal text-emerald-200">kg</span></span>
+            <span className="text-[10px] text-emerald-300 font-semibold">+12% this week</span>
           </div>
-          <p className="text-xs font-medium text-slate-500">
-            86% operational
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Waste Collected</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-1">1,240 <span className="text-lg text-slate-500">kg</span></h3>
-            </div>
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-              <Truck size={20} />
-            </div>
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Dump Spots Cleared</span>
+            <span className="text-xl sm:text-2xl font-black text-white mt-0.5 block">32 <span className="text-xs font-normal text-emerald-200">sites</span></span>
+            <span className="text-[10px] text-emerald-300 font-semibold">92% resolved</span>
           </div>
-          <p className="text-xs font-medium text-emerald-600 bg-emerald-50 inline-block px-2 py-1 rounded">
-            +8% from last week
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Reports Resolved</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-1">32</h3>
-            </div>
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-              <CheckCircle2 size={20} />
-            </div>
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Smart Bins Online</span>
+            <span className="text-xl sm:text-2xl font-black text-white mt-0.5 block">48 <span className="text-xs font-normal text-emerald-200">/ 56</span></span>
+            <span className="text-[10px] text-emerald-300 font-semibold">86% operational</span>
           </div>
-          <p className="text-xs font-medium text-emerald-600 bg-emerald-50 inline-block px-2 py-1 rounded">
-            92% resolved
-          </p>
+
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 block">Cleanliness Score</span>
+            <span className="text-xl sm:text-2xl font-black text-amber-300 mt-0.5 block">94 <span className="text-xs font-normal text-amber-200">/ 100</span></span>
+            <span className="text-[10px] text-amber-300 font-semibold">Grade A Clean City</span>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Nearest Bin Card */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
-          <div className="p-5 border-b border-slate-100 font-bold text-slate-800">
-            Nearest Bin
+          <div className="p-5 border-b border-slate-100 font-bold text-slate-800 flex items-center justify-between">
+            <span>Nearest Smart Dustbin</span>
+            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+              450m away
+            </span>
           </div>
           <div className="p-5 flex-1 flex flex-col justify-center">
             <div className="flex gap-5 items-center">
               <div className="w-24 h-32 bg-emerald-100 rounded-lg border border-emerald-200 relative flex items-center justify-center shrink-0">
                 <Trash2 size={40} className="text-emerald-600" />
-                {/* Solar panel mockup */}
                 <div className="absolute top-0 w-full h-4 bg-slate-800 rounded-t-lg opacity-90 border-b border-slate-600"></div>
               </div>
               <div className="flex-1">
@@ -153,12 +171,13 @@ export default function DashboardMainPage() {
                   SmartBin #102
                 </h4>
                 <p className="text-sm text-slate-500 flex items-center gap-1 mb-4 mt-1">
-                  <MapPin size={14} /> Civil Lines, Gwalior
+                  <MapPin size={14} /> Civil Lines, {userCity}
                 </p>
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-medium">
                     <span className="text-amber-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> 78% Full</span>
+                    <span className="text-xs text-slate-400">Sensors Active</span>
                   </div>
                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div className="h-full bg-amber-500 rounded-full" style={{ width: '78%' }}></div>
@@ -168,46 +187,111 @@ export default function DashboardMainPage() {
             </div>
           </div>
           <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-xl">
-            <span className="text-xs text-slate-500 font-medium">Last collection: 2 hours ago</span>
+            <span className="text-xs text-slate-500 font-medium">Solar Powered · IoT Online</span>
             <Link to="/dashboard/bin/102" className="text-sm font-bold text-emerald-600 hover:text-emerald-700">
-              View Details
+              View Bin Status →
             </Link>
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions (Role Customized) */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
           <div className="p-5 border-b border-slate-100 font-bold text-slate-800">
             Quick Actions
           </div>
           <div className="p-5 grid grid-cols-2 gap-4 flex-1 content-center">
-            <Link to="/dashboard/report" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Camera size={24} />
-              </div>
-              <span className="font-semibold text-sm text-slate-700">Report Waste</span>
-            </Link>
             
-            <Link to="/dashboard/map" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <MapPin size={24} />
-              </div>
-              <span className="font-semibold text-sm text-slate-700">Find Nearby Bin</span>
-            </Link>
+            {userRole === 'admin' ? (
+              <>
+                <Link to="/dashboard/analytics" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <BarChart2 size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Analytics Room</span>
+                </Link>
 
-            <Link to="/dashboard/analytics" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BarChart2 size={24} />
-              </div>
-              <span className="font-semibold text-sm text-slate-700">View Analytics</span>
-            </Link>
+                <Link to="/dashboard/map" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <MapPin size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">GIS Fleet Map</span>
+                </Link>
 
-            <button className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <MessageSquare size={24} />
-              </div>
-              <span className="font-semibold text-sm text-slate-700">Give Feedback</span>
-            </button>
+                <Link to="/dashboard/ai" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Camera size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">AI Waste Vision</span>
+                </Link>
+
+                <Link to="/dashboard/bin/102" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Trash2 size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Garbage Stations</span>
+                </Link>
+              </>
+            ) : userRole === 'driver' ? (
+              <>
+                <Link to="/dashboard/map" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Navigation size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Active Route Map</span>
+                </Link>
+
+                <Link to="/dashboard/ai" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Camera size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">After Cleaning Photo</span>
+                </Link>
+
+                <Link to="/dashboard/report" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Zap size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Report Blackspot</span>
+                </Link>
+
+                <Link to="/dashboard/profile" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Award size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Driver Shift Status</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/dashboard/report" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Camera size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Report Litter (+100 Pts)</span>
+                </Link>
+                
+                <Link to="/dashboard/map" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <MapPin size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Find Nearby Bin</span>
+                </Link>
+
+                <Link to="/dashboard/rewards" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Gift size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">Redeem Vouchers</span>
+                </Link>
+
+                <Link to="/dashboard/ai" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md transition-all gap-3 group">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Sparkles size={24} />
+                  </div>
+                  <span className="font-semibold text-sm text-slate-700">AI Classifier</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

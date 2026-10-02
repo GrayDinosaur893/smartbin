@@ -5,19 +5,48 @@ import { LayoutDashboard, Trash2, Camera, BarChart2, Map, Bell, Users, Settings,
 const Sidebar = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [userRole, setUserRole] = React.useState('citizen');
 
-  const navItems = [
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.role) setUserRole(u.role.toLowerCase());
+      }
+    } catch (e) {}
+  }, []);
+
+  const adminNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Bins', path: '/dashboard/bin/102', icon: Trash2 },
-    { name: 'Report', path: '/dashboard/report', icon: Camera },
-    { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
-    { name: 'Map', path: '/dashboard/map', icon: Map },
-    { name: 'AI', path: '/dashboard/ai', icon: Camera },
-    { name: 'Notifications', path: '/dashboard/notifications', icon: Bell },
+    { name: 'Live Map', path: '/dashboard/map', icon: Map },
+    { name: 'AI Vision', path: '/dashboard/ai', icon: Camera },
+    { name: 'Garbage Bins', path: '/dashboard/bin/102', icon: Trash2 },
     { name: 'Profile', path: '/dashboard/profile', icon: Users },
-    { name: 'Settings', path: '/dashboard/settings', icon: Settings },
   ];
+
+  const driverNavItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Live Map & Routes', path: '/dashboard/map', icon: Map },
+    { name: 'AI Scanner', path: '/dashboard/ai', icon: Camera },
+    { name: 'Profile', path: '/dashboard/profile', icon: Users },
+  ];
+
+  const citizenNavItems = [
+    { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Live Map', path: '/dashboard/map', icon: Map },
+    { name: 'Report Waste', path: '/dashboard/report', icon: Camera },
+    { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },
+    { name: 'AI Classifier', path: '/dashboard/ai', icon: Camera },
+    { name: 'Profile', path: '/dashboard/profile', icon: Users },
+  ];
+
+  const navItems = userRole === 'admin' 
+    ? adminNavItems 
+    : userRole === 'driver' 
+    ? driverNavItems 
+    : citizenNavItems;
 
   return (
     <div className="hidden md:flex w-64 bg-[#0d402b] text-white flex-col h-screen fixed left-0 top-0 z-20">
@@ -25,10 +54,15 @@ const Sidebar = () => {
         <div className="text-emerald-400">
           <Trash2 size={28} />
         </div>
-        <h1 className="text-xl font-bold tracking-wide">SmartBin</h1>
+        <div>
+          <h1 className="text-xl font-bold tracking-wide">SmartBin</h1>
+          <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wider bg-emerald-900/60 px-2 py-0.5 rounded-full">
+            {userRole} Portal
+          </span>
+        </div>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = currentPath === item.path || (item.path === '/dashboard' && currentPath === '/dashboard/');
           const Icon = item.icon;
@@ -68,14 +102,46 @@ const Sidebar = () => {
 const MobileBottomNav = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [userRole, setUserRole] = React.useState('citizen');
 
-  const navItems = [
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.role) setUserRole(u.role.toLowerCase());
+      }
+    } catch (e) {}
+  }, []);
+
+  const adminNavItems = [
+    { name: 'Admin', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
+    { name: 'Map', path: '/dashboard/map', icon: Map },
+    { name: 'AI Vision', path: '/dashboard/ai', icon: Camera },
+    { name: 'Profile', path: '/dashboard/profile', icon: Users },
+  ];
+
+  const driverNavItems = [
+    { name: 'Tasks', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Route Map', path: '/dashboard/map', icon: Map },
+    { name: 'AI Scan', path: '/dashboard/ai', icon: Camera },
+    { name: 'Profile', path: '/dashboard/profile', icon: Users },
+  ];
+
+  const citizenNavItems = [
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Map', path: '/dashboard/map', icon: Map },
     { name: 'Report', path: '/dashboard/report', icon: Camera },
     { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },
     { name: 'Profile', path: '/dashboard/profile', icon: Users },
   ];
+
+  const navItems = userRole === 'admin' 
+    ? adminNavItems 
+    : userRole === 'driver' 
+    ? driverNavItems 
+    : citizenNavItems;
 
   return (
     <nav

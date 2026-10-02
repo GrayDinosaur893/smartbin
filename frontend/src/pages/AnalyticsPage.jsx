@@ -1,7 +1,90 @@
-import React from 'react';
-import { ChevronDown, ArrowUp, ArrowDown, AlertCircle, Trash2, Recycle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, ArrowUp, ArrowDown, AlertCircle, Trash2, Recycle, ShieldAlert, ArrowLeft, Gift, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function AnalyticsPage() {
+  const [userRole, setUserRole] = useState('citizen');
+  const [userName, setUserName] = useState('Citizen');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.role) setUserRole(u.role.toLowerCase());
+        if (u.name) setUserName(u.name);
+      }
+    } catch (e) {}
+  }, []);
+
+  // If user is not admin, show clear Citizen Impact Summary / Admin Access Notice
+  if (userRole !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200">
+        <div className="bg-gradient-to-br from-emerald-900 to-[#0d402b] text-white p-8 rounded-3xl shadow-xl space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-400/30 text-emerald-300">
+              <ShieldAlert size={26} />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-700/60 px-3 py-1 rounded-full text-emerald-200 border border-emerald-500/30">
+                Swachhata Control Room
+              </span>
+              <h2 className="text-xl font-black mt-1">Admin Analytics Restricted</h2>
+            </div>
+          </div>
+
+          <p className="text-sm text-emerald-100/90 leading-relaxed max-w-2xl">
+            Detailed municipal IoT sensor telemetry and fleet dispatch charts are reserved for municipal administrators. As a <strong className="text-white capitalize">{userRole}</strong>, you can track your live community impact summary, report litter, and earn sponsor rewards!
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <Link
+              to="/dashboard"
+              className="bg-white hover:bg-emerald-50 text-[#0d402b] font-bold px-5 py-3 rounded-2xl transition flex items-center justify-center gap-2 shadow"
+            >
+              <ArrowLeft size={16} /> Back to Community Summary
+            </Link>
+            <Link
+              to="/dashboard/rewards"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3 rounded-2xl transition flex items-center justify-center gap-2 shadow"
+            >
+              <Gift size={16} /> Browse Sponsor Vouchers
+            </Link>
+          </div>
+        </div>
+
+        {/* Citizen Quick Impact Snapshot */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
+            <Award className="text-emerald-600" size={20} />
+            <span>Community Cleanliness Impact Summary</span>
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-100">
+              <span className="text-[11px] font-bold text-emerald-800 uppercase block">Total Waste Cleared</span>
+              <span className="text-2xl font-black text-emerald-900 mt-0.5 block">1,240 kg</span>
+              <span className="text-[11px] text-emerald-700 font-medium">Across all municipal zones</span>
+            </div>
+
+            <div className="p-4 bg-blue-50/70 rounded-2xl border border-blue-100">
+              <span className="text-[11px] font-bold text-blue-800 uppercase block">Clean Reports Resolved</span>
+              <span className="text-2xl font-black text-blue-900 mt-0.5 block">32 Sites</span>
+              <span className="text-[11px] text-blue-700 font-medium">92% resolution rate</span>
+            </div>
+
+            <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100">
+              <span className="text-[11px] font-bold text-amber-800 uppercase block">Active Smart Bins</span>
+              <span className="text-2xl font-black text-amber-900 mt-0.5 block">48 / 56 Bins</span>
+              <span className="text-[11px] text-amber-700 font-medium">Operational & monitored</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       
