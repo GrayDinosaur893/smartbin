@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../App';
+const API_BASE = '/api';
 import { Building2, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, Send, FileText, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function Sponsors({ user, lang }) {
