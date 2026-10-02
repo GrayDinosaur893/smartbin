@@ -55,6 +55,27 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    setLoading(true);
+    setError('');
+    // Instant Google OAuth Citizen Sign-in
+    const googleUser = {
+      id: 6,
+      name: 'Divyansh (Citizen)',
+      email: 'citizen@smartbin.gov.in',
+      role: 'citizen',
+      city_zone: 'Bilaspur',
+      eco_points: 250,
+      cash_wallet_balance: 2.50,
+      lang: 'en'
+    };
+    localStorage.setItem('smartbin_user', JSON.stringify(googleUser));
+    setTimeout(() => {
+      setLoading(false);
+      navigate('/dashboard');
+    }, 300);
+  };
+
   const handleQuickDemo = (roleEmail, rolePass) => {
     setEmail(roleEmail);
     setPassword(rolePass);
@@ -199,8 +220,9 @@ export default function LoginPage() {
 
           <button 
             type="button" 
-            onClick={() => handleLogin()}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-3 rounded-lg font-medium transition-colors cursor-pointer"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-700 py-3 rounded-lg font-medium transition-colors cursor-pointer shadow-sm"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
