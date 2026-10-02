@@ -71,15 +71,15 @@ const MobileBottomNav = () => {
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Map', path: '/dashboard/map', icon: Map },
-    { name: 'Report', path: '/dashboard/report', icon: Camera, main: true },
+    { name: 'Report', path: '/dashboard/report', icon: Camera },
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
     { name: 'Profile', path: '/dashboard/profile', icon: Users },
   ];
 
   return (
-    <div
-      className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 z-50 flex justify-around items-end px-1"
-      style={{ height: '64px', boxShadow: '0 -2px 16px rgba(0,0,0,0.08)' }}
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-50 flex items-center justify-around px-2"
+      style={{ height: '58px', boxShadow: '0 -1px 12px rgba(0,0,0,0.06)' }}
     >
       {navItems.map((item) => {
         const isActive =
@@ -87,41 +87,26 @@ const MobileBottomNav = () => {
           (item.path === '/dashboard' && currentPath === '/dashboard/');
         const Icon = item.icon;
 
-        if (item.main) {
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className="flex flex-col items-center justify-center"
-              style={{ marginBottom: '12px' }}
-            >
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-white active:scale-95 transition-transform ${
-                  isActive ? 'bg-[#0b452a]' : 'bg-[#105a39]'
-                }`}
-                style={{ boxShadow: '0 4px 12px rgba(16,90,57,0.35)' }}
-              >
-                <Icon size={22} className="text-white" />
-              </div>
-            </Link>
-          );
-        }
-
         return (
           <Link
             key={item.name}
             to={item.path}
-            className={`flex flex-col items-center justify-end flex-1 gap-0.5 ${
-              isActive ? 'text-[#105a39]' : 'text-slate-400'
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all rounded-lg active:scale-95 ${
+              isActive
+                ? 'text-[#105a39] font-bold'
+                : 'text-slate-400 hover:text-slate-600 font-medium'
             }`}
-            style={{ paddingBottom: '8px' }}
           >
-            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-            <span className="text-[10px] font-semibold leading-tight">{item.name}</span>
+            <div className={`p-1 rounded-full transition-colors ${isActive ? 'bg-emerald-100/70 text-[#105a39]' : ''}`}>
+              <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} />
+            </div>
+            <span className={`text-[10px] tracking-tight leading-none mt-0.5 ${isActive ? 'text-[#105a39] font-bold' : 'text-slate-500 font-medium'}`}>
+              {item.name}
+            </span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

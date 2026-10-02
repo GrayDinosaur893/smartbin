@@ -62,62 +62,62 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Waste Composition */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Waste Composition</h3>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Waste Composition</h3>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 h-48">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 py-2">
             
-            {/* Fake Donut Chart */}
-            <div className="relative w-40 h-40">
+            {/* Donut Chart */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 shrink-0">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                 {/* Organic 40% - Green */}
-                <circle stroke="#10b981" strokeWidth="6" strokeDasharray="40, 100" strokeDashoffset="0" fill="none" cx="18" cy="18" r="15" />
+                <circle stroke="#10b981" strokeWidth="5.5" strokeDasharray="40, 100" strokeDashoffset="0" fill="none" cx="18" cy="18" r="15" />
                 {/* Plastic 25% - Blue */}
-                <circle stroke="#3b82f6" strokeWidth="6" strokeDasharray="25, 100" strokeDashoffset="-40" fill="none" cx="18" cy="18" r="15" />
+                <circle stroke="#3b82f6" strokeWidth="5.5" strokeDasharray="25, 100" strokeDashoffset="-40" fill="none" cx="18" cy="18" r="15" />
                 {/* Paper 15% - Yellow */}
-                <circle stroke="#eab308" strokeWidth="6" strokeDasharray="15, 100" strokeDashoffset="-65" fill="none" cx="18" cy="18" r="15" />
+                <circle stroke="#eab308" strokeWidth="5.5" strokeDasharray="15, 100" strokeDashoffset="-65" fill="none" cx="18" cy="18" r="15" />
                 {/* Glass 10% - Purple */}
-                <circle stroke="#8b5cf6" strokeWidth="6" strokeDasharray="10, 100" strokeDashoffset="-80" fill="none" cx="18" cy="18" r="15" />
+                <circle stroke="#8b5cf6" strokeWidth="5.5" strokeDasharray="10, 100" strokeDashoffset="-80" fill="none" cx="18" cy="18" r="15" />
                 {/* Metal 10% - Gray */}
-                <circle stroke="#64748b" strokeWidth="6" strokeDasharray="10, 100" strokeDashoffset="-90" fill="none" cx="18" cy="18" r="15" />
+                <circle stroke="#64748b" strokeWidth="5.5" strokeDasharray="10, 100" strokeDashoffset="-90" fill="none" cx="18" cy="18" r="15" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xs text-slate-500 font-medium">Total</span>
-                <span className="text-sm font-bold text-slate-800">1240 kg</span>
+                <span className="text-[10px] sm:text-xs text-slate-400 font-medium">Total</span>
+                <span className="text-sm sm:text-base font-bold text-slate-800">1240 kg</span>
               </div>
             </div>
 
             {/* Legend */}
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between text-sm">
+            <div className="w-full sm:flex-1 space-y-2.5">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 font-medium text-slate-700">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Organic
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Organic
                 </div>
-                <span className="font-bold">40%</span>
+                <span className="font-bold text-slate-800">40%</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 font-medium text-slate-700">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span> Plastic
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Plastic
                 </div>
-                <span className="font-bold">25%</span>
+                <span className="font-bold text-slate-800">25%</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 font-medium text-slate-700">
-                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Paper
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Paper
                 </div>
-                <span className="font-bold">15%</span>
+                <span className="font-bold text-slate-800">15%</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 font-medium text-slate-700">
-                  <span className="w-3 h-3 rounded-full bg-purple-500"></span> Glass
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Glass
                 </div>
-                <span className="font-bold">10%</span>
+                <span className="font-bold text-slate-800">10%</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 font-medium text-slate-700">
-                  <span className="w-3 h-3 rounded-full bg-slate-500"></span> Metal
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Metal
                 </div>
-                <span className="font-bold">10%</span>
+                <span className="font-bold text-slate-800">10%</span>
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Mini Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
