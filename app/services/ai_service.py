@@ -1,5 +1,6 @@
 import math
 import os
+import tempfile
 
 try:
     import numpy as np
@@ -16,6 +17,31 @@ try:
 except ImportError:
     Image = None
     ImageStat = None
+
+def get_safe_upload_folder(app=None):
+    """
+    Returns a writable upload directory.
+    Prefers app.static_folder/uploads in local environments,
+    falls back to /tmp/smartbin_uploads in serverless / Vercel read-only environments.
+    """
+    if app is not None and hasattr(app, 'static_folder') and app.static_folder:
+        try:
+            static_uploads = os.path.join(app.static_folder, 'uploads')
+            os.makedirs(static_uploads, exist_ok=True)
+            test_file = os.path.join(static_uploads, '.test_write')
+            with open(test_file, 'w') as f:
+                f.write('1')
+            os.remove(test_file)
+            return static_uploads
+        except Exception:
+            pass
+
+    tmp_uploads = os.path.join(tempfile.gettempdir(), 'smartbin_uploads')
+    try:
+        os.makedirs(tmp_uploads, exist_ok=True)
+    except Exception:
+        pass
+    return tmp_uploads
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Tier 1: HuggingFace ML Model — prithivMLmods/Augmented-Waste-Classifier-SigLIP2

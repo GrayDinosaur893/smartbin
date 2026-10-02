@@ -5,7 +5,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from werkzeug.utils import secure_filename
 from app.database import db
 from app.models.models import User, DriverProfile, Task, Report, CleaningProof, Attendance
-from app.services.ai_service import AIService
+from app.services.ai_service import AIService, get_safe_upload_folder
 
 driver_bp = Blueprint('driver', __name__)
 
@@ -55,8 +55,7 @@ def clock_in():
         return redirect(url_for('driver.dashboard'))
 
     filename = f"selfie_{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-    upload_folder = os.path.join(current_app.static_folder, 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = get_safe_upload_folder(current_app)
     file_path = os.path.join(upload_folder, filename)
     file.save(file_path)
 
@@ -97,8 +96,7 @@ def submit_cleaning(task_id):
             return render_template('driver/submit_cleaning.html', task=task, report=report, error="Please take an After photo.")
 
         filename = f"after_{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-        upload_folder = os.path.join(current_app.static_folder, 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
+        upload_folder = get_safe_upload_folder(current_app)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
 

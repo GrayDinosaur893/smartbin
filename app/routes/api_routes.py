@@ -3,12 +3,12 @@ import uuid
 import csv
 import io
 from datetime import datetime
-from flask import Blueprint, request, jsonify, current_app, make_response
+from flask import Blueprint, request, jsonify, current_app, make_response, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from app.database import db
 from app.models.models import User, DriverProfile, Dustbin, Report, Task, CleaningProof, Attendance, RewardsLedger, MunicipalZone, SponsorOffer, UserActivityLog, VoucherRedemption
-from app.services.ai_service import AIService
+from app.services.ai_service import AIService, get_safe_upload_folder
 from app.services.vrp_service import VRPService
 from app.services.reward_service import RewardService
 from app.services.sms_service import SMSService
@@ -899,8 +899,7 @@ def classify_waste_api():
             return jsonify({'success': False, 'error': 'No image file uploaded'}), 400
 
         filename = f"ai_scan_{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-        upload_folder = os.path.join(current_app.static_folder, 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
+        upload_folder = get_safe_upload_folder(current_app)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
 
@@ -992,8 +991,7 @@ def report_waste_api():
         }), 400
 
     filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-    upload_folder = os.path.join(current_app.static_folder, 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = get_safe_upload_folder(current_app)
     file_path = os.path.join(upload_folder, filename)
     file.save(file_path)
 
@@ -1214,8 +1212,7 @@ def driver_clock_in_api():
         return jsonify({'success': False, 'error': 'Selfie required'}), 400
 
     filename = f"selfie_{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-    upload_folder = os.path.join(current_app.static_folder, 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = get_safe_upload_folder(current_app)
     file.save(os.path.join(upload_folder, filename))
 
     attendance = Attendance(
@@ -1249,8 +1246,7 @@ def driver_submit_cleaning_api(task_id):
     report = Report.query.get(task.report_id)
 
     filename = f"after_{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-    upload_folder = os.path.join(current_app.static_folder, 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
+    upload_folder = get_safe_upload_folder(current_app)
     file.save(os.path.join(upload_folder, filename))
 
     dist_m = AIService.calculate_haversine_distance(driver_lat, driver_lng, report.gps_lat_user, report.gps_lng_user)
@@ -1273,6 +1269,25 @@ def driver_submit_cleaning_api(task_id):
     db.session.commit()
 
     return jsonify({'success': True, 'message': 'Work completed and verified successfully!'})
+
+
+@api_bp.route('/uploads/<path:filename>', methods=['GET'])
+def serve_upload_file(filename):
+    """
+    Serves uploaded images safely from either static uploads or temp storage.
+    """
+    try:
+        upload_folder = get_safe_upload_folder(current_app)
+        if os.path.exists(os.path.join(upload_folder, filename)):
+            return send_from_directory(upload_folder, filename)
+        
+        # Also check static folder
+        static_uploads = os.path.join(current_app.static_folder or 'static', 'uploads')
+        if os.path.exists(os.path.join(static_uploads, filename)):
+            return send_from_directory(static_uploads, filename)
+    except Exception as e:
+        print(f"[Serve Upload Exception] {e}")
+    return jsonify({'error': 'File not found'}), 404
 
 # --------------------------------------------------
 # 6. MUNICIPAL ADMIN CONTROL CENTER REST APIS (STRICTLY CITY SCOPED C++ VRP)

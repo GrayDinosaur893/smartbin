@@ -5,7 +5,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from werkzeug.utils import secure_filename
 from app.database import db
 from app.models.models import User, Report, Dustbin, Task, CleaningProof, RewardsLedger, MunicipalZone
-from app.services.ai_service import AIService
+from app.services.ai_service import AIService, get_safe_upload_folder
 from app.services.reward_service import RewardService
 from app.services.sms_service import SMSService
 
@@ -79,8 +79,7 @@ def report_waste():
             return render_template('citizen/report_form.html', error="Please select or capture a photo.")
 
         filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-        upload_folder = os.path.join(current_app.static_folder, 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
+        upload_folder = get_safe_upload_folder(current_app)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
 
