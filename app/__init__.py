@@ -32,7 +32,9 @@ def create_app():
     db_uri = os.environ.get('DATABASE_URL', default_db)
     
     if db_uri and db_uri.startswith("postgres://"):
-        db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+        db_uri = db_uri.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif db_uri and db_uri.startswith("postgresql://") and "+psycopg2" not in db_uri:
+        db_uri = db_uri.replace("postgresql://", "postgresql+psycopg2://", 1)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -43,7 +45,10 @@ def create_app():
     }
 
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-    db.init_app(app)
+    try:
+        db.init_app(app)
+    except Exception as e:
+        print(f"[DB Init Notice] {e}")
 
     # Register REST API Blueprint
     from app.routes.api_routes import api_bp
