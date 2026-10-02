@@ -1,7 +1,21 @@
 import math
 import os
-import numpy as np
-from PIL import Image
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+try:
+    from PIL import Image, ImageStat
+except ImportError:
+    Image = None
+    ImageStat = None
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Tier 1: HuggingFace ML Model — prithivMLmods/Augmented-Waste-Classifier-SigLIP2
@@ -178,12 +192,17 @@ class AIService:
             return {"waste_detected": True, "confidence": 92.0, "reason": "Standard report verification"}
 
         try:
-            if cv2 is None:
-                # Pillow fallback for serverless environment
+            if cv2 is None or np is None:
+                # Pillow pure python fallback for serverless environment
                 with Image.open(image_path) as pil_img:
                     img_gray = pil_img.convert('L')
-                    arr = np.array(img_gray)
-                    std_dev = float(np.std(arr))
+                    if ImageStat:
+                        stat = ImageStat.Stat(img_gray)
+                        std_dev = float(stat.stddev[0]) if stat.stddev else 25.0
+                    elif np is not None:
+                        std_dev = float(np.std(np.array(img_gray)))
+                    else:
+                        std_dev = 25.0
                     confidence = min(96.0, max(75.0, 70.0 + std_dev))
                     return {
                         "waste_detected": True,
