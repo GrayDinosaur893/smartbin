@@ -1606,7 +1606,7 @@ def redeem_citizen_voucher_api():
 
 @api_bp.route('/public/test-sms', methods=['GET', 'POST'])
 def test_sms_api():
-    phone = request.args.get('phone') or (request.json.get('phone') if request.is_json else '8085668669')
+    phone = request.args.get('phone') or (request.get_json(silent=True) or {}).get('phone') or '8085668669'
     results = SMSService.send_report_confirmation_sms(
         report_code="#SB1099",
         city_name="Bilaspur",

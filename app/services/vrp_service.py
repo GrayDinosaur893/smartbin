@@ -86,10 +86,43 @@ class VRPService:
                 'engine': 'C++ High-Performance Solver'
             }
         else:
-            ordered_ids = [s['id'] for s in stops_list_of_dicts]
-            return {
-                'ordered_ids': ordered_ids,
-                'total_distance_km': 5.2,
-                'stop_count': len(ordered_ids),
-                'engine': 'Python Fallback Solver'
-            }
+            return cls._python_nearest_neighbor(driver_start_dict, stops_list_of_dicts)
+
+    @staticmethod
+    def _python_nearest_neighbor(driver_start, stops):
+        """Nearest-neighbor TSP heuristic fallback when C++ DLL is unavailable."""
+        import math
+
+        def haversine(lat1, lon1, lat2, lon2):
+            R = 6371.0
+            phi1, phi2 = math.radians(lat1), math.radians(lat2)
+            dphi = math.radians(lat2 - lat1)
+            dlam = math.radians(lon2 - lon1)
+            a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2
+            return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        remaining = list(stops)
+        ordered = []
+        total_dist = 0.0
+        current = driver_start
+
+        while remaining:
+            nearest_idx = 0
+            nearest_dist = float('inf')
+            for i, s in enumerate(remaining):
+                d = haversine(float(current['lat']), float(current['lng']),
+                              float(s['lat']), float(s['lng']))
+                if d < nearest_dist:
+                    nearest_dist = d
+                    nearest_idx = i
+            chosen = remaining.pop(nearest_idx)
+            ordered.append(chosen['id'])
+            total_dist += nearest_dist
+            current = chosen
+
+        return {
+            'ordered_ids': ordered,
+            'total_distance_km': round(total_dist, 2),
+            'stop_count': len(ordered),
+            'engine': 'Python Nearest-Neighbor Solver'
+        }

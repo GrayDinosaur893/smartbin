@@ -8,22 +8,23 @@ class RewardService:
     POINT_TO_CASH_RATE = 0.01
 
     @classmethod
-    def award_points_and_cash(cls, user_id, points, transaction_type, description):
+    def award_points_and_cash(cls, user_id, points, transaction_type, description, bonus_cash=0.0):
         user = User.query.get(user_id)
         if not user:
             return False
 
         cash_earned = points * cls.POINT_TO_CASH_RATE  # 100 points = ₹1.00
+        total_cash = cash_earned + bonus_cash
 
         user.eco_points += points
-        user.cash_wallet_balance += cash_earned
+        user.cash_wallet_balance += total_cash
 
         ledger_entry = RewardsLedger(
             user_id=user_id,
             points_earned=points,
-            cash_earned=cash_earned,
+            cash_earned=total_cash,
             transaction_type=transaction_type,
-            description=f"{description} (+{points} Pts = ₹{cash_earned:.2f})"
+            description=f"{description} (+{points} Pts = ₹{total_cash:.2f})"
         )
         db.session.add(ledger_entry)
 

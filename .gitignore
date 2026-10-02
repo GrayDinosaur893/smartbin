@@ -36,3 +36,8 @@ cpp_engine/*.exe
 .idea/
 .DS_Store
 Thumbs.db
+gemini_proxy.py
+test_ml_model.py
+test_images_cache/
+synthetic
+

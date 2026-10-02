@@ -272,11 +272,11 @@ class AIService:
         # ── Tier 1: Try ML Model first ──
         ml_result = cls._analyze_with_ml_model(image_path)
         if ml_result is not None:
-            print(f"[AIService] ✅ ML Model result used: {ml_result.get('waste_category', 'N/A')}")
+            print(f"[AIService] ML Model result used: {ml_result.get('waste_category', 'N/A')}")
             return ml_result
 
         # ── Tier 2 & 3: Fall back to OpenCV / Pillow ──
-        print(f"[AIService] ⚠️ ML Model unavailable, using OpenCV/Pillow fallback.")
+        print("[AIService] ML Model unavailable, using OpenCV/Pillow fallback.")
         return cls._analyze_with_opencv(image_path)
 
     # ──────────────────────────────────────────────────────────────────────

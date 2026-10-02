@@ -4,9 +4,10 @@ from datetime import datetime
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app.database import db
-from app.models.models import User, Report, Dustbin, Task, CleaningProof, RewardsLedger
+from app.models.models import User, Report, Dustbin, Task, CleaningProof, RewardsLedger, MunicipalZone
 from app.services.ai_service import AIService
 from app.services.reward_service import RewardService
+from app.services.sms_service import SMSService
 
 citizen_bp = Blueprint('citizen', __name__)
 
@@ -83,16 +84,26 @@ def report_waste():
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
 
+        # Determine closest Municipal Zone based on GPS coordinates
+        closest_zone = "Durg"
+        min_dist = float('inf')
+        for zone in MunicipalZone.query.all():
+            dist = AIService.calculate_haversine_distance(lat_user, lng_user, zone.depot_lat, zone.depot_lng)
+            if dist < min_dist:
+                min_dist = dist
+                closest_zone = zone.city_name
+
         # Run AI Computer Vision Analysis Engine
         registered_dustbins = Dustbin.query.all()
         ai_res = AIService.analyze_waste_report(file_path, lat_user, lng_user, registered_dustbins)
 
         report_code = f"#SB{1000 + Report.query.count() + 1}"
-        
+
         # Save Report
         new_report = Report(
             report_code=report_code,
             citizen_id=user_id,
+            city_name=closest_zone,
             image_path=f"uploads/{filename}",
             gps_lat_detected=lat_detected,
             gps_lng_detected=lng_detected,
@@ -113,10 +124,20 @@ def report_waste():
             RewardService.award_points_and_cash(
                 user_id=user_id,
                 points=50,
-                cash=15.0,
+                bonus_cash=15.0,
                 transaction_type="report_verified",
                 description=f"Verified waste report {report_code}"
             )
+
+        # Trigger SMS notification to admin and citizen
+        user = User.query.get(user_id)
+        SMSService.send_report_confirmation_sms(
+            report_code=new_report.report_code,
+            city_name=new_report.city_name,
+            waste_type=new_report.waste_type,
+            eco_points=50,
+            user_phone=user.phone if user else None
+        )
 
         # Render interactive AI analysis result screen
         return render_template(
@@ -151,7 +172,7 @@ def approve_cleaning(proof_id):
     RewardService.award_points_and_cash(
         user_id=user_id,
         points=20,
-        cash=5.0,
+        bonus_cash=5.0,
         transaction_type="verification_bonus",
         description=f"Cleaned site verification bonus for {report.report_code}"
     )

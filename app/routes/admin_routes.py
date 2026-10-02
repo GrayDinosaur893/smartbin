@@ -3,7 +3,7 @@ import io
 from datetime import datetime
 from flask import Blueprint, request, render_template, redirect, url_for, session, make_response, jsonify
 from app.database import db
-from app.models.models import User, Report, Dustbin, Task, DriverProfile, Attendance, CleaningProof, RewardsLedger
+from app.models.models import User, MunicipalZone, Report, Dustbin, Task, DriverProfile, Attendance, CleaningProof, RewardsLedger
 from app.services.vrp_service import VRPService
 
 admin_bp = Blueprint('admin', __name__)
@@ -62,11 +62,21 @@ def optimize_routes():
     if not driver_user_id:
         return redirect(url_for('admin.dashboard'))
 
-    # Driver depot / start location (Durg Depot)
-    driver_start = {'id': 0, 'lat': 21.1904, 'lng': 81.2849, 'urgency': 1}
+    # Look up driver and scope to their Municipal Corporation Zone
+    driver = User.query.get(driver_user_id)
+    if not driver:
+        return redirect(url_for('admin.dashboard'))
 
-    # Fetch verified reports needing collection
-    unassigned_reports = Report.query.filter(Report.status.in_(['verified', 'uncertain'])).all()
+    driver_city = driver.city_zone or 'Durg'
+    city_zone = MunicipalZone.query.filter_by(city_name=driver_city).first()
+    depot_lat = city_zone.depot_lat if city_zone else 21.1904
+    depot_lng = city_zone.depot_lng if city_zone else 81.2849
+
+    # Driver depot / start location (city-specific)
+    driver_start = {'id': 0, 'lat': depot_lat, 'lng': depot_lng, 'urgency': 1}
+
+    # Fetch verified reports strictly matching the Driver's City Municipal Zone
+    unassigned_reports = Report.query.filter_by(city_name=driver_city).filter(Report.status.in_(['verified', 'uncertain'])).all()
     if not unassigned_reports:
         return redirect(url_for('admin.dashboard'))
 
@@ -93,12 +103,14 @@ def optimize_routes():
                 task_code=task_code,
                 report_id=report_id,
                 driver_id=driver_user_id,
+                city_name=driver_city,
                 route_sequence_index=seq_index + 1,
                 status='assigned'
             )
             db.session.add(new_task)
         else:
             existing_task.driver_id = driver_user_id
+            existing_task.city_name = driver_city
             existing_task.route_sequence_index = seq_index + 1
             existing_task.status = 'assigned'
 
