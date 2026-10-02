@@ -45,21 +45,9 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
     db.init_app(app)
 
-    with app.app_context():
-        try:
-            db.create_all()
-        except Exception as e:
-            print(f"[Database Init Notice] {e}")
-
     # Register REST API Blueprint
-    from app.routes.api_routes import api_bp, ensure_database_seeded
+    from app.routes.api_routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
-
-    with app.app_context():
-        try:
-            ensure_database_seeded()
-        except Exception as e:
-            print(f"[Auto-seed Notice] {e}")
 
     @app.after_request
     def add_cache_headers(response):
