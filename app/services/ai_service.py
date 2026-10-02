@@ -274,28 +274,173 @@ class AIService:
             return {"waste_detected": False, "confidence": 20.0, "reason": f"Analysis error: {str(e)}"}
 
     # ──────────────────────────────────────────────────────────────────────
-    # MAIN ENTRY: analyze_image_with_vision_ai (3-tier cascade)
+    # TIER 1: Online Vision LLM (Groq Llama-3.2 Vision / Gemini 1.5 Flash)
+    # ──────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def _analyze_with_vision_llm(cls, image_path):
+        """
+        Analyzes real-life waste images using Vision LLM (Groq Llama-3.2 Vision or Gemini 1.5 Flash Vision).
+        Returns parsed JSON dict or None on failure/fallback.
+        """
+        import base64
+        import json
+        import urllib.request
+        import urllib.error
+
+        if not os.path.exists(image_path):
+            return None
+
+        try:
+            with open(image_path, "rb") as f:
+                img_bytes = f.read()
+                b64_image = base64.b64encode(img_bytes).decode('utf-8')
+                
+            mime_type = "image/jpeg"
+            if image_path.lower().endswith(".png"):
+                mime_type = "image/png"
+            elif image_path.lower().endswith(".webp"):
+                mime_type = "image/webp"
+
+            prompt_text = (
+                "You are an AI Waste Classifier for Smart Cities (Swachh Bharat Mission). "
+                "Analyze this image and identify if it contains waste/garbage/litter. "
+                "Return ONLY a valid JSON object (no markdown, no backticks) with these exact keys:\n"
+                "{\n"
+                '  "waste_detected": true,\n'
+                '  "waste_category": "Plastic" | "Organic" | "Paper" | "Glass" | "Metal" | "Electronic" | "Medical" | "Mixed" | "Non-Waste",\n'
+                '  "confidence": 92,\n'
+                '  "overflow_detected": false,\n'
+                '  "is_illegal_dumping": false,\n'
+                '  "recommended_bin": "Blue Bin (Dry Recyclables)",\n'
+                '  "disposal_tip": "Dispose in blue dry-waste bin to enable plastic recycling.",\n'
+                '  "severity": "medium",\n'
+                '  "reason": "Clear plastic bottle detected"\n'
+                "}"
+            )
+
+            # 1. Groq Llama-3.2 Vision API
+            groq_key = os.environ.get("GROQ_API_KEY")
+            if groq_key:
+                try:
+                    url = "https://api.groq.com/openai/v1/chat/completions"
+                    payload = {
+                        "model": "llama-3.2-11b-vision-preview",
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": prompt_text},
+                                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_image}"}}
+                                ]
+                            }
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 300,
+                        "response_format": {"type": "json_object"}
+                    }
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={
+                            "Authorization": f"Bearer {groq_key}",
+                            "Content-Type": "application/json"
+                        }
+                    )
+                    with urllib.request.urlopen(req, timeout=8) as resp:
+                        res_data = json.loads(resp.read().decode('utf-8'))
+                        content = res_data['choices'][0]['message']['content']
+                        parsed = json.loads(content)
+                        parsed['engine'] = 'Groq Llama-3.2 Vision'
+                        print(f"[AIService] Groq Vision result: {parsed.get('waste_category')}")
+                        return parsed
+                except Exception as groq_err:
+                    print(f"[AIService] Groq Vision Notice: {groq_err}")
+
+            # 2. Google Gemini Vision API
+            gemini_key = os.environ.get("GEMINI_API_KEY")
+            if gemini_key:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                    payload = {
+                        "contents": [
+                            {
+                                "parts": [
+                                    {"text": prompt_text},
+                                    {
+                                        "inline_data": {
+                                            "mime_type": mime_type,
+                                            "data": b64_image
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.1,
+                            "response_mime_type": "application/json"
+                        }
+                    }
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={"Content-Type": "application/json"}
+                    )
+                    with urllib.request.urlopen(req, timeout=8) as resp:
+                        res_data = json.loads(resp.read().decode('utf-8'))
+                        text = res_data['candidates'][0]['content']['parts'][0]['text']
+                        clean_text = text.replace("```json", "").replace("```", "").strip()
+                        parsed = json.loads(clean_text)
+                        parsed['engine'] = 'Gemini 1.5 Flash Vision'
+                        print(f"[AIService] Gemini Vision result: {parsed.get('waste_category')}")
+                        return parsed
+                except Exception as gem_err:
+                    print(f"[AIService] Gemini Vision Notice: {gem_err}")
+
+        except Exception as e:
+            print(f"[AIService] Vision LLM error: {e}")
+
+        return None
+
+    # ──────────────────────────────────────────────────────────────────────
+    # MAIN ENTRY: analyze_image_with_vision_ai (4-tier cascade)
     # ──────────────────────────────────────────────────────────────────────
 
     @classmethod
     def analyze_image_with_vision_ai(cls, image_path):
         """
-        3-Tier Cascade AI Analysis:
-        1. HuggingFace SigLIP2 ML Model (most accurate)
-        2. OpenCV heuristics (fallback)
-        3. Pillow std-dev (serverless fallback)
+        4-Tier Cascade AI Analysis:
+        1. Online Vision LLM (Groq Llama-3.2 Vision / Gemini 1.5 Flash)
+        2. HuggingFace SigLIP2 ML Model
+        3. OpenCV heuristics (fallback)
+        4. Pillow std-dev (serverless fallback)
         """
         if not os.path.exists(image_path):
             return {"waste_detected": True, "confidence": 92.0, "reason": "Standard report verification"}
 
-        # ── Tier 1: Try ML Model first ──
+        # ── Tier 1: Try Online Vision LLM first ──
+        llm_result = cls._analyze_with_vision_llm(image_path)
+        if llm_result is not None:
+            return {
+                "waste_detected": llm_result.get("waste_detected", True),
+                "overflow_detected": llm_result.get("overflow_detected", False),
+                "confidence": float(llm_result.get("confidence", 94.0)),
+                "waste_category": llm_result.get("waste_category", "Plastic"),
+                "recommended_bin": llm_result.get("recommended_bin", "Blue Bin (Dry Recyclables)"),
+                "disposal_tip": llm_result.get("disposal_tip", "Please segregate into proper dustbin."),
+                "severity": llm_result.get("severity", "medium"),
+                "reason": llm_result.get("reason", "Analyzed via Vision LLM"),
+                "engine": llm_result.get("engine", "Vision LLM")
+            }
+
+        # ── Tier 2: Try HuggingFace ML Model ──
         ml_result = cls._analyze_with_ml_model(image_path)
         if ml_result is not None:
             print(f"[AIService] ML Model result used: {ml_result.get('waste_category', 'N/A')}")
             return ml_result
 
-        # ── Tier 2 & 3: Fall back to OpenCV / Pillow ──
-        print("[AIService] ML Model unavailable, using OpenCV/Pillow fallback.")
+        # ── Tier 3 & 4: Fall back to OpenCV / Pillow ──
+        print("[AIService] Using OpenCV/Pillow fallback.")
         return cls._analyze_with_opencv(image_path)
 
     # ──────────────────────────────────────────────────────────────────────
