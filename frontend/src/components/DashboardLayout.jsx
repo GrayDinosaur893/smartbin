@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Trash2, Camera, BarChart2, Map, Bell, Users, Settings, LogOut, Search } from 'lucide-react';
+import { LayoutDashboard, Trash2, Camera, BarChart2, Map, Bell, Users, Settings, LogOut, Search, Gift } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -10,6 +10,7 @@ const Sidebar = () => {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Bins', path: '/dashboard/bin/102', icon: Trash2 },
     { name: 'Report', path: '/dashboard/report', icon: Camera },
+    { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
     { name: 'Map', path: '/dashboard/map', icon: Map },
     { name: 'AI', path: '/dashboard/ai', icon: Camera },
@@ -72,7 +73,7 @@ const MobileBottomNav = () => {
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Map', path: '/dashboard/map', icon: Map },
     { name: 'Report', path: '/dashboard/report', icon: Camera },
-    { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
+    { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },
     { name: 'Profile', path: '/dashboard/profile', icon: Users },
   ];
 
@@ -128,6 +129,7 @@ const MobileTopbar = () => {
     '/dashboard': 'Dashboard',
     '/dashboard/map': 'Live Map',
     '/dashboard/report': 'Report Waste',
+    '/dashboard/rewards': 'Rewards & Vouchers',
     '/dashboard/analytics': 'Analytics',
     '/dashboard/profile': 'Profile',
     '/dashboard/ai': 'AI Classification',

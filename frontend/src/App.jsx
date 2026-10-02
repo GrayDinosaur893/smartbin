@@ -14,8 +14,17 @@ import AIClassificationPage from './pages/AIClassificationPage';
 import BinDetailsPage from './pages/BinDetailsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ProfilePage from './pages/ProfilePage';
+import Sponsors from './pages/Sponsors';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = React.useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
   return (
     <Router>
       <Routes>
@@ -27,6 +36,7 @@ export default function App() {
           <Route index element={<DashboardMainPage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="report" element={<ReportWastePage />} />
+          <Route path="rewards" element={<Sponsors user={currentUser} lang="en" />} />
           <Route path="ai" element={<AIClassificationPage />} />
           <Route path="bin/:id" element={<BinDetailsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />

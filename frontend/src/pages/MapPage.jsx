@@ -96,17 +96,22 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all' | 'warning' | 'critical' | 'normal'
   
+  // Live GPS Acquisition States
+  const [locationAcquired, setLocationAcquired] = useState(false);
+  const [locating, setLocating] = useState(true);
+  const [locatingError, setLocatingError] = useState(null);
+
   // User Location (Default: Gwalior City Centre / Civil Lines)
   const [userLoc, setUserLoc] = useState({ lat: 26.2183, lng: 78.1828 });
   const [mapCenter, setMapCenter] = useState([26.2183, 78.1828]);
-  const [mapZoom, setMapZoom] = useState(14);
+  const [mapZoom, setMapZoom] = useState(15);
   
   // Data States
   const [bins, setBins] = useState([]);
   const [offices, setOffices] = useState([]);
   const [helpdesks, setHelpdesks] = useState([]);
   const [trucks, setTrucks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   
   // Navigation State (Zomato-style active route)
   const [selectedTarget, setSelectedTarget] = useState(null);
@@ -120,10 +125,48 @@ export default function MapPage() {
   const [grievanceText, setGrievanceText] = useState('');
   const [grievanceCategory, setGrievanceCategory] = useState('Dustbin Overflow');
 
-  // Fetch explore map data from Python backend
+  // Request Live GPS on component mount
   useEffect(() => {
-    fetchMapData();
+    requestLiveGPS();
   }, []);
+
+  const requestLiveGPS = () => {
+    setLocating(true);
+    setLocatingError(null);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLoc(newLoc);
+          setMapCenter([newLoc.lat, newLoc.lng]);
+          setMapZoom(15);
+          setLocationAcquired(true);
+          setLocating(false);
+          fetchMapData(newLoc.lat, newLoc.lng);
+        },
+        (err) => {
+          console.warn('Live GPS prompt rejected or timed out:', err);
+          setLocating(false);
+          setLocatingError('Please allow GPS/Location permission in your browser to load your live surroundings.');
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    } else {
+      setLocating(false);
+      setLocatingError('Geolocation is not supported by your current browser.');
+    }
+  };
+
+  const handleUseFallbackLocation = () => {
+    const defaultLoc = { lat: 26.2183, lng: 78.1828 };
+    setUserLoc(defaultLoc);
+    setMapCenter([defaultLoc.lat, defaultLoc.lng]);
+    setMapZoom(15);
+    setLocationAcquired(true);
+    setLocating(false);
+    fetchMapData(defaultLoc.lat, defaultLoc.lng);
+  };
 
   const fetchMapData = async (lat = userLoc.lat, lng = userLoc.lng) => {
     setLoading(true);
@@ -142,7 +185,7 @@ export default function MapPage() {
       }
     } catch (err) {
       console.warn('Using local fallback data for Map:', err);
-      // Fallback curated bins for Gwalior
+      // Fallback curated bins
       setBins([
         { id: '101', bin_code: 'SB-GWL-101', location_name: 'Lashkar Market', lat: 26.2045, lng: 78.1590, fill_level: 30, status: 'normal', distance_text: '1.2 km', walk_time_minutes: 15, capacity_liters: 240, waste_types: ['Organic', 'Dry'] },
         { id: '102', bin_code: 'SB-GWL-102', location_name: 'Civil Lines', lat: 26.2183, lng: 78.1828, fill_level: 78, status: 'warning', distance_text: '350 m', walk_time_minutes: 4, capacity_liters: 360, waste_types: ['Plastic', 'Cardboard'] },
@@ -166,22 +209,7 @@ export default function MapPage() {
 
   // GPS Locate User Button
   const handleLocateMe = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserLoc(newLoc);
-          setMapCenter([newLoc.lat, newLoc.lng]);
-          setMapZoom(15);
-          fetchMapData(newLoc.lat, newLoc.lng);
-        },
-        (err) => {
-          console.warn('Geolocation denied, using default city center:', err);
-          setMapCenter([26.2183, 78.1828]);
-          setMapZoom(14);
-        }
-      );
-    }
+    requestLiveGPS();
   };
 
   // Start Navigation to selected Target (Bin or Office)
@@ -279,6 +307,56 @@ export default function MapPage() {
     off.zone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     off.address?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (!locationAcquired) {
+    return (
+      <div className="min-h-[480px] lg:h-[calc(100vh-7.5rem)] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl max-w-md w-full p-8 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+          
+          {/* Radar Animation */}
+          <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping"></div>
+            <div className="absolute inset-2 rounded-full bg-emerald-500/30 animate-pulse"></div>
+            <div className="w-16 h-16 rounded-full bg-[#105a39] text-white flex items-center justify-center shadow-lg relative z-10">
+              <Navigation size={28} className={locating ? "animate-spin" : ""} />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {locating ? 'Detecting Live GPS Location...' : 'GPS Location Required'}
+            </h2>
+            <p className="text-slate-500 text-sm mt-2 leading-relaxed">
+              {locatingError || 'SmartBin requires your real-time GPS location to calculate walking routes and display nearest smart bins around you.'}
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={requestLiveGPS}
+              disabled={locating}
+              className="w-full bg-[#105a39] hover:bg-[#0b452a] text-white py-3.5 px-6 rounded-xl font-bold text-sm shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-60 cursor-pointer"
+            >
+              <Navigation size={18} />
+              <span>{locating ? 'Acquiring GPS Coordinates...' : 'Allow GPS & Load Map'}</span>
+            </button>
+
+            <button
+              onClick={handleUseFallbackLocation}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 px-6 rounded-xl font-bold text-xs transition cursor-pointer"
+            >
+              Continue with City Center (Test Coordinates)
+            </button>
+          </div>
+
+          <div className="text-[11px] text-slate-400 font-medium flex items-center justify-center gap-1.5 pt-2 border-t border-slate-100">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Live GPS Geolocation • High Accuracy</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-auto lg:h-[calc(100vh-7.5rem)] flex flex-col lg:flex-row gap-5 relative">
