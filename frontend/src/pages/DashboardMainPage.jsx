@@ -1,48 +1,79 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, Wifi, Truck, CheckCircle2, MapPin, Camera, BarChart2, MessageSquare, ArrowRight, Star, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function DashboardMainPage() {
+  const [userName, setUserName] = useState('Divyansh');
+  const [userPoints, setUserPoints] = useState(250);
+  const [reportsCount, setReportsCount] = useState(12);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name) setUserName(u.name.split(' ')[0]);
+        if (u.eco_points !== undefined) setUserPoints(u.eco_points);
+        if (u.id) {
+          fetch(`/api/citizen/dashboard/${u.id}`)
+            .then(r => r.json())
+            .then(d => {
+              if (d.user && d.user.eco_points !== undefined) setUserPoints(d.user.eco_points);
+              if (d.reports) setReportsCount(d.reports.length);
+            })
+            .catch(() => {});
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const getGreeting = () => {
+    const hr = new Date().getHours();
+    if (hr < 12) return 'Good Morning';
+    if (hr < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            Good Afternoon, Aishwarya! <span className="text-2xl">👋</span>
+            {getGreeting()}, {userName}! <span className="text-2xl">👋</span>
           </h1>
-          <p className="text-slate-500 mt-1">Let's keep our city clean together.</p>
+          <p className="text-slate-500 mt-1 text-sm">Let's keep our city clean together.</p>
         </div>
         
         {/* Contribution Badge */}
-        <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 min-w-[200px]">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Contribution</span>
-          <div className="flex items-center justify-between">
+        <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1.5 self-start sm:self-auto min-w-[180px]">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Your Contribution</span>
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                <FileText size={16} />
+              <div className="w-7 h-7 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
+                <FileText size={14} />
               </div>
               <div>
-                <p className="text-lg font-bold text-slate-800 leading-tight">12</p>
-                <p className="text-[10px] text-slate-500 font-medium">Reports</p>
+                <p className="text-base font-bold text-slate-800 leading-tight">{reportsCount}</p>
+                <p className="text-[9px] text-slate-500 font-medium">Reports</p>
               </div>
             </div>
-            <div className="w-px h-8 bg-slate-200"></div>
+            <div className="w-px h-6 bg-slate-200"></div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center">
-                <Star size={16} fill="currentColor" />
+              <div className="w-7 h-7 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center shrink-0">
+                <Star size={14} fill="currentColor" />
               </div>
               <div>
-                <p className="text-lg font-bold text-slate-800 leading-tight">120</p>
-                <p className="text-[10px] text-slate-500 font-medium">Points</p>
+                <p className="text-base font-bold text-slate-800 leading-tight">{userPoints}</p>
+                <p className="text-[9px] text-slate-500 font-medium">Points</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid - 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-4">
             <div>

@@ -142,11 +142,54 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 relative">
-        <div className="w-full max-w-md space-y-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 lg:p-20 relative">
+        <div className="w-full max-w-md space-y-6">
           <div>
             <h2 className="text-3xl font-bold text-slate-800">Login</h2>
             <p className="text-slate-500 text-sm mt-1">Enter your credentials to access SmartBin</p>
+          </div>
+
+          {/* Quick Demo Role Selector (Visible on all mobile & desktop screens) */}
+          <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5">
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">⚡ 1-Click Role Login</span>
+              <span className="text-[10px] text-emerald-600 font-medium">Auto-fills demo user</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleQuickDemo('citizen@smartbin.gov.in', 'citizen123')}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer active:scale-95 ${
+                  email.includes('citizen') 
+                    ? 'bg-[#105a39] text-white border-[#105a39] shadow-sm' 
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                👤 Citizen
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemo('driver@smartbin.gov.in', 'driver123')}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer active:scale-95 ${
+                  email.includes('driver') 
+                    ? 'bg-[#105a39] text-white border-[#105a39] shadow-sm' 
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                🚛 Driver
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemo('admin@smartbin.gov.in', 'admin123')}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer active:scale-95 ${
+                  email.includes('admin') 
+                    ? 'bg-[#105a39] text-white border-[#105a39] shadow-sm' 
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                🛡️ Admin
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -156,7 +199,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 

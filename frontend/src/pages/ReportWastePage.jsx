@@ -12,21 +12,21 @@ export default function ReportWastePage() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row">
         
         {/* Left Side - Image Upload */}
-        <div className="w-full md:w-5/12 p-8 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-center bg-slate-50/50">
-          <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center text-center h-full min-h-[300px] hover:bg-slate-50 hover:border-emerald-500 transition-colors cursor-pointer group">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
-              <Camera size={32} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
+        <div className="w-full md:w-5/12 p-4 sm:p-8 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-center bg-slate-50/50">
+          <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center h-full min-h-[220px] sm:min-h-[300px] hover:bg-slate-50 hover:border-emerald-500 transition-colors cursor-pointer group">
+            <div className="w-14 sm:w-16 h-14 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-emerald-100 transition-colors">
+              <Camera size={28} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
             </div>
-            <p className="font-medium text-slate-700 mb-1">Upload a photo</p>
-            <p className="text-sm text-slate-500 mb-6">or drag and drop<br/>(JPG, PNG, up to 5MB)</p>
-            <button type="button" className="bg-[#105a39] hover:bg-[#0b452a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+            <p className="font-medium text-slate-700 mb-1 text-sm sm:text-base">Upload a photo</p>
+            <p className="text-xs sm:text-sm text-slate-500 mb-4 sm:mb-6">or take with phone camera<br/>(JPG, PNG, up to 5MB)</p>
+            <button type="button" className="bg-[#105a39] hover:bg-[#0b452a] text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors shadow-sm text-xs sm:text-sm">
               Choose Image
             </button>
           </div>
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full md:w-7/12 p-8 flex flex-col justify-center">
+        <div className="w-full md:w-7/12 p-5 sm:p-8 flex flex-col justify-center">
           <form className="space-y-5">
             
             <div>
