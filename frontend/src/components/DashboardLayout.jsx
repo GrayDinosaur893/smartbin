@@ -19,6 +19,7 @@ const Sidebar = () => {
 
   const adminNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: '3D Living City', path: '/city', icon: Trash2 },
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
     { name: 'Live Map', path: '/dashboard/map', icon: Map },
     { name: 'AI Vision', path: '/dashboard/ai', icon: Camera },
@@ -28,6 +29,7 @@ const Sidebar = () => {
 
   const driverNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: '3D Living City', path: '/city', icon: Trash2 },
     { name: 'Live Map & Routes', path: '/dashboard/map', icon: Map },
     { name: 'AI Scanner', path: '/dashboard/ai', icon: Camera },
     { name: 'Profile', path: '/dashboard/profile', icon: Users },
@@ -35,6 +37,7 @@ const Sidebar = () => {
 
   const citizenNavItems = [
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
+    { name: '3D Living City', path: '/city', icon: Trash2 },
     { name: 'Live Map', path: '/dashboard/map', icon: Map },
     { name: 'Report Waste', path: '/dashboard/report', icon: Camera },
     { name: 'Rewards', path: '/dashboard/rewards', icon: Gift },

@@ -16,6 +16,8 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ProfilePage from './pages/ProfilePage';
 import Sponsors from './pages/Sponsors';
 
+import LivingCity3D from './components/LivingCity3D';
+
 export default function App() {
   const [currentUser, setCurrentUser] = React.useState(() => {
     try {
@@ -30,10 +32,12 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/city" element={<LivingCity3D onExit={() => window.location.href = '/'} />} />
         
         {/* Dashboard Routes with Layout */}
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMainPage />} />
+          <Route path="city" element={<LivingCity3D onExit={() => window.location.href = '/dashboard'} />} />
           <Route path="map" element={<MapPage />} />
           <Route path="report" element={<ReportWastePage />} />
           <Route path="rewards" element={<Sponsors user={currentUser} lang="en" />} />

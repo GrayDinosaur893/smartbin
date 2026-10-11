@@ -37,8 +37,13 @@ export default function LandingPage() {
           </span>
         </Link>
         
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+        <div className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
           <Link to="/" className="text-emerald-700 font-semibold border-b-2 border-emerald-700 pb-1">Home</Link>
+          <Link to="/city" className="text-slate-900 font-bold hover:text-emerald-700 transition-colors flex items-center gap-1.5">
+            <Truck size={16} className="text-emerald-700" />
+            <span>3D City Sim</span>
+            <span className="text-[9px] px-1 py-0.2 bg-emerald-100 text-emerald-800 font-extrabold rounded">3D</span>
+          </Link>
           <a href="#pipeline" className="hover:text-emerald-700 transition-colors">How It Works</a>
           <Link to="/dashboard/map" className="hover:text-emerald-700 transition-colors">Live Map</Link>
           <Link to="/dashboard/ai" className="hover:text-emerald-700 transition-colors">AI Scanner</Link>
@@ -102,8 +107,17 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center gap-3.5 mt-2 w-full sm:w-auto">
             <Link 
+              to="/city" 
+              className="w-full sm:w-auto bg-slate-900 hover:bg-black text-white px-7 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2.5 shadow-xl shadow-slate-900/20 transition-all hover:-translate-y-0.5 border border-slate-700"
+            >
+              <Truck size={19} className="text-[#e2fd00]" />
+              <span>Drive 3D Living City</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-[#e2fd00] text-black font-extrabold rounded ml-1">PLAY</span>
+            </Link>
+
+            <Link 
               to="/login" 
-              className="w-full sm:w-auto bg-[#105a39] hover:bg-[#0b452a] text-white px-7 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
+              className="w-full sm:w-auto bg-[#105a39] hover:bg-[#0b452a] text-white px-6 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
             >
               <span>Get Started</span>
               <ArrowRight size={18} />
@@ -111,7 +125,7 @@ export default function LandingPage() {
 
             <Link 
               to="/dashboard/ai" 
-              className="w-full sm:w-auto border border-slate-200 hover:border-emerald-700 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-800 px-6 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-xs"
+              className="w-full sm:w-auto border border-slate-200 hover:border-emerald-700 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-800 px-5 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-xs"
             >
               <Scan size={18} className="text-emerald-700" />
               <span>Test AI Scanner</span>
