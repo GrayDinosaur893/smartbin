@@ -1739,4 +1739,93 @@ def test_sms_api():
     })
 
 
+# --------------------------------------------------
+# 19. CITY SIMULATION PROGRESSION & LEVEL LEDGER
+# --------------------------------------------------
+@api_bp.route('/city/progress', methods=['GET', 'POST'])
+def city_progress():
+    try:
+        if request.method == 'GET':
+            user_id = request.args.get('user_id')
+            if not user_id:
+                return jsonify({'success': False, 'message': 'user_id required'}), 400
+            user = User.query.get(int(user_id))
+            if not user:
+                return jsonify({'success': False, 'message': 'User not found'}), 404
+
+            pts = user.eco_points or 0
+            # Level formula: Every 150 eco-points increases 1 level
+            level = max(1, (pts // 150) + 1)
+            xp_in_level = pts % 150
+
+            all_powers = [
+                {'level': 1, 'id': 'standard_compactor', 'name': 'Apprentice Driver', 'desc': 'Standard 0-30 KM/H cruise & smooth steering.'},
+                {'level': 2, 'id': 'turbo_suction', 'name': 'Turbo Suction (2x Fast)', 'desc': 'Empties dustbins in half the time!'},
+                {'level': 3, 'id': 'nitro_boost', 'name': 'Nitro Turbo Boost', 'desc': 'Hold SHIFT for safe acceleration up to 40 KM/H!'},
+                {'level': 4, 'id': 'magnetic_aura', 'name': 'Magnetic Waste Aura', 'desc': 'Automatic proximity garbage collection within 10m!'},
+                {'level': 5, 'id': 'golden_strobe', 'name': 'Master Eco-Governor', 'desc': 'Golden emergency strobe & 2x Eco-Points multiplier!'}
+            ]
+
+            return jsonify({
+                'success': True,
+                'user_id': user.id,
+                'user_name': user.name,
+                'level': level,
+                'eco_points': pts,
+                'xp_current': xp_in_level,
+                'xp_needed': 150,
+                'unlocked_powers': all_powers[:min(5, level)],
+                'next_power': all_powers[level] if level < 5 else None
+            }), 200
+
+        else:
+            data = request.get_json() or {}
+            user_id = data.get('user_id')
+            added_points = int(data.get('points_earned', 0))
+
+            if not user_id:
+                return jsonify({'success': False, 'message': 'user_id required'}), 400
+            user = User.query.get(int(user_id))
+            if not user:
+                return jsonify({'success': False, 'message': 'User not found'}), 404
+
+            if added_points > 0:
+                user.eco_points = (user.eco_points or 0) + added_points
+                db.session.commit()
+                log_user_activity(
+                    user_id=user.id,
+                    user_name=user.name,
+                    phone_or_email=user.phone or user.email,
+                    action_type='CITY_SIM_PROGRESS',
+                    description=f"Earned {added_points} Eco-Points in 3D City Simulation (Total: {user.eco_points})"
+                )
+
+            pts = user.eco_points or 0
+            new_level = max(1, (pts // 150) + 1)
+            xp_in_level = pts % 150
+
+            all_powers = [
+                {'level': 1, 'id': 'standard_compactor', 'name': 'Apprentice Driver', 'desc': 'Standard 0-30 KM/H cruise & smooth steering.'},
+                {'level': 2, 'id': 'turbo_suction', 'name': 'Turbo Suction (2x Fast)', 'desc': 'Empties dustbins in half the time!'},
+                {'level': 3, 'id': 'nitro_boost', 'name': 'Nitro Turbo Boost', 'desc': 'Hold SHIFT for safe acceleration up to 40 KM/H!'},
+                {'level': 4, 'id': 'magnetic_aura', 'name': 'Magnetic Waste Aura', 'desc': 'Automatic proximity garbage collection within 10m!'},
+                {'level': 5, 'id': 'golden_strobe', 'name': 'Master Eco-Governor', 'desc': 'Golden emergency strobe & 2x Eco-Points multiplier!'}
+            ]
+
+            return jsonify({
+                'success': True,
+                'user_id': user.id,
+                'eco_points': pts,
+                'level': new_level,
+                'xp_current': xp_in_level,
+                'xp_needed': 150,
+                'unlocked_powers': all_powers[:min(5, new_level)]
+            }), 200
+
+    except Exception as e:
+        print(f"[City Progress Exception] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
 

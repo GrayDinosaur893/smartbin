@@ -11,6 +11,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
+  const [loginMode, setLoginMode] = useState(() => {
+    return localStorage.getItem('smartbin_selected_mode') || 'normal';
+  });
+
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     if (!email || !password) {
@@ -20,6 +24,9 @@ export default function LoginPage() {
 
     setLoading(true);
     setError('');
+
+    // Save chosen mode
+    localStorage.setItem('smartbin_selected_mode', loginMode);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -32,7 +39,11 @@ export default function LoginPage() {
 
       if (data.success && data.user) {
         localStorage.setItem('smartbin_user', JSON.stringify(data.user));
-        navigate('/dashboard');
+        if (loginMode === 'game') {
+          navigate('/city');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(data.error || 'Invalid email or password. Please try again.');
       }
@@ -49,7 +60,11 @@ export default function LoginPage() {
         cash_wallet_balance: 2.50
       };
       localStorage.setItem('smartbin_user', JSON.stringify(fallbackUser));
-      navigate('/dashboard');
+      if (loginMode === 'game') {
+        navigate('/city');
+      } else {
+        navigate('/dashboard');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,10 +84,15 @@ export default function LoginPage() {
       cash_wallet_balance: 2.50,
       lang: 'en'
     };
+    localStorage.setItem('smartbin_selected_mode', loginMode);
     localStorage.setItem('smartbin_user', JSON.stringify(googleUser));
     setTimeout(() => {
       setLoading(false);
-      navigate('/dashboard');
+      if (loginMode === 'game') {
+        navigate('/city');
+      } else {
+        navigate('/dashboard');
+      }
     }, 300);
   };
 
@@ -147,6 +167,55 @@ export default function LoginPage() {
           <div>
             <h2 className="text-3xl font-bold text-slate-800">Login</h2>
             <p className="text-slate-500 text-sm mt-1">Enter your credentials to access SmartBin</p>
+          </div>
+
+          {/* ── SELECT LOGIN MODE UPFRONT (Normal App vs Game Mode) ── */}
+          <div className="bg-slate-900 text-white rounded-2xl p-3 sm:p-4 border border-slate-800 shadow-lg">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                🎮 CHOOSE ACCESS MODE (मोड चुनें)
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold">
+                {loginMode === 'game' ? 'For Gamers & Explorers' : 'Clean City Dashboard'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLoginMode('normal')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  loginMode === 'normal'
+                    ? 'bg-emerald-600/90 border-emerald-400 shadow-md ring-2 ring-emerald-500/40 text-white'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-black">🚗 Normal Mode</span>
+                  {loginMode === 'normal' && <span className="text-[9px] bg-white text-emerald-900 font-extrabold px-1.5 py-0.2 rounded-full">ACTIVE</span>}
+                </div>
+                <p className="text-[10px] opacity-80 leading-tight">
+                  Standard Citizen App, Analytics, Reports & Direct Dashboard.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLoginMode('game')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  loginMode === 'game'
+                    ? 'bg-amber-500 border-[#e2fd00] shadow-md ring-2 ring-amber-400/40 text-slate-950 font-bold'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-black">🎮 Game Mode</span>
+                  {loginMode === 'game' && <span className="text-[9px] bg-slate-950 text-[#e2fd00] font-extrabold px-1.5 py-0.2 rounded-full">ACTIVE</span>}
+                </div>
+                <p className={`text-[10px] leading-tight ${loginMode === 'game' ? 'text-slate-900 font-medium' : 'opacity-80'}`}>
+                  3D Living City, Truck Driving, Building Audits & Interactive Hubs.
+                </p>
+              </button>
+            </div>
           </div>
 
           {/* Quick Demo Role Selector (Visible on all mobile & desktop screens) */}

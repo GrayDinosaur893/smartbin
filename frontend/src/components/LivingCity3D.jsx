@@ -29,9 +29,14 @@ import {
   Trees,
   Flame,
   LogIn,
-  ShieldCheck,
   Gamepad2,
-  User
+  User,
+  ShoppingBag,
+  LogOut,
+  Zap,
+  BarChart2,
+  Check,
+  Smartphone
 } from 'lucide-react';
 
 /**
@@ -346,16 +351,50 @@ export default function LivingCity3D({ onExit }) {
   const [showHelp, setShowHelp] = useState(false);
   
   // Game Mode vs Normal Mode State
-  const [gameMode, setGameMode] = useState('normal'); // 'normal' | 'game'
-  const gameModeRef = useRef('normal');
+  const [gameMode, setGameMode] = useState(() => {
+    return localStorage.getItem('smartbin_selected_mode') || 'normal';
+  });
+  const gameModeRef = useRef(gameMode);
   gameModeRef.current = gameMode;
 
+  // Launcher Mode Selection Modal (Shown upfront on load)
+  const [showLauncherModal, setShowLauncherModal] = useState(false);
+
+  // Citizen Level & Superpower System
+  const [citizenLevel, setCitizenLevel] = useState(1);
+  const citizenLevelRef = useRef(1);
+  citizenLevelRef.current = citizenLevel;
+
+  const [levelXP, setLevelXP] = useState(0);
+  const [unlockedPowers, setUnlockedPowers] = useState(['standard_compactor']);
+  const [nitroActive, setNitroActive] = useState(false);
+  const nitroActiveRef = useRef(false);
+  nitroActiveRef.current = nitroActive;
+  const [showLevelUpModal, setShowLevelUpModal] = useState(null);
+
+  // Eco-Truck Garage & Vector Shop System
+  const [showGarageShop, setShowGarageShop] = useState(false);
+  const [selectedTruckModel, setSelectedTruckModel] = useState(() => {
+    return localStorage.getItem('smartbin_active_truck') || 'swachh_bharat_standard';
+  });
+  const [ownedTrucks, setOwnedTrucks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartbin_owned_trucks') || '["swachh_bharat_standard"]');
+    } catch {
+      return ['swachh_bharat_standard'];
+    }
+  });
+
+  const [showBuildingPieceModal, setShowBuildingPieceModal] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeBuildingInfo, setActiveBuildingInfo] = useState(null);
   const activeBuildingRef = useRef(null);
 
   const [surveyedBuildings, setSurveyedBuildings] = useState([]);
   const surveyedBuildingsRef = useRef([]);
+
+  // Mobile On-Screen Virtual Controls State
+  const mobileKeysRef = useRef({ forward: false, backward: false, left: false, right: false, nitro: false });
 
   const getCitizenUser = () => {
     try {
@@ -365,7 +404,70 @@ export default function LivingCity3D({ onExit }) {
     return null;
   };
 
+  // Sync Progress with Database
+  const fetchCitizenProgress = async () => {
+    try {
+      const u = getCitizenUser();
+      if (!u || !u.id) return;
+      const res = await fetch(`/api/city/progress?user_id=${u.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setCitizenLevel(data.level || 1);
+        citizenLevelRef.current = data.level || 1;
+        setLevelXP(data.xp_current || 0);
+        setEcoPoints(data.eco_points || 250);
+        ecoPointsRef.current = data.eco_points || 250;
+        setUnlockedPowers((data.unlocked_powers || []).map((p) => p.id));
+      }
+    } catch (e) {
+      console.warn("Could not fetch citizen progress:", e);
+    }
+  };
+
+  const saveCitizenPoints = async (addedPoints) => {
+    try {
+      const u = getCitizenUser();
+      if (!u || !u.id) return;
+      const res = await fetch('/api/city/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: u.id, points_earned: addedPoints })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.level > citizenLevelRef.current) {
+          setCitizenLevel(data.level);
+          citizenLevelRef.current = data.level;
+          setShowLevelUpModal({
+            level: data.level,
+            powers: data.unlocked_powers
+          });
+          playSound('level_up');
+        }
+        setLevelXP(data.xp_current || 0);
+      }
+    } catch (e) {
+      console.warn("Could not save citizen progress:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchCitizenProgress();
+  }, []);
+
+  // When switching away from Game Mode: IMMEDIATELY SIGN OUT!
   const handleToggleGameMode = (targetMode) => {
+    if (targetMode === 'normal') {
+      // User is exiting game mode -> immediately sign out to protect session
+      localStorage.removeItem('smartbin_user');
+      localStorage.setItem('smartbin_selected_mode', 'normal');
+      setNotification("🔒 Logged out of Game Mode session. Redirecting to login page...");
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 400);
+      return;
+    }
+
     if (targetMode === 'game') {
       const u = getCitizenUser();
       if (!u) {
@@ -373,13 +475,17 @@ export default function LivingCity3D({ onExit }) {
         return;
       }
       setGameMode('game');
-      setNotification("🎮 Game Mode: Drive near any building or component to inspect its waste profile & earn bonus Eco-Points!");
-    } else {
-      setGameMode('normal');
-      setActiveBuildingInfo(null);
-      activeBuildingRef.current = null;
-      setNotification("🚗 Normal Mode: Free-roam driving without building inspections.");
+      localStorage.setItem('smartbin_selected_mode', 'game');
+      setNotification("🎮 Game Mode: Drive near any building & click to open its interactive app component!");
+      fetchCitizenProgress();
     }
+  };
+
+  // Immediate Sign-Out handler
+  const handleSignOutImmediate = () => {
+    localStorage.removeItem('smartbin_user');
+    localStorage.removeItem('smartbin_selected_mode');
+    window.location.href = '/login';
   };
 
   // Game Logic: Collisions, Lives, and Mission Completion
@@ -445,7 +551,49 @@ export default function LivingCity3D({ onExit }) {
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      if (type === 'suction') {
+      if (type === 'horn') {
+        // Dual-Tone Heavy Pneumatic Truck Air Horn (310Hz + 465Hz)
+        [310, 465].forEach((freq) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'sawtooth';
+          o.frequency.setValueAtTime(freq, now);
+          o.frequency.linearRampToValueAtTime(freq * 0.98, now + 0.38);
+          g.gain.setValueAtTime(0.22, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start(now);
+          o.stop(now + 0.45);
+        });
+      } else if (type === 'nitro') {
+        // High-pressure turbo nitrous thrust
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(220, now);
+        o.frequency.exponentialRampToValueAtTime(660, now + 0.45);
+        g.gain.setValueAtTime(0.28, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(now);
+        o.stop(now + 0.55);
+      } else if (type === 'level_up') {
+        // Triumphant 4-tone ascending fanfare (C5 - E5 - G5 - C6)
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(freq, now + idx * 0.08);
+          g.gain.setValueAtTime(0.2, now + idx * 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start(now + idx * 0.08);
+          o.stop(now + idx * 0.08 + 0.3);
+        });
+      } else if (type === 'suction') {
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(140, now);
         osc.frequency.linearRampToValueAtTime(320, now + 0.35);
@@ -477,13 +625,6 @@ export default function LivingCity3D({ onExit }) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
         osc.start(now);
         osc.stop(now + 0.48);
-      } else if (type === 'horn') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(311.13, now);
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
       }
     } catch {}
   };
@@ -852,45 +993,54 @@ export default function LivingCity3D({ onExit }) {
     scene.add(dumpyardGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 6. CITY BLOCKS: PARKS / BOTANICAL GARDENS, CAFES, HOUSES & TOWERS
+    // 6. CITY BLOCKS: REALISTIC ARCHITECTURE, GARDEN SWINGS & FOOTPATHS
     // ─────────────────────────────────────────────────────────────
     const cityGroup = new THREE.Group();
     const smartBins = [];
+    const animatedSwings = [];
     let blockIndex = 0;
 
     blockCenters.forEach((bx) => {
       blockCenters.forEach((bz) => {
         blockIndex++;
 
-        // Plot Base Sidewalk
+        // Plot Base Sidewalk & Textured Elevated Footpath Curb
         const platform = new THREE.Mesh(
-          new THREE.BoxGeometry(blockSize, 0.4, blockSize),
-          new THREE.MeshLambertMaterial({ color: 0xcfd8dc })
+          new THREE.BoxGeometry(blockSize + 1.2, 0.45, blockSize + 1.2),
+          new THREE.MeshLambertMaterial({ color: 0xcfd8dc }) // Concrete Sidewalk Pavement
         );
-        platform.position.set(bx, 0.2, bz);
+        platform.position.set(bx, 0.22, bz);
         platform.receiveShadow = true;
         cityGroup.add(platform);
+
+        // White Curb Trims around edge
+        const curbEdge = new THREE.Mesh(
+          new THREE.BoxGeometry(blockSize + 1.4, 0.12, blockSize + 1.4),
+          new THREE.MeshLambertMaterial({ color: 0xf8fafc })
+        );
+        curbEdge.position.set(bx, 0.42, bz);
+        cityGroup.add(curbEdge);
 
         const isGarden = (blockIndex === 6 || blockIndex === 11);
         const isCafe = (blockIndex === 1 || blockIndex === 7 || blockIndex === 14);
         const isHouse = (blockIndex === 3 || blockIndex === 8 || blockIndex === 13);
 
         if (isGarden) {
-          // Public Botanical Garden & Park
+          // Public Botanical Garden Lawn
           const lawn = new THREE.Mesh(
-            new THREE.BoxGeometry(blockSize - 2, 0.35, blockSize - 2),
+            new THREE.BoxGeometry(blockSize - 2, 0.38, blockSize - 2),
             new THREE.MeshLambertMaterial({ color: 0x16a34a })
           );
-          lawn.position.set(bx, 0.38, bz);
+          lawn.position.set(bx, 0.42, bz);
           lawn.receiveShadow = true;
           cityGroup.add(lawn);
 
-          // Fountain
+          // Central Illuminated Fountain
           const fPool = new THREE.Mesh(
             new THREE.CylinderGeometry(4.2, 4.2, 0.7, 24),
             new THREE.MeshLambertMaterial({ color: 0x94a3b8 })
           );
-          fPool.position.set(bx, 0.7, bz);
+          fPool.position.set(bx, 0.75, bz);
           fPool.castShadow = true;
           cityGroup.add(fPool);
 
@@ -898,12 +1048,59 @@ export default function LivingCity3D({ onExit }) {
             new THREE.CylinderGeometry(3.6, 3.6, 0.1, 24),
             new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
           );
-          fWater.position.set(bx, 1.05, bz);
+          fWater.position.set(bx, 1.1, bz);
           cityGroup.add(fWater);
 
-          // Trees
+          // ── 3D GARDEN SWINGS SET (JHULA) ──
+          const jhulaGroup = new THREE.Group();
+          const poleMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+          const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 4.2, 8);
+          // Left A-frame
+          const l1 = new THREE.Mesh(legGeo, poleMat); l1.rotation.z = 0.26; l1.position.set(-1.8, 2.1, 0.7); jhulaGroup.add(l1);
+          const l2 = new THREE.Mesh(legGeo, poleMat); l2.rotation.z = 0.26; l2.position.set(-1.8, 2.1, -0.7); jhulaGroup.add(l2);
+          // Right A-frame
+          const r1 = new THREE.Mesh(legGeo, poleMat); r1.rotation.z = -0.26; r1.position.set(1.8, 2.1, 0.7); jhulaGroup.add(r1);
+          const r2 = new THREE.Mesh(legGeo, poleMat); r2.rotation.z = -0.26; r2.position.set(1.8, 2.1, -0.7); jhulaGroup.add(r2);
+          // Crossbar
+          const crossBar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 4.4, 8), poleMat);
+          crossBar.rotation.z = Math.PI / 2;
+          crossBar.position.y = 4.0;
+          jhulaGroup.add(crossBar);
+
+          // 2 Hanging Swings
+          [-0.8, 0.8].forEach((sx, sIdx) => {
+            const swingPivot = new THREE.Group();
+            swingPivot.position.set(sx, 3.95, 0);
+
+            // Chains
+            const chainMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+            [-0.3, 0.3].forEach((cx) => {
+              const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.3, 6), chainMat);
+              chain.position.set(cx, -1.15, 0);
+              swingPivot.add(chain);
+            });
+
+            // Wooden Seat
+            const seat = new THREE.Mesh(
+              new THREE.BoxGeometry(0.85, 0.08, 0.4),
+              new THREE.MeshLambertMaterial({ color: 0xb45309 })
+            );
+            seat.position.y = -2.3;
+            swingPivot.add(seat);
+
+            jhulaGroup.add(swingPivot);
+            animatedSwings.push({ pivot: swingPivot, offset: sIdx * 1.5 });
+          });
+
+          jhulaGroup.position.set(bx + 8, 0.42, bz);
+          cityGroup.add(jhulaGroup);
+
+          // Garden Benches & Trees
           const treeOffsets = [
-            { x: -9, z: -9 }, { x: 9, z: -9 }, { x: -9, z: 9 }, { x: 9, z: 9 }
+            { x: -9, z: -9, type: 'neem' },
+            { x: 9, z: -9, type: 'gulmohar' },
+            { x: -9, z: 9, type: 'gulmohar' },
+            { x: 9, z: 9, type: 'neem' }
           ];
           treeOffsets.forEach((to) => {
             const trunk = new THREE.Mesh(
@@ -916,7 +1113,7 @@ export default function LivingCity3D({ onExit }) {
 
             const foliage = new THREE.Mesh(
               new THREE.SphereGeometry(2.2, 10, 10),
-              new THREE.MeshLambertMaterial({ color: 0x15803d })
+              new THREE.MeshLambertMaterial({ color: to.type === 'gulmohar' ? 0xf97316 : 0x15803d })
             );
             foliage.position.set(bx + to.x, 4.2, bz + to.z);
             foliage.castShadow = true;
@@ -924,46 +1121,126 @@ export default function LivingCity3D({ onExit }) {
           });
 
         } else if (isCafe) {
-          // Cafe
-          const cafeW = 20, cafeD = 18, cafeH = 7.5;
+          // ── REALISTIC CONTEMPORARY CAFE WITH AWNING & PATIO ──
+          const cafeW = 20, cafeD = 18, cafeH = 8.0;
           const cafeBody = new THREE.Mesh(
             new THREE.BoxGeometry(cafeW, cafeH, cafeD),
-            new THREE.MeshLambertMaterial({ color: 0x292524 })
+            new THREE.MeshLambertMaterial({ color: 0x27272a }) // Modern Charcoal Slate
           );
           cafeBody.position.set(bx, cafeH / 2 + 0.4, bz);
           cafeBody.castShadow = true;
           cityGroup.add(cafeBody);
 
+          // Warm Interior Lit Glass Window
           const glass = new THREE.Mesh(
-            new THREE.PlaneGeometry(cafeW * 0.85, 4.2),
-            new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.85 })
+            new THREE.PlaneGeometry(cafeW * 0.82, 4.4),
+            new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.9 })
           );
-          glass.position.set(bx, 2.8, bz + cafeD / 2 + 0.05);
+          glass.position.set(bx, 3.0, bz + cafeD / 2 + 0.05);
           cityGroup.add(glass);
 
+          // Striped Canvas Fabric Awning Canopy
+          const awning = new THREE.Mesh(
+            new THREE.BoxGeometry(cafeW * 0.86, 0.25, 3.2),
+            new THREE.MeshLambertMaterial({ color: 0xef4444 }) // Vibrant Cafe Canopy
+          );
+          awning.rotation.x = 0.25;
+          awning.position.set(bx, 5.5, bz + cafeD / 2 + 1.4);
+          cityGroup.add(awning);
+
+          // 3D Roof Signboard
+          const signBoard = new THREE.Mesh(
+            new THREE.BoxGeometry(9.5, 1.8, 0.4),
+            new THREE.MeshLambertMaterial({ color: 0x18181b })
+          );
+          signBoard.position.set(bx, cafeH + 1.4, bz + cafeD / 2 - 0.2);
+          cityGroup.add(signBoard);
+
+          const signText = new THREE.Mesh(
+            new THREE.BoxGeometry(8.0, 0.9, 0.45),
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 }) // Glowing yellow cafe badge
+          );
+          signText.position.set(bx, cafeH + 1.4, bz + cafeD / 2);
+          cityGroup.add(signText);
+
+          // Outdoor Patio Tables with Umbrellas
+          [-5.5, 5.5].forEach((tx) => {
+            const table = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.9, 0.9, 0.08, 16),
+              new THREE.MeshLambertMaterial({ color: 0xf8fafc })
+            );
+            table.position.set(bx + tx, 1.1, bz + cafeD / 2 + 4.2);
+            cityGroup.add(table);
+
+            const tLeg = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.08, 1.1, 8),
+              new THREE.MeshLambertMaterial({ color: 0x334155 })
+            );
+            tLeg.position.set(bx + tx, 0.55, bz + cafeD / 2 + 4.2);
+            cityGroup.add(tLeg);
+
+            const umbrella = new THREE.Mesh(
+              new THREE.ConeGeometry(1.9, 0.8, 16),
+              new THREE.MeshLambertMaterial({ color: 0x0284c7 })
+            );
+            umbrella.position.set(bx + tx, 3.1, bz + cafeD / 2 + 4.2);
+            cityGroup.add(umbrella);
+
+            const uPole = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.05, 0.05, 2.3, 8),
+              new THREE.MeshLambertMaterial({ color: 0x94a3b8 })
+            );
+            uPole.position.set(bx + tx, 1.9, bz + cafeD / 2 + 4.2);
+            cityGroup.add(uPole);
+          });
+
         } else if (isHouse) {
-          // Residential Gable House
-          const houseW = 18, houseD = 18, houseH = 8.0;
+          // ── REALISTIC 2-STORY RESIDENTIAL DUPLEX VILLA ──
+          const houseW = 18, houseD = 18, houseH = 8.5;
           const houseBody = new THREE.Mesh(
             new THREE.BoxGeometry(houseW, houseH, houseD),
-            new THREE.MeshLambertMaterial({ color: 0xfef3c7 })
+            new THREE.MeshLambertMaterial({ color: 0xfef3c7 }) // Indian Sandstone
           );
           houseBody.position.set(bx, houseH / 2 + 0.4, bz);
           houseBody.castShadow = true;
           cityGroup.add(houseBody);
 
+          // 2nd Floor Balcony with Metal Railing
+          const balconySlab = new THREE.Mesh(
+            new THREE.BoxGeometry(houseW * 0.72, 0.35, 2.6),
+            new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
+          );
+          balconySlab.position.set(bx, 4.8, bz + houseD / 2 + 1.1);
+          cityGroup.add(balconySlab);
+
+          const railing = new THREE.Mesh(
+            new THREE.BoxGeometry(houseW * 0.72, 0.95, 0.1),
+            new THREE.MeshLambertMaterial({ color: 0x1e293b })
+          );
+          railing.position.set(bx, 5.4, bz + houseD / 2 + 2.35);
+          cityGroup.add(railing);
+
+          // Terracotta Sloped Tiled Roof
           const roof = new THREE.Mesh(
-            new THREE.ConeGeometry(houseW * 0.75, 5.0, 4),
-            new THREE.MeshLambertMaterial({ color: 0xb45309 })
+            new THREE.ConeGeometry(houseW * 0.76, 5.0, 4),
+            new THREE.MeshLambertMaterial({ color: 0xb45309 }) // Terracotta Tile
           );
           roof.rotation.y = Math.PI / 4;
           roof.position.set(bx, houseH + 2.7, bz);
           roof.castShadow = true;
           cityGroup.add(roof);
 
+          // Black Sintex Rooftop Water Tank
+          const sintexTank = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.85, 0.85, 1.3, 16),
+            new THREE.MeshLambertMaterial({ color: 0x090d16 }) // Classic Black Sintex Tank
+          );
+          sintexTank.position.set(bx - 3.5, houseH + 4.6, bz - 3.5);
+          cityGroup.add(sintexTank);
+
         } else {
-          // Commercial Tower
-          const corpW = 22, corpD = 22, corpH = 22 + ((blockIndex * 5) % 18);
+          // ── MODERN CORPORATE SKYSCRAPER ──
+          const corpW = 22, corpD = 22, corpH = 24 + ((blockIndex * 6) % 18);
           const corpTower = new THREE.Mesh(
             new THREE.BoxGeometry(corpW, corpH, corpD),
             new THREE.MeshLambertMaterial({ color: 0x0f172a })
@@ -972,13 +1249,82 @@ export default function LivingCity3D({ onExit }) {
           corpTower.castShadow = true;
           cityGroup.add(corpTower);
 
+          // Reflective Cyan Glass Curtain Wall Panels
           const windowGlass = new THREE.Mesh(
-            new THREE.PlaneGeometry(corpW * 0.88, corpH * 0.82),
-            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 })
+            new THREE.PlaneGeometry(corpW * 0.88, corpH * 0.84),
+            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
           );
           windowGlass.position.set(bx, corpH / 2 + 0.4, bz + corpD / 2 + 0.05);
           cityGroup.add(windowGlass);
+
+          // Rooftop HVAC Mechanical Unit & Solar Panels
+          const hvac = new THREE.Mesh(
+            new THREE.BoxGeometry(6.5, 2.4, 5.5),
+            new THREE.MeshLambertMaterial({ color: 0x475569 })
+          );
+          hvac.position.set(bx - 4, corpH + 1.4, bz);
+          cityGroup.add(hvac);
+
+          const solarArray = new THREE.Mesh(
+            new THREE.BoxGeometry(7.5, 0.25, 6.5),
+            new THREE.MeshLambertMaterial({ color: 0x1d4ed8 })
+          );
+          solarArray.rotation.x = 0.2;
+          solarArray.position.set(bx + 4, corpH + 0.6, bz);
+          cityGroup.add(solarArray);
+
+          // Communications Antenna Spire with Aircraft Warning Beacon
+          const spire = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.2, 8.5, 8),
+            new THREE.MeshBasicMaterial({ color: 0xe2e8f0 })
+          );
+          spire.position.set(bx, corpH + 4.5, bz);
+          cityGroup.add(spire);
+
+          const beacon = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xef4444 })
+          );
+          beacon.position.set(bx, corpH + 8.8, bz);
+          cityGroup.add(beacon);
         }
+
+        // Buffer Trees in Empty Corners (Khali jagah m ped)
+        const cornerTrees = [
+          { x: -blockSize / 2 + 2.5, z: -blockSize / 2 + 2.5, type: 'neem' },
+          { x: blockSize / 2 - 2.5, z: -blockSize / 2 + 2.5, type: 'gulmohar' },
+          { x: -blockSize / 2 + 2.5, z: blockSize / 2 - 2.5, type: 'pine' }
+        ];
+        cornerTrees.forEach((ct) => {
+          const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.25, 0.35, 2.6, 8),
+            new THREE.MeshLambertMaterial({ color: 0x78350f })
+          );
+          trunk.position.set(bx + ct.x, 1.3, bz + ct.z);
+          cityGroup.add(trunk);
+
+          let canopy;
+          if (ct.type === 'gulmohar') {
+            canopy = new THREE.Mesh(
+              new THREE.SphereGeometry(2.0, 10, 10),
+              new THREE.MeshLambertMaterial({ color: 0xf97316 })
+            );
+            canopy.position.set(bx + ct.x, 3.4, bz + ct.z);
+          } else if (ct.type === 'pine') {
+            canopy = new THREE.Mesh(
+              new THREE.ConeGeometry(1.6, 3.8, 10),
+              new THREE.MeshLambertMaterial({ color: 0x14532d })
+            );
+            canopy.position.set(bx + ct.x, 3.8, bz + ct.z);
+          } else {
+            canopy = new THREE.Mesh(
+              new THREE.SphereGeometry(2.1, 10, 10),
+              new THREE.MeshLambertMaterial({ color: 0x16a34a })
+            );
+            canopy.position.set(bx + ct.x, 3.5, bz + ct.z);
+          }
+          cityGroup.add(canopy);
+        });
 
         // Place 6 Wheelie SmartBins on curbs
         if ([2, 4, 7, 9, 12, 15].includes(blockIndex)) {
@@ -1065,6 +1411,140 @@ export default function LivingCity3D({ onExit }) {
 
     scene.add(cityGroup);
     setTotalBins(smartBins.length);
+
+    // ─────────────────────────────────────────────────────────────
+    // 6B. 3D TRAFFIC LIGHT SIGNALS AT MAJOR ROAD INTERSECTIONS
+    // ─────────────────────────────────────────────────────────────
+    const trafficSignals = [];
+    const signalIntersections = [
+      { x: 0, z: 0 },
+      { x: -46, z: 0 },
+      { x: 46, z: 0 },
+      { x: 0, z: -46 },
+      { x: 0, z: 46 }
+    ];
+
+    signalIntersections.forEach((si) => {
+      [
+        { ox: -8.8, oz: -8.8, rot: 0, avenue: 'ns' },
+        { ox: 8.8, oz: 8.8, rot: Math.PI, avenue: 'ew' }
+      ].forEach((corner) => {
+        const sigGroup = new THREE.Group();
+        // Steel Pole
+        const sigPole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.18, 6.2, 8),
+          new THREE.MeshLambertMaterial({ color: 0x334155 })
+        );
+        sigPole.position.y = 3.1;
+        sigGroup.add(sigPole);
+
+        // Mast arm
+        const mast = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.18, 2.2),
+          new THREE.MeshLambertMaterial({ color: 0x334155 })
+        );
+        mast.position.set(0, 5.8, 1.1);
+        sigGroup.add(mast);
+
+        // Signal Housing Box
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85, 2.2, 0.65),
+          new THREE.MeshLambertMaterial({ color: 0x0f172a })
+        );
+        box.position.set(0, 5.4, 2.2);
+        sigGroup.add(box);
+
+        // 3 Lamps: Red, Yellow, Green
+        const rLamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), new THREE.MeshBasicMaterial({ color: 0x7f1d1d }));
+        rLamp.position.set(0, 6.0, 2.55);
+        sigGroup.add(rLamp);
+
+        const yLamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), new THREE.MeshBasicMaterial({ color: 0x78350f }));
+        yLamp.position.set(0, 5.4, 2.55);
+        sigGroup.add(yLamp);
+
+        const gLamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), new THREE.MeshBasicMaterial({ color: 0x064e3b }));
+        gLamp.position.set(0, 4.8, 2.55);
+        sigGroup.add(gLamp);
+
+        sigGroup.position.set(si.x + corner.ox, 0, si.z + corner.oz);
+        sigGroup.rotation.y = corner.rot;
+        scene.add(sigGroup);
+
+        trafficSignals.push({
+          rLamp,
+          yLamp,
+          gLamp,
+          avenue: corner.avenue,
+          ix: si.x,
+          iz: si.z
+        });
+      });
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // 6C. ANIMATED 3D CITIZEN PEDESTRIANS ON FOOTPATHS
+    // ─────────────────────────────────────────────────────────────
+    const pedestrians = [];
+    const pedShirtColors = [0x2563eb, 0xdc2626, 0x16a34a, 0xeab308, 0x9333ea, 0x0d9488];
+    const pedCoords = [
+      { x: -69, z: -48, axis: 'x', min: -85, max: -53, speed: 0.045 },
+      { x: -23, z: -48, axis: 'x', min: -39, max: -7, speed: 0.05 },
+      { x: 23, z: -48, axis: 'x', min: 7, max: 39, speed: 0.048 },
+      { x: 69, z: -48, axis: 'x', min: 53, max: 85, speed: 0.052 },
+      { x: -48, z: -69, axis: 'z', min: -85, max: -53, speed: 0.046 },
+      { x: -48, z: -23, axis: 'z', min: -39, max: -7, speed: 0.05 },
+      { x: -48, z: 23, axis: 'z', min: 7, max: 39, speed: 0.044 },
+      { x: -48, z: 69, axis: 'z', min: 53, max: 85, speed: 0.05 },
+      { x: 48, z: -69, axis: 'z', min: -85, max: -53, speed: 0.047 },
+      { x: 48, z: -23, axis: 'z', min: -39, max: -7, speed: 0.051 },
+      { x: 48, z: 23, axis: 'z', min: 7, max: 39, speed: 0.045 },
+      { x: 48, z: 69, axis: 'z', min: 53, max: 85, speed: 0.048 }
+    ];
+
+    pedCoords.forEach((pc, idx) => {
+      const pedGroup = new THREE.Group();
+      // Torso
+      const shirtMat = new THREE.MeshLambertMaterial({ color: pedShirtColors[idx % pedShirtColors.length] });
+      const pTorso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.75, 0.35), shirtMat);
+      pTorso.position.y = 1.05;
+      pTorso.castShadow = true;
+      pedGroup.add(pTorso);
+
+      // Head
+      const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), new THREE.MeshLambertMaterial({ color: 0xd4a373 }));
+      pHead.position.y = 1.62;
+      pedGroup.add(pHead);
+
+      // Articulated Legs
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      const legGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.65, 8);
+      const pLegL = new THREE.Mesh(legGeo, legMat); pLegL.position.set(-0.16, 0.35, 0); pedGroup.add(pLegL);
+      const pLegR = new THREE.Mesh(legGeo, legMat); pLegR.position.set(0.16, 0.35, 0); pedGroup.add(pLegR);
+
+      // Articulated Arms
+      const armMat = new THREE.MeshLambertMaterial({ color: 0xd4a373 });
+      const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.55, 8);
+      const pArmL = new THREE.Mesh(armGeo, armMat); pArmL.position.set(-0.36, 1.05, 0); pedGroup.add(pArmL);
+      const pArmR = new THREE.Mesh(armGeo, armMat); pArmR.position.set(0.36, 1.05, 0); pedGroup.add(pArmR);
+
+      pedGroup.position.set(pc.x, 0.38, pc.z);
+      scene.add(pedGroup);
+
+      pedestrians.push({
+        group: pedGroup,
+        legL: pLegL,
+        legR: pLegR,
+        armL: pArmL,
+        armR: pArmR,
+        axis: pc.axis,
+        min: pc.min,
+        max: pc.max,
+        speed: pc.speed,
+        dir: 1,
+        phase: idx * 0.8
+      });
+    });
 
     // ─────────────────────────────────────────────────────────────
     // 7. SUCTION DEBRIS & CRASH PARTICLE SYSTEMS
@@ -1400,13 +1880,20 @@ export default function LivingCity3D({ onExit }) {
       return onH || onV || onDumpYard;
     };
 
-    const keys = { forward: false, backward: false, left: false, right: false };
+    const keys = { forward: false, backward: false, left: false, right: false, nitro: false };
     const onKeyDown = (e) => {
       const k = e.key.toLowerCase();
       if (k === 'w' || k === 'arrowup') keys.forward = true;
       if (k === 's' || k === 'arrowdown') keys.backward = true;
       if (k === 'a' || k === 'arrowleft') keys.left = true;
       if (k === 'd' || k === 'arrowright') keys.right = true;
+      if (e.key === 'Shift') {
+        if (citizenLevelRef.current >= 3) {
+          keys.nitro = true;
+          setNitroActive(true);
+          playSound('nitro');
+        }
+      }
       if (k === 'h') playSound('horn');
       if (k === 'e' || k === ' ') {
         isHoldingCollectRef.current = true;
@@ -1421,6 +1908,10 @@ export default function LivingCity3D({ onExit }) {
       if (k === 's' || k === 'arrowdown') keys.backward = false;
       if (k === 'a' || k === 'arrowleft') keys.left = false;
       if (k === 'd' || k === 'arrowright') keys.right = false;
+      if (e.key === 'Shift') {
+        keys.nitro = false;
+        setNitroActive(false);
+      }
       if (k === 'e' || k === ' ') {
         isHoldingCollectRef.current = false;
         setIsHoldingCollect(false);
@@ -1540,11 +2031,85 @@ export default function LivingCity3D({ onExit }) {
           }
         });
       } else {
-        // Driving Input
-        if (keys.forward) {
-          truckSpeed = Math.min(maxSpeed, truckSpeed + acceleration);
-        } else if (keys.backward) {
-          truckSpeed = Math.max(-maxSpeed * 0.5, truckSpeed - acceleration);
+        // Animate Playground Swings (Jhula) in Botanical Gardens
+        animatedSwings.forEach((sw) => {
+          if (sw.pivot) {
+            sw.pivot.rotation.x = Math.sin(time * 2.8 + sw.offset) * 0.38;
+          }
+        });
+
+        // Animate Pedestrians Patrol Walking on Footpaths
+        pedestrians.forEach((ped) => {
+          if (ped.axis === 'x') {
+            ped.x += ped.dir * ped.speed;
+            if (ped.x > ped.max) { ped.x = ped.max; ped.dir = -1; ped.group.rotation.y = -Math.PI / 2; }
+            if (ped.x < ped.min) { ped.x = ped.min; ped.dir = 1; ped.group.rotation.y = Math.PI / 2; }
+            ped.group.position.x = ped.x;
+          } else {
+            ped.z += ped.dir * ped.speed;
+            if (ped.z > ped.max) { ped.z = ped.max; ped.dir = -1; ped.group.rotation.y = Math.PI; }
+            if (ped.z < ped.min) { ped.z = ped.min; ped.dir = 1; ped.group.rotation.y = 0; }
+            ped.group.position.z = ped.z;
+          }
+          // Limb swing
+          ped.legL.rotation.x = Math.sin(time * 8 + ped.phase) * 0.55;
+          ped.legR.rotation.x = -Math.sin(time * 8 + ped.phase) * 0.55;
+          ped.armL.rotation.x = -Math.sin(time * 8 + ped.phase) * 0.45;
+          ped.armR.rotation.x = Math.sin(time * 8 + ped.phase) * 0.45;
+        });
+
+        // Cycle 3D Traffic Light Intersections
+        const cycleTime = (time * 0.35) % 12; // 12-second total cycle
+        trafficSignals.forEach((sig) => {
+          let isGreen = false;
+          if (sig.avenue === 'ns') {
+            // North-South Green (0 - 5.5s), Yellow (5.5 - 6.5s), Red (6.5 - 12s)
+            if (cycleTime < 5.5) {
+              sig.rLamp.material.color.setHex(0x7f1d1d);
+              sig.yLamp.material.color.setHex(0x78350f);
+              sig.gLamp.material.color.setHex(0x10b981);
+              isGreen = true;
+            } else if (cycleTime < 6.5) {
+              sig.rLamp.material.color.setHex(0x7f1d1d);
+              sig.yLamp.material.color.setHex(0xf59e0b);
+              sig.gLamp.material.color.setHex(0x064e3b);
+            } else {
+              sig.rLamp.material.color.setHex(0xef4444);
+              sig.yLamp.material.color.setHex(0x78350f);
+              sig.gLamp.material.color.setHex(0x064e3b);
+            }
+          } else {
+            // East-West Red (0 - 6.0s), Green (6.0 - 11.0s), Yellow (11.0 - 12.0s)
+            if (cycleTime < 6.0) {
+              sig.rLamp.material.color.setHex(0xef4444);
+              sig.yLamp.material.color.setHex(0x78350f);
+              sig.gLamp.material.color.setHex(0x064e3b);
+            } else if (cycleTime < 11.0) {
+              sig.rLamp.material.color.setHex(0x7f1d1d);
+              sig.yLamp.material.color.setHex(0x78350f);
+              sig.gLamp.material.color.setHex(0x10b981);
+              isGreen = true;
+            } else {
+              sig.rLamp.material.color.setHex(0x7f1d1d);
+              sig.yLamp.material.color.setHex(0xf59e0b);
+              sig.gLamp.material.color.setHex(0x064e3b);
+            }
+          }
+        });
+
+        // Combined Driving Input (Keyboard + Mobile On-Screen Controls)
+        const isFwd = keys.forward || mobileKeysRef.current.forward;
+        const isBwd = keys.backward || mobileKeysRef.current.backward;
+        const isLft = keys.left || mobileKeysRef.current.left;
+        const isRgt = keys.right || mobileKeysRef.current.right;
+        const isNitro = (keys.nitro || mobileKeysRef.current.nitro) && (citizenLevelRef.current >= 3);
+
+        const currentMaxSpeed = isNitro ? 0.28 : maxSpeed;
+
+        if (isFwd) {
+          truckSpeed = Math.min(currentMaxSpeed, truckSpeed + acceleration);
+        } else if (isBwd) {
+          truckSpeed = Math.max(-currentMaxSpeed * 0.5, truckSpeed - acceleration);
         } else {
           if (truckSpeed > 0) truckSpeed = Math.max(0, truckSpeed - deceleration);
           else if (truckSpeed < 0) truckSpeed = Math.min(0, truckSpeed + deceleration);
@@ -1552,8 +2117,8 @@ export default function LivingCity3D({ onExit }) {
 
         if (Math.abs(truckSpeed) > 0.005) {
           const dir = truckSpeed > 0 ? 1 : -1;
-          if (keys.left) truckAngle += turnSpeed * dir;
-          if (keys.right) truckAngle -= turnSpeed * dir;
+          if (isLft) truckAngle += turnSpeed * dir;
+          if (isRgt) truckAngle -= turnSpeed * dir;
         }
 
         const nextX = truckGroup.position.x + Math.sin(truckAngle) * truckSpeed;
@@ -1596,15 +2161,19 @@ export default function LivingCity3D({ onExit }) {
           truckGroup.position.y = 0;
         }
 
-        // Strict 0 - 30 KM/H Speedometer
-        const speedKmh = Math.min(30, Math.round((Math.abs(truckSpeed) / maxSpeed) * 30));
+        // Strict 0 - 30 KM/H Speedometer (or up to 42 KM/H with Nitro)
+        const speedKmh = Math.min(isNitro ? 42 : 30, Math.round((Math.abs(truckSpeed) / maxSpeed) * 30));
         setCurrentSpeed(speedKmh);
       }
 
-      // Flash Roof Strobe & Pulse Vector Field Ring
-      strobeBar.material.color.setHex((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
+      // Flash Roof Strobe & Pulse Vector Field Ring (Golden strobe for Level >= 5)
+      const strobeColor = (citizenLevelRef.current >= 5) 
+        ? ((Math.sin(time * 20) > 0) ? 0xfbbf24 : 0xe2fd00)
+        : ((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
+      strobeBar.material.color.setHex(strobeColor);
+
       if (vectorFieldRing) {
-        vectorFieldRing.material.opacity = 0.22 + Math.sin(time * 3.5) * 0.12;
+        vectorFieldRing.material.opacity = (citizenLevelRef.current >= 4) ? 0.45 : 0.22 + Math.sin(time * 3.5) * 0.12;
         vectorFieldRing.rotation.z += 0.005;
       }
 
@@ -1704,8 +2273,10 @@ export default function LivingCity3D({ onExit }) {
             leftArm.rotation.x = -1.2;
             rightArm.rotation.x = -1.2;
 
+            // Superpower: Level 2 Turbo Suction cuts emptying time to 1.4s
+            const currentDuration = (citizenLevelRef.current >= 2) ? 1.4 : COLLECTION_DURATION;
             collectionTimer += delta;
-            const progressPct = Math.min(100, Math.round((collectionTimer / COLLECTION_DURATION) * 100));
+            const progressPct = Math.min(100, Math.round((collectionTimer / currentDuration) * 100));
             setCollectProgress(progressPct);
 
             playSound('suction');
@@ -1721,7 +2292,7 @@ export default function LivingCity3D({ onExit }) {
               p.mesh.position.addScaledVector(p.offset, (1 - p.progress) * 0.5);
             });
 
-            if (collectionTimer >= COLLECTION_DURATION) {
+            if (collectionTimer >= currentDuration) {
               // 100% Emptied!
               stoppedNearBin.collected = true;
               stoppedNearBin.group.rotation.x = 0; // Return bin upright
@@ -1743,13 +2314,16 @@ export default function LivingCity3D({ onExit }) {
                 });
               }
 
+              // Superpower: Level 5 grants 2x Multiplier (+200 pts)
+              const earnedPts = (citizenLevelRef.current >= 5) ? 200 : 100;
+
               setWasteCollected((prev) => {
                 const nextVal = prev + 1;
                 wasteCollectedRef.current = nextVal;
                 if (nextVal >= smartBins.length) {
                   setNotification("🚀 ALL 6 BINS COLLECTED! Proceed to northern Municipal Dumpyard to finish!");
                 } else {
-                  setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +100 Eco-Points)`);
+                  setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +${earnedPts} Eco-Points)`);
                 }
                 return nextVal;
               });
@@ -1761,10 +2335,13 @@ export default function LivingCity3D({ onExit }) {
               });
 
               setEcoPoints((prev) => {
-                const nextPts = prev + 100;
+                const nextPts = prev + earnedPts;
                 ecoPointsRef.current = nextPts;
                 return nextPts;
               });
+
+              // Save to Database (No data loss)
+              saveCitizenPoints(earnedPts);
 
               workerPhase = 'walking_back';
             }
@@ -1816,9 +2393,15 @@ export default function LivingCity3D({ onExit }) {
         playSound('dump');
         setCurrentLoad(0);
         currentLoadRef.current = 0;
-        setEcoPoints((prev) => prev + 500);
+        const bonusPts = (citizenLevelRef.current >= 5) ? 1000 : 500;
+        setEcoPoints((prev) => {
+          const next = prev + bonusPts;
+          ecoPointsRef.current = next;
+          return next;
+        });
+        saveCitizenPoints(bonusPts);
         setMissionComplete(true);
-        setNotification("🏆 SHIFT COMPLETE: All waste processed at Municipal Facility! (+500 Bonus Points)");
+        setNotification(`🏆 SHIFT COMPLETE: All waste processed at Municipal Facility! (+${bonusPts} Bonus Points)`);
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -1877,12 +2460,14 @@ export default function LivingCity3D({ onExit }) {
               if (!surveyedBuildingsRef.current.includes(nearestComp.id)) {
                 surveyedBuildingsRef.current.push(nearestComp.id);
                 setSurveyedBuildings([...surveyedBuildingsRef.current]);
+                const auditPts = nearestComp.points || 25;
                 setEcoPoints((prev) => {
-                  const next = prev + (nearestComp.points || 25);
+                  const next = prev + auditPts;
                   ecoPointsRef.current = next;
                   return next;
                 });
-                setNotification(`🎯 Audited ${nearestComp.name}! +${nearestComp.points} Eco-Points!`);
+                saveCitizenPoints(auditPts);
+                setNotification(`🎯 Audited ${nearestComp.name}! +${auditPts} Eco-Points! Click to open interactive module.`);
               }
             }
           } else {
@@ -2080,6 +2665,16 @@ export default function LivingCity3D({ onExit }) {
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} className="text-rose-400" />}
           </button>
 
+          {/* Truck Garage Shop Button */}
+          <button
+            onClick={() => setShowGarageShop(true)}
+            className="px-3.5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg transition active:scale-95 cursor-pointer"
+            title="Truck Shop: Buy new trucks with Eco-Points!"
+          >
+            <ShoppingBag size={15} />
+            <span className="hidden sm:inline">Truck Shop</span>
+          </button>
+
           <button
             onClick={() => setShowHelp(true)}
             className="w-10 h-10 rounded-2xl bg-slate-900/90 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 transition shadow-lg cursor-pointer"
@@ -2088,12 +2683,24 @@ export default function LivingCity3D({ onExit }) {
             <HelpCircle size={16} />
           </button>
 
-          <button
-            onClick={onExit}
-            className="px-4 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs uppercase shadow-lg transition hover:scale-105 cursor-pointer"
-          >
-            Exit Sim
-          </button>
+          {/* If Game Mode: Immediate Sign Out Button */}
+          {gameMode === 'game' ? (
+            <button
+              onClick={handleSignOutImmediate}
+              className="px-4 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs uppercase shadow-lg transition hover:scale-105 cursor-pointer flex items-center gap-1.5"
+              title="Sign Out from Game Mode session immediately"
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
+          ) : (
+            <button
+              onClick={onExit}
+              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs uppercase shadow-lg transition hover:scale-105 cursor-pointer"
+            >
+              Exit Sim
+            </button>
+          )}
         </div>
       </div>
 
@@ -2300,6 +2907,31 @@ export default function LivingCity3D({ onExit }) {
               <span className="text-[#e2fd00] font-black">
                 Audited: {surveyedBuildings.length} / {CITY_BUILDINGS_DATA.length} City Zones
               </span>
+            </div>
+
+            {/* Click to open interactive piece button */}
+            <div className="pt-2 flex items-center justify-between gap-3">
+              <button
+                onClick={() => setShowBuildingPieceModal(activeBuildingInfo)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition active:scale-95 cursor-pointer"
+              >
+                <Sparkles size={14} />
+                <span>
+                  {activeBuildingInfo.category === 'cafe' ? 'Open Cafe Composting & Voucher Hub' :
+                   activeBuildingInfo.category === 'residential' ? 'Open Housing Society Waste Tracker' :
+                   activeBuildingInfo.category === 'garden' ? 'Open Park Irrigation & Fountain Telemetry' :
+                   activeBuildingInfo.category === 'landfill' ? 'Open Landfill Salvage & Scrap Station' :
+                   activeBuildingInfo.id === 'block-16' ? 'Open Citizen Rewards Redemption' :
+                   'Open Municipal Fleet GIS Module'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveBuildingInfo(null)}
+                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
+              >
+                Keep Driving
+              </button>
             </div>
           </div>
         </div>
@@ -2640,6 +3272,429 @@ export default function LivingCity3D({ onExit }) {
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          BUILDING PIECE INTERACTIVE MODAL (When clicking building in Game Mode)
+          Shows piece-by-piece dashboard modules (Rewards, Waste Audit, Telemetry, etc.)
+          ───────────────────────────────────────────────────────────── */}
+      {showBuildingPieceModal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl text-white space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow"
+                  style={{
+                    backgroundColor:
+                      showBuildingPieceModal.category === 'garden' ? '#15803d' :
+                      showBuildingPieceModal.category === 'cafe' ? '#b45309' :
+                      showBuildingPieceModal.category === 'residential' ? '#059669' :
+                      showBuildingPieceModal.category === 'landfill' ? '#0f766e' : '#0284c7'
+                  }}
+                >
+                  {showBuildingPieceModal.category === 'garden' && <Trees size={20} />}
+                  {showBuildingPieceModal.category === 'cafe' && <Coffee size={20} />}
+                  {showBuildingPieceModal.category === 'residential' && <Home size={20} />}
+                  {showBuildingPieceModal.category === 'landfill' && <Flame size={20} />}
+                  {showBuildingPieceModal.category === 'corporate' && <Building2 size={20} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-amber-400 text-slate-950">
+                      {showBuildingPieceModal.tag}
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-400">
+                      Zone #{showBuildingPieceModal.blockIndex}
+                    </span>
+                  </div>
+                  <h3 className="font-black text-base sm:text-lg text-white mt-0.5">
+                    {showBuildingPieceModal.name}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBuildingPieceModal(null)}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Dynamic Interactive Component Pieces */}
+            <div className="space-y-3.5 text-xs">
+              <p className="text-slate-300 leading-relaxed">
+                {showBuildingPieceModal.desc}
+              </p>
+
+              {/* Piece 1: Waste Segregation Stream */}
+              <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-white/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-400 uppercase text-[10px]">Active Segregation Protocol</span>
+                  <span className="text-emerald-400 font-extrabold text-[11px]">Audit Certified</span>
+                </div>
+                <p className="text-white font-semibold">{showBuildingPieceModal.segregation}</p>
+              </div>
+
+              {/* Piece 2: Role-Specific Action Module */}
+              {showBuildingPieceModal.id === 'block-16' ? (
+                <div className="bg-gradient-to-r from-amber-950/60 to-slate-800 p-4 rounded-2xl border border-amber-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-amber-400 text-xs flex items-center gap-1.5">
+                      <Gift size={14} /> Citizen Rewards Bureau
+                    </span>
+                    <span className="text-[#e2fd00] font-black">{ecoPoints} Points Available</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-tight">
+                    Redeem local discounts for D-Mart grocery vouchers, PVR movie tickets, or free Bilaspur City Bus transit passes!
+                  </p>
+                  <a
+                    href="/dashboard/rewards"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow transition"
+                  >
+                    <span>Open Rewards Voucher Catalog</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              ) : showBuildingPieceModal.category === 'cafe' ? (
+                <div className="bg-gradient-to-r from-emerald-950/60 to-slate-800 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-emerald-400 text-xs flex items-center gap-1.5">
+                      <Coffee size={14} /> Commercial Food Waste Composter
+                    </span>
+                    <span className="text-emerald-300 font-bold text-[11px]">32 kg Daily Scrap</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-slate-900/80 p-2 rounded-xl">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Biogas Diverted</span>
+                      <strong className="text-white">100% Organic</strong>
+                    </div>
+                    <div className="bg-slate-900/80 p-2 rounded-xl">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Customer Discount</span>
+                      <strong className="text-[#e2fd00]">10% Off with QR</strong>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-white/5 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 font-bold">IoT Ultrasonic Telemetry:</span>
+                    <span className="text-[#e2fd00] font-black">Connected (LoRa Grid)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 font-bold">Earned Exploration XP:</span>
+                    <span className="text-emerald-400 font-black">+{showBuildingPieceModal.points} Eco-Points Credited</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex gap-3">
+              <button
+                onClick={() => setShowBuildingPieceModal(null)}
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+              >
+                Close Piece & Return to Driver Seat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          TRUCK FLEET SHOP & VECTOR AURA GARAGE MODAL
+          Buy new trucks with Eco-Points, unlock higher capacity & unique vector field powers!
+          ───────────────────────────────────────────────────────────── */}
+      {showGarageShop && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-white space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+                  <ShoppingBag size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <span>MUNICIPAL ECO-TRUCK GARAGE</span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-950">SHOP</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">Buy high-capacity compactor trucks & upgrade vector aura abilities</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-800 px-3 py-1.5 rounded-xl border border-white/10 text-right">
+                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Balance</span>
+                  <span className="text-[#e2fd00] font-black text-sm">{ecoPoints} Pts</span>
+                </div>
+                <button
+                  onClick={() => setShowGarageShop(false)}
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Truck Models Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {[
+                {
+                  id: 'swachh_bharat_standard',
+                  name: 'Swachh Bharat Standard',
+                  cost: 0,
+                  capacity: 150,
+                  speed: '30 KM/H',
+                  color: '#105a39',
+                  auraColor: '#38bdf8',
+                  auraPower: 'Standard Vector Field Proximity Deceleration (28m)'
+                },
+                {
+                  id: 'bilaspur_heavy_hauler',
+                  name: 'Bilaspur Heavy 4-Axle Hauler',
+                  cost: 400,
+                  capacity: 250,
+                  speed: '32 KM/H',
+                  color: '#1e3a8a',
+                  auraColor: '#3b82f6',
+                  auraPower: 'Hydraulic Compaction (Faster Bin Emptying Rate)'
+                },
+                {
+                  id: 'chhattisgarh_green_ev',
+                  name: 'C.G. Clean Electric EV Compactor',
+                  cost: 750,
+                  capacity: 320,
+                  speed: '35 KM/H',
+                  color: '#059669',
+                  auraColor: '#10b981',
+                  auraPower: 'Magnetic Induction Suction (Auto-empties bins within 8m)'
+                },
+                {
+                  id: 'mahanadi_titan_flagship',
+                  name: 'Mahanadi Titan Apex Rig',
+                  cost: 1200,
+                  capacity: 500,
+                  speed: '40 KM/H',
+                  color: '#d97706',
+                  auraColor: '#f59e0b',
+                  auraPower: '2x Eco-Points Multiplier & Autonomous Route Drone'
+                }
+              ].map((truck) => {
+                const isOwned = ownedTrucks.includes(truck.id);
+                const isSelected = selectedTruckModel === truck.id;
+
+                return (
+                  <div
+                    key={truck.id}
+                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-emerald-950/50 border-emerald-400 ring-2 ring-emerald-500/30'
+                        : isOwned
+                        ? 'bg-slate-800/80 border-slate-700'
+                        : 'bg-slate-900 border-slate-800 opacity-95'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-black text-sm text-white">{truck.name}</span>
+                        {isSelected ? (
+                          <span className="text-[10px] bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Check size={10} /> ACTIVE
+                          </span>
+                        ) : isOwned ? (
+                          <span className="text-[10px] bg-slate-700 text-slate-300 font-extrabold px-2 py-0.5 rounded-full">
+                            OWNED
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-black text-amber-400">
+                            🪙 {truck.cost} Pts
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 text-[11px] text-slate-300 mb-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Hopper Capacity:</span>
+                          <strong className="text-white">{truck.capacity} kg</strong>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Max Top Speed:</span>
+                          <strong className="text-emerald-400">{truck.speed}</strong>
+                        </div>
+                        <div className="mt-2 bg-slate-900/90 p-2 rounded-xl text-[10px] text-slate-300 border border-white/5">
+                          <span className="text-amber-400 font-bold block mb-0.5">Vector Field Power:</span>
+                          {truck.auraPower}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      {isSelected ? (
+                        <div className="w-full py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-center text-xs font-bold border border-emerald-500/30">
+                          Currently Driving
+                        </div>
+                      ) : isOwned ? (
+                        <button
+                          onClick={() => {
+                            setSelectedTruckModel(truck.id);
+                            localStorage.setItem('smartbin_active_truck', truck.id);
+                            setNotification(`🚛 Switched active truck to ${truck.name}!`);
+                          }}
+                          className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-black text-xs transition cursor-pointer"
+                        >
+                          Equip Truck
+                        </button>
+                      ) : (
+                        <button
+                          disabled={ecoPoints < truck.cost}
+                          onClick={() => {
+                            if (ecoPoints >= truck.cost) {
+                              const nextPts = ecoPoints - truck.cost;
+                              setEcoPoints(nextPts);
+                              ecoPointsRef.current = nextPts;
+                              const updatedOwned = [...ownedTrucks, truck.id];
+                              setOwnedTrucks(updatedOwned);
+                              localStorage.setItem('smartbin_owned_trucks', JSON.stringify(updatedOwned));
+                              setSelectedTruckModel(truck.id);
+                              localStorage.setItem('smartbin_active_truck', truck.id);
+                              playSound('collect');
+                              setNotification(`🎉 Congratulations! Purchased ${truck.name} for ${truck.cost} Eco-Points!`);
+                            }
+                          }}
+                          className={`w-full py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
+                            ecoPoints >= truck.cost
+                              ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {ecoPoints >= truck.cost ? `Buy for ${truck.cost} Eco-Points` : 'Insufficient Points'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setShowGarageShop(false)}
+                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer"
+              >
+                Close Garage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE TOUCH ON-SCREEN CONTROLS (D-Pad, Horn, Nitro & Collect)
+          Ensures phone users can comfortably drive and collect without a physical keyboard
+          ───────────────────────────────────────────────────────────── */}
+      <div className="md:hidden absolute bottom-5 left-4 z-30 pointer-events-auto flex flex-col items-center select-none">
+        {/* Forward */}
+        <button
+          onTouchStart={() => { mobileKeysRef.current.forward = true; }}
+          onTouchEnd={() => { mobileKeysRef.current.forward = false; }}
+          onMouseDown={() => { mobileKeysRef.current.forward = true; }}
+          onMouseUp={() => { mobileKeysRef.current.forward = false; }}
+          className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+        >
+          ▲
+        </button>
+        {/* Left, Backward, Right */}
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <button
+            onTouchStart={() => { mobileKeysRef.current.left = true; }}
+            onTouchEnd={() => { mobileKeysRef.current.left = false; }}
+            onMouseDown={() => { mobileKeysRef.current.left = true; }}
+            onMouseUp={() => { mobileKeysRef.current.left = false; }}
+            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+          >
+            ◀
+          </button>
+          <button
+            onTouchStart={() => { mobileKeysRef.current.backward = true; }}
+            onTouchEnd={() => { mobileKeysRef.current.backward = false; }}
+            onMouseDown={() => { mobileKeysRef.current.backward = true; }}
+            onMouseUp={() => { mobileKeysRef.current.backward = false; }}
+            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+          >
+            ▼
+          </button>
+          <button
+            onTouchStart={() => { mobileKeysRef.current.right = true; }}
+            onTouchEnd={() => { mobileKeysRef.current.right = false; }}
+            onMouseDown={() => { mobileKeysRef.current.right = true; }}
+            onMouseUp={() => { mobileKeysRef.current.right = false; }}
+            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+          >
+            ▶
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Action Buttons (Right side: Horn, Nitro Boost) */}
+      <div className="md:hidden absolute bottom-5 right-4 z-30 pointer-events-auto flex flex-col items-end gap-2 select-none">
+        {citizenLevel >= 3 && (
+          <button
+            onTouchStart={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
+            onTouchEnd={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
+            onMouseDown={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
+            onMouseUp={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
+            className="px-4 py-2.5 rounded-2xl bg-cyan-600 active:bg-cyan-400 text-white font-black text-xs shadow-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <Zap size={14} />
+            <span>NITRO</span>
+          </button>
+        )}
+
+        <button
+          onClick={() => playSound('horn')}
+          className="w-12 h-12 rounded-2xl bg-amber-500 active:bg-amber-400 text-slate-950 font-black text-base shadow-xl active:scale-95 transition flex items-center justify-center cursor-pointer"
+          title="Horn"
+        >
+          📢
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          LEVEL UP SUPERPOWER UNLOCK MODAL
+          ───────────────────────────────────────────────────────────── */}
+      {showLevelUpModal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-[#e2fd00] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 text-[#e2fd00] flex items-center justify-center mx-auto animate-bounce">
+              <Sparkles size={36} />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">LEVEL PROMOTION</span>
+              <h3 className="text-2xl font-black text-white mt-1">CITIZEN LEVEL {showLevelUpModal.level}!</h3>
+            </div>
+            <p className="text-slate-300 text-xs">
+              Your civic contributions have reached a new milestone. Superpower unlocked:
+            </p>
+            <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-white/10 text-left space-y-2">
+              {(showLevelUpModal.powers || []).map((p) => (
+                <div key={p.id} className="flex items-start gap-2.5">
+                  <span className="text-base">{p.icon}</span>
+                  <div>
+                    <h5 className="font-extrabold text-white text-xs">{p.name}</h5>
+                    <p className="text-[11px] text-slate-300">{p.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowLevelUpModal(null)}
+              className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg transition cursor-pointer"
+            >
+              Claim & Continue Route
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           HELP MODAL
