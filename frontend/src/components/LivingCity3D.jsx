@@ -652,12 +652,12 @@ export default function LivingCity3D({ onExit }) {
   const truckUpgradesRef = useRef(truckUpgrades);
   truckUpgradesRef.current = truckUpgrades;
 
-  // Game Screen State: 'menu' (Game Title/Hub), 'garage' (Dr. Driving 3D Vehicle Showcase), 'city' (Driving in 3D City)
+  // Game Screen State: 'city' (Driving in 3D City), 'garage' (Dr. Driving 3D Vehicle Showcase), 'menu' (Game Title/Hub)
   const [gameScreen, setGameScreen] = useState(() => {
     // Check if player came directly to city or prefer garage
     const pref = sessionStorage.getItem('smartbin_game_initial_screen');
     if (pref) return pref;
-    return 'menu';
+    return 'city';
   });
   const gameScreenRef = useRef(gameScreen);
   gameScreenRef.current = gameScreen;
@@ -718,7 +718,7 @@ export default function LivingCity3D({ onExit }) {
   const saveCityTransformRef = useRef(null);
   const restoreCityDriveRef = useRef(null);
   const previousScreenRef = useRef('menu');
-  const savedCityTransformRef = useRef({ x: 0, z: -45, angle: 0 });
+  const savedCityTransformRef = useRef({ x: 0, z: 0, angle: 0 });
   const spawnImmunityUntilRef = useRef(0);
   const [isShieldActive, setIsShieldActive] = useState(false);
 
@@ -1150,12 +1150,13 @@ export default function LivingCity3D({ onExit }) {
 
   const startNewShiftFromMenu = () => {
     applyTruckModelVisualsRef.current?.(selectedTruckModelRef.current);
-    savedCityTransformRef.current = { x: 0, z: -45, angle: 0 };
+    savedCityTransformRef.current = { x: 0, z: 0, angle: 0 };
     restoreCityDriveRef.current?.();
     setGameScreen('city');
     gameScreenRef.current = 'city';
     setIsPaused(false);
     isPausedRef.current = false;
+    setCrashState(null);
     setShiftTime(0);
     shiftTimeRef.current = 0;
     setCollisionCount(0);
@@ -3578,11 +3579,12 @@ export default function LivingCity3D({ onExit }) {
       if (isPausedRef.current || gameScreenRef.current !== 'city') return;
 
       const k = e.key.toLowerCase();
-      if (k === 'w' || k === 'arrowup') keys.forward = true;
-      if (k === 's' || k === 'arrowdown') keys.backward = true;
-      if (k === 'a' || k === 'arrowleft') keys.left = true;
-      if (k === 'd' || k === 'arrowright') keys.right = true;
-      if (e.key === 'Shift') {
+      const code = e.code;
+      if (k === 'w' || k === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') keys.forward = true;
+      if (k === 's' || k === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') keys.backward = true;
+      if (k === 'a' || k === 'arrowleft' || code === 'KeyA' || code === 'ArrowLeft') keys.left = true;
+      if (k === 'd' || k === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') keys.right = true;
+      if (e.key === 'Shift' || code === 'ShiftLeft' || code === 'ShiftRight') {
         if (citizenLevelRef.current >= 3) {
           keys.nitro = true;
           setNitroActive(true);
@@ -3598,24 +3600,25 @@ export default function LivingCity3D({ onExit }) {
         setShowGarageShop(true);
         return;
       }
-      if (k === 'e' || k === ' ') {
+      if (k === 'e' || k === ' ' || code === 'Space') {
         isHoldingCollectRef.current = true;
         setIsHoldingCollect(true);
       }
-      if (k === 'r' && isCrashedRef.current) handleManualRespawn();
+      if (k === 'r') resetTruck("Manual Respawn [R]");
     };
 
     const onKeyUp = (e) => {
       const k = e.key.toLowerCase();
-      if (k === 'w' || k === 'arrowup') keys.forward = false;
-      if (k === 's' || k === 'arrowdown') keys.backward = false;
-      if (k === 'a' || k === 'arrowleft') keys.left = false;
-      if (k === 'd' || k === 'arrowright') keys.right = false;
-      if (e.key === 'Shift') {
+      const code = e.code;
+      if (k === 'w' || k === 'arrowup' || code === 'KeyW' || code === 'ArrowUp') keys.forward = false;
+      if (k === 's' || k === 'arrowdown' || code === 'KeyS' || code === 'ArrowDown') keys.backward = false;
+      if (k === 'a' || k === 'arrowleft' || code === 'KeyA' || code === 'ArrowLeft') keys.left = false;
+      if (k === 'd' || k === 'arrowright' || code === 'KeyD' || code === 'ArrowRight') keys.right = false;
+      if (e.key === 'Shift' || code === 'ShiftLeft' || code === 'ShiftRight') {
         keys.nitro = false;
         setNitroActive(false);
       }
-      if (k === 'e' || k === ' ') {
+      if (k === 'e' || k === ' ' || code === 'Space') {
         isHoldingCollectRef.current = false;
         setIsHoldingCollect(false);
       }
@@ -3735,7 +3738,7 @@ export default function LivingCity3D({ onExit }) {
         truckAngle = saved.angle;
         truckGroup.rotation.y = truckAngle;
       } else {
-        truckGroup.position.set(0, 0, -45);
+        truckGroup.position.set(0, 0, 0);
         truckAngle = 0;
         truckGroup.rotation.y = 0;
       }
@@ -3744,6 +3747,10 @@ export default function LivingCity3D({ onExit }) {
       keys.backward = false;
       keys.left = false;
       keys.right = false;
+
+      // Ensure truck is NEVER locked in crash state
+      isCrashedRef.current = false;
+      setCrashState(null);
 
       // 3.5s Spawn Immunity Shield
       spawnImmunityUntilRef.current = performance.now() + 3500;
@@ -3776,53 +3783,52 @@ export default function LivingCity3D({ onExit }) {
         cp.life = 1.0;
       });
 
-      // Prevent same continuous collision from damaging every rendered frame (2s contact cooldown)
-      const now = performance.now();
-      if (now - lastCollisionTimeRef.current < 1800) return;
-      lastCollisionTimeRef.current = now;
-
-      // Track collision count
-      setCollisionCount((c) => {
-        const nextC = c + 1;
-        collisionCountRef.current = nextC;
-        return nextC;
-      });
-
       // Difficulty & Severity damage calculation
       const activeDiff = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
       const speedRatio = Math.min(1.0, Math.abs(truckSpeed) / 0.30);
       let baseDamagePct = 8;
       if (speedRatio < 0.4) baseDamagePct = 4; // minor
       else if (speedRatio > 0.8) baseDamagePct = 16; // severe
-
       const damageAmount = Math.max(2, Math.round(baseDamagePct * (activeDiff.damageMultiplier || 1.0)));
 
-      setTruckCondition((prevCond) => {
-        const nextCond = Math.max(0, prevCond - damageAmount);
-        truckConditionRef.current = nextCond;
-        localStorage.setItem('smartbin_truck_condition', nextCond.toString());
-        return nextCond;
-      });
+      // Prevent same continuous collision from damaging every frame (1.8s cooldown on damage only)
+      const now = performance.now();
+      const isCooldown = (now - lastCollisionTimeRef.current < 1800);
+      lastCollisionTimeRef.current = now;
 
-      setLives((prev) => {
-        const rem = Math.max(0, prev - 1);
-        livesRef.current = rem;
-        if (rem === 0) {
-          setShowRespawnCoinModal(true);
-        }
-        return rem;
-      });
-
-      if (livesRef.current > 0) {
-        setCrashState({
-          message: `COLLIDED WITH ${obstacleName.toUpperCase()}! (-${damageAmount}% Chassis Condition)`,
-          countdown: 2
+      if (!isCooldown) {
+        setCollisionCount((c) => {
+          const nextC = c + 1;
+          collisionCountRef.current = nextC;
+          return nextC;
         });
 
-        setTimeout(() => {
-          resetTruck(`Repositioned after Collision with ${obstacleName}`);
-        }, 2000);
+        setTruckCondition((prevCond) => {
+          const nextCond = Math.max(0, prevCond - damageAmount);
+          truckConditionRef.current = nextCond;
+          localStorage.setItem('smartbin_truck_condition', nextCond.toString());
+          return nextCond;
+        });
+
+        setLives((prev) => {
+          const rem = Math.max(0, prev - 1);
+          livesRef.current = rem;
+          if (rem === 0) {
+            setShowRespawnCoinModal(true);
+          }
+          return rem;
+        });
       }
+
+      // ALWAYS show crash message and ALWAYS schedule resetTruck so truck never gets stuck frozen!
+      setCrashState({
+        message: `COLLIDED WITH ${obstacleName.toUpperCase()}! (-${damageAmount}% Chassis Condition)`,
+        countdown: 1.5
+      });
+
+      setTimeout(() => {
+        resetTruck(`Repositioned after Collision with ${obstacleName}`);
+      }, 1500);
     };
 
     // ─────────────────────────────────────────────────────────────
