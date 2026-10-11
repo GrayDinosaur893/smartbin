@@ -14,25 +14,101 @@ import {
   Award,
   Sparkles,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  Bot,
+  Radio,
+  Navigation,
+  Gift,
+  Building2,
+  ExternalLink,
+  X
 } from 'lucide-react';
 
 /**
- * LivingCity3D — Authentic 3D Living Waste Management Simulation
- * Features:
- * 1. Road Boundary & Crash Confinement (Cannot drive into buildings; high speed impacts trigger crash restart).
- * 2. Internet / Real-world Detailed 3D Models:
- *    - Heavy 3-axle Compactor Garbage Truck (Mack/Dennis Eagle style with cab, mirrors, strobe lights, hazard chevrons, fluted hopper, dual rear axles).
- *    - Modern Passenger Cars (sedans/SUVs with curved glass, headlights, taillights, alloy spoke wheels).
- * 3. 240L Wheelie SmartBins with hinged lids, category colors, and IoT beacons.
- * 4. Hydraulic Suction Counter: 2.5s countdown with 40 3D debris particles flying into truck compactor.
- * 5. NO RESET ON WASTE COLLECTION: Scene is preserved via stable refs and runs once on mount.
- * 6. Central Municipal Dumpyard & Recycling Facility with concrete unloading apron, rollup bays, and bonus points.
- * 7. GTA-Style Mini-Map Radar HUD (Replaces floating 3D arrow with classic circular GTA radar with rotating player blip, road network, bin blips, dumpyard beacon, and GPS line).
- * 8. Lush Public Botanical Gardens & Parks with fountains, trees, flower beds, and walking pathways.
- * 9. World Border Security Perimeter with tall chainlink fences, steel pillars, barbed wire, and warning signs.
- * 10. Comprehensive Game Logic: Collision detection, camera shake, crash audio, lives system, and Mission Complete summary.
+ * SMARTBIN APP FEATURES DATASET
+ * Showcased dynamically at each of the 6 city garbage collection spots.
  */
+const SPOT_APP_FEATURES = [
+  {
+    id: 1,
+    title: "AI Multi-Modal Waste Classifier",
+    subtitle: "Gemini 2.5 Flash Neural Vision Engine",
+    category: "Plastic & Packaging",
+    color: "#3b82f6",
+    icon: "Bot",
+    highlight: "Computer Vision & Auto-Tagging",
+    description: "Our edge and cloud AI scans trash photos in real-time, categorizing items into Recyclable, Compostable, or Hazardous with >98.4% accuracy.",
+    statLabel: "Detection Accuracy",
+    statValue: "98.4%",
+    route: "/dashboard/ai"
+  },
+  {
+    id: 2,
+    title: "IoT Ultrasonic Telemetry Sensors",
+    subtitle: "Real-time Bin Volume & LoRaWAN Alerts",
+    category: "Organic Food Waste",
+    color: "#22c55e",
+    icon: "Radio",
+    highlight: "Zero-Overflow Urban Monitoring",
+    description: "Every physical SmartBin contains an ultrasonic distance sensor that reports live fill percentages to municipal servers every 15 minutes, avoiding overflow.",
+    statLabel: "Telemetry Latency",
+    statValue: "< 2.5s",
+    route: "/dashboard/map"
+  },
+  {
+    id: 3,
+    title: "High-Performance C++ VRP Optimizer",
+    subtitle: "Capacitated Vehicle Routing Problem Solver",
+    category: "Paper & Cardboard",
+    color: "#f59e0b",
+    icon: "Navigation",
+    highlight: "34% Fuel & Diesel Reduction",
+    description: "Our high-speed C++ engine solves the Capacitated Vehicle Routing Problem (CVRP), calculating the shortest fuel-efficient routes for garbage trucks.",
+    statLabel: "Fuel Savings",
+    statValue: "34.2%",
+    route: "/dashboard"
+  },
+  {
+    id: 4,
+    title: "Civic Eco-Points Digital Ledger",
+    subtitle: "Civic Incentives & Micro-Cash Wallet",
+    category: "Hazardous & Dry Waste",
+    color: "#ec4899",
+    icon: "Award",
+    highlight: "100 Eco-Points = ₹1.00 Digital Cash",
+    description: "Citizens upload verified photos of cleanings and earn Eco-Points credited directly to their civic digital wallet for government tax & bill rebates.",
+    statLabel: "Reward Rate",
+    statValue: "₹1 / 100 Pts",
+    route: "/dashboard/profile"
+  },
+  {
+    id: 5,
+    title: "Corporate CSR Voucher Marketplace",
+    subtitle: "Local Businesses Sponsor Cleanliness",
+    category: "Commercial Recyclables",
+    color: "#8b5cf6",
+    icon: "Gift",
+    highlight: "Sponsor Discounts & EV Vouchers",
+    description: "Local stores and CSR partners (Jindal, Tata EV, CG Compost) sponsor discounts and free passes that citizens redeem using earned Eco-Points.",
+    statLabel: "Partner Sponsors",
+    statValue: "18+ Brands",
+    route: "/dashboard/rewards"
+  },
+  {
+    id: 6,
+    title: "Municipal GIS Command Center",
+    subtitle: "Centralized Administrative Fleet Control",
+    category: "Public Sector Waste",
+    color: "#10b981",
+    icon: "Building2",
+    highlight: "Bilaspur Municipal Real-Time GIS",
+    description: "City administrators view live heatmap clusters, track garbage fleet GPS in real time, and audit contractor cleaning verifications.",
+    statLabel: "City Coverage",
+    statValue: "100% Ward GIS",
+    route: "/dashboard/analytics"
+  }
+];
+
 export default function LivingCity3D({ onExit }) {
   const mountRef = useRef(null);
 
@@ -44,18 +120,22 @@ export default function LivingCity3D({ onExit }) {
   const [ecoPoints, setEcoPoints] = useState(250);
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [collectingBinId, setCollectingBinId] = useState(null);
-  const [collectProgress, setCollectProgress] = useState(0); // 0 to 100%
+  const [collectProgress, setCollectProgress] = useState(0);
   const [currentTargetName, setCurrentTargetName] = useState("SmartBin #1 (Plastic)");
   const [targetDistance, setTargetDistance] = useState(0);
-  const [notification, setNotification] = useState("Shift Started: Check GTA Radar at bottom-left for your route!");
+  const [notification, setNotification] = useState("Shift Started: Slower, smooth steering activated. Follow GTA Radar at bottom-left!");
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [viewMode, setViewMode] = useState('chase'); // 'chase' | 'isometric' | 'topdown'
+  const [viewMode, setViewMode] = useState('chase');
   const [showHelp, setShowHelp] = useState(false);
   
   // Game Logic: Collisions, Lives, and Mission Completion
   const [lives, setLives] = useState(3);
-  const [crashState, setCrashState] = useState(null); // null | { message: string, countdown: number }
+  const [crashState, setCrashState] = useState(null);
   const [missionComplete, setMissionComplete] = useState(false);
+
+  // Feature Spotlight Modal State
+  const [activeFeatureSpotlight, setActiveFeatureSpotlight] = useState(null);
+  const [discoveredFeatures, setDiscoveredFeatures] = useState([]);
 
   // Radar State for SVG Rendering
   const [radarData, setRadarData] = useState({
@@ -78,6 +158,12 @@ export default function LivingCity3D({ onExit }) {
   const currentLoadRef = useRef(currentLoad);
   currentLoadRef.current = currentLoad;
 
+  const wasteCollectedRef = useRef(wasteCollected);
+  wasteCollectedRef.current = wasteCollected;
+
+  const ecoPointsRef = useRef(ecoPoints);
+  ecoPointsRef.current = ecoPoints;
+
   const livesRef = useRef(lives);
   livesRef.current = lives;
 
@@ -86,7 +172,7 @@ export default function LivingCity3D({ onExit }) {
   const audioCtxRef = useRef(null);
   const resetTruckTriggerRef = useRef(null);
 
-  // Synthesized Web Audio FX
+  // Web Audio Synthesizer
   const playSound = (type) => {
     if (!soundEnabledRef.current) return;
     try {
@@ -103,25 +189,22 @@ export default function LivingCity3D({ onExit }) {
       gain.connect(ctx.destination);
 
       if (type === 'suction') {
-        // Hydraulic collection whoosh
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(140, now);
-        osc.frequency.linearRampToValueAtTime(340, now + 0.35);
+        osc.frequency.linearRampToValueAtTime(320, now + 0.35);
         gain.gain.setValueAtTime(0.12, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
         osc.start(now);
         osc.stop(now + 0.45);
       } else if (type === 'collect') {
-        // High pitched pleasant success chime
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, now); // D5
-        osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.3); // D6
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.3);
         gain.gain.setValueAtTime(0.18, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
         osc.start(now);
         osc.stop(now + 0.35);
       } else if (type === 'dump') {
-        // Deep hydraulic compactor dump rumble
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(90, now);
         osc.frequency.linearRampToValueAtTime(180, now + 0.7);
@@ -130,16 +213,14 @@ export default function LivingCity3D({ onExit }) {
         osc.start(now);
         osc.stop(now + 0.9);
       } else if (type === 'crash') {
-        // Heavy metal crunch / accident impact sound
         osc.type = 'square';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.exponentialRampToValueAtTime(25, now + 0.38);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
         osc.start(now);
-        osc.stop(now + 0.55);
+        osc.stop(now + 0.48);
       } else if (type === 'horn') {
-        // Dual air horn
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(311.13, now);
         gain.gain.setValueAtTime(0.18, now);
@@ -150,7 +231,6 @@ export default function LivingCity3D({ onExit }) {
     } catch {}
   };
 
-  // Trigger safe respawn
   const handleManualRespawn = () => {
     if (resetTruckTriggerRef.current) {
       resetTruckTriggerRef.current();
@@ -162,7 +242,7 @@ export default function LivingCity3D({ onExit }) {
     if (!container) return;
 
     // ─────────────────────────────────────────────────────────────
-    // 1. THREE.JS SCENE, CAMERA & RENDERER SETUP
+    // 1. THREE.JS SCENE SETUP
     // ─────────────────────────────────────────────────────────────
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xcfe8fc);
@@ -182,7 +262,7 @@ export default function LivingCity3D({ onExit }) {
     container.appendChild(renderer.domElement);
 
     // ─────────────────────────────────────────────────────────────
-    // 2. LIGHTING & ATMOSPHERE
+    // 2. LIGHTING & ENVIRONMENT
     // ─────────────────────────────────────────────────────────────
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x64748b, 0.75);
     scene.add(hemiLight);
@@ -202,17 +282,17 @@ export default function LivingCity3D({ onExit }) {
     scene.add(sunLight);
 
     // ─────────────────────────────────────────────────────────────
-    // 3. 4x4 GRID ROAD NETWORK & GROUND
+    // 3. ROAD NETWORK (4x4 GRID / 16 BLOCKS)
     // ─────────────────────────────────────────────────────────────
     const blockSize = 32;
     const roadWidth = 14;
-    const step = blockSize + roadWidth; // 46 units between avenue centerlines
+    const step = blockSize + roadWidth; // 46 units
     const roadLines = [-2 * step, -1 * step, 0, 1 * step, 2 * step]; // [-92, -46, 0, 46, 92]
-    const blockCenters = [-1.5 * step, -0.5 * step, 0.5 * step, 1.5 * step]; // [-69, -23, 23, 69]
-    const totalSpan = 260; // Total world boundary diameter
-    const fenceLimit = 125; // Boundary fences at ±125
+    const blockCenters = [-1.5 * step, -0.5 * step, 0.5 * step, 1.5 * step];
+    const totalSpan = 260;
+    const fenceLimit = 125;
 
-    // Base Ground Pavement
+    // Base Pavement
     const groundGeo = new THREE.PlaneGeometry(totalSpan, totalSpan);
     const groundMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -220,10 +300,9 @@ export default function LivingCity3D({ onExit }) {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Asphalt Roads (Dark Charcoal with Yellow Center Divider & White Pedestrian Crossings)
+    // Asphalt Roads
     const roadMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
     const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const whiteStripeMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
 
     // Horizontal Avenues
     roadLines.forEach((rz) => {
@@ -254,7 +333,7 @@ export default function LivingCity3D({ onExit }) {
     });
 
     // ─────────────────────────────────────────────────────────────
-    // 4. WORLD BORDER: TALL SECURITY PERIMETER FENCES
+    // 4. WORLD BORDER: TALL SECURITY FENCES
     // ─────────────────────────────────────────────────────────────
     const fenceGroup = new THREE.Group();
     const fencePostGeo = new THREE.CylinderGeometry(0.2, 0.2, 6.5, 8);
@@ -265,7 +344,7 @@ export default function LivingCity3D({ onExit }) {
       transparent: true, 
       opacity: 0.7 
     });
-    const barrierBaseMat = new THREE.MeshLambertMaterial({ color: 0xcbd5e1 }); // Concrete Jersey barrier
+    const barrierBaseMat = new THREE.MeshLambertMaterial({ color: 0xcbd5e1 });
 
     const buildPerimeterSide = (startX, startZ, endX, endZ, isHorizontal) => {
       const length = isHorizontal ? Math.abs(endX - startX) : Math.abs(endZ - startZ);
@@ -276,13 +355,11 @@ export default function LivingCity3D({ onExit }) {
         const px = isHorizontal ? startX + i * postSpacing : startX;
         const pz = isHorizontal ? startZ : startZ + i * postSpacing;
 
-        // Steel Pillar
         const post = new THREE.Mesh(fencePostGeo, fencePostMat);
         post.position.set(px, 3.25, pz);
         post.castShadow = true;
         fenceGroup.add(post);
 
-        // Concrete Jersey crash curb base
         const curb = new THREE.Mesh(
           new THREE.BoxGeometry(isHorizontal ? postSpacing : 1.2, 0.8, isHorizontal ? 1.2 : postSpacing),
           barrierBaseMat
@@ -295,7 +372,6 @@ export default function LivingCity3D({ onExit }) {
         curb.receiveShadow = true;
         fenceGroup.add(curb);
 
-        // Chainlink Mesh Panel
         if (i < count) {
           const panel = new THREE.Mesh(
             new THREE.PlaneGeometry(postSpacing, 5.5),
@@ -312,15 +388,14 @@ export default function LivingCity3D({ onExit }) {
       }
     };
 
-    // North, South, East, West Boundaries
     buildPerimeterSide(-fenceLimit, -fenceLimit, fenceLimit, -fenceLimit, true);
     buildPerimeterSide(-fenceLimit, fenceLimit, fenceLimit, fenceLimit, true);
     buildPerimeterSide(-fenceLimit, -fenceLimit, -fenceLimit, fenceLimit, false);
     buildPerimeterSide(fenceLimit, -fenceLimit, fenceLimit, fenceLimit, false);
 
-    // Warning Signboards on Fences
+    // Hazard Signs on Fences
     const signGeo = new THREE.BoxGeometry(7, 1.8, 0.2);
-    const signMat = new THREE.MeshLambertMaterial({ color: 0xd97706 }); // Hazard amber
+    const signMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
     [
       { x: 0, z: -fenceLimit + 0.4, rotY: 0 },
       { x: 0, z: fenceLimit - 0.4, rotY: Math.PI },
@@ -336,12 +411,12 @@ export default function LivingCity3D({ onExit }) {
     scene.add(fenceGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 5. MUNICIPAL DUMPYARD & RECYCLING FACILITY (North Apron)
+    // 5. MUNICIPAL DUMPYARD & RECYCLING FACILITY
     // ─────────────────────────────────────────────────────────────
     const dumpyardPos = { x: 0, z: -115 };
     const dumpyardGroup = new THREE.Group();
 
-    // Heavy Concrete Unloading Apron
+    // Apron
     const apron = new THREE.Mesh(
       new THREE.BoxGeometry(36, 0.4, 24),
       new THREE.MeshLambertMaterial({ color: 0x475569 })
@@ -350,7 +425,7 @@ export default function LivingCity3D({ onExit }) {
     apron.receiveShadow = true;
     dumpyardGroup.add(apron);
 
-    // Hazard Yellow/Black Striped Curb around Apron
+    // Striped Curb
     const curbStripe = new THREE.Mesh(
       new THREE.BoxGeometry(36.4, 0.5, 0.8),
       new THREE.MeshBasicMaterial({ color: 0xfacc15 })
@@ -358,24 +433,24 @@ export default function LivingCity3D({ onExit }) {
     curbStripe.position.set(dumpyardPos.x, 0.26, dumpyardPos.z + 11.8);
     dumpyardGroup.add(curbStripe);
 
-    // Industrial Main Recycling Facility Hangar
+    // Hangar
     const hangar = new THREE.Mesh(
       new THREE.BoxGeometry(32, 13, 16),
-      new THREE.MeshLambertMaterial({ color: 0x0f766e }) // Industrial Forest Teal
+      new THREE.MeshLambertMaterial({ color: 0x0f766e })
     );
     hangar.position.set(dumpyardPos.x, 6.7, dumpyardPos.z - 4);
     hangar.castShadow = true;
     dumpyardGroup.add(hangar);
 
-    // Neon Industrial Signboard
+    // Signboard
     const dumpSign = new THREE.Mesh(
       new THREE.BoxGeometry(26, 2.8, 0.5),
-      new THREE.MeshBasicMaterial({ color: 0xe2fd00 }) // Neon Lime
+      new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
     );
     dumpSign.position.set(dumpyardPos.x, 14.8, dumpyardPos.z + 4.2);
     dumpyardGroup.add(dumpSign);
 
-    // 3 Material Sorting Rollup Dumpsters (Plastic, Metal, Organic)
+    // Sorting Dumpsters
     const sorterColors = [0x2563eb, 0x475569, 0x16a34a];
     [-10, 0, 10].forEach((sx, idx) => {
       const sorter = new THREE.Mesh(
@@ -387,7 +462,7 @@ export default function LivingCity3D({ onExit }) {
       dumpyardGroup.add(sorter);
     });
 
-    // Tall Green Beacon Tower for Dumpyard
+    // Beacon Tower
     const beaconTower = new THREE.Mesh(
       new THREE.CylinderGeometry(0.25, 0.25, 16, 8),
       new THREE.MeshBasicMaterial({ color: 0x10b981 })
@@ -416,7 +491,7 @@ export default function LivingCity3D({ onExit }) {
       blockCenters.forEach((bz) => {
         blockIndex++;
 
-        // Plot Sidewalk Platform Base
+        // Plot Base Sidewalk
         const platform = new THREE.Mesh(
           new THREE.BoxGeometry(blockSize, 0.4, blockSize),
           new THREE.MeshLambertMaterial({ color: 0xcfd8dc })
@@ -425,23 +500,21 @@ export default function LivingCity3D({ onExit }) {
         platform.receiveShadow = true;
         cityGroup.add(platform);
 
-        // Architecture Decision
-        // Blocks 6 and 11 are converted into Lush Botanical Gardens / Parks!
         const isGarden = (blockIndex === 6 || blockIndex === 11);
         const isCafe = (blockIndex === 1 || blockIndex === 7 || blockIndex === 14);
         const isHouse = (blockIndex === 3 || blockIndex === 8 || blockIndex === 13);
 
         if (isGarden) {
-          // ── LUSH BOTANICAL PUBLIC PARK & GARDEN ──
+          // Public Botanical Garden & Park
           const lawn = new THREE.Mesh(
             new THREE.BoxGeometry(blockSize - 2, 0.35, blockSize - 2),
-            new THREE.MeshLambertMaterial({ color: 0x16a34a }) // Vibrant Garden Green
+            new THREE.MeshLambertMaterial({ color: 0x16a34a })
           );
           lawn.position.set(bx, 0.38, bz);
           lawn.receiveShadow = true;
           cityGroup.add(lawn);
 
-          // Central Circular Stone Fountain
+          // Fountain
           const fPool = new THREE.Mesh(
             new THREE.CylinderGeometry(4.2, 4.2, 0.7, 24),
             new THREE.MeshLambertMaterial({ color: 0x94a3b8 })
@@ -452,25 +525,16 @@ export default function LivingCity3D({ onExit }) {
 
           const fWater = new THREE.Mesh(
             new THREE.CylinderGeometry(3.6, 3.6, 0.1, 24),
-            new THREE.MeshBasicMaterial({ color: 0x38bdf8 }) // Sparkling Water
+            new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
           );
           fWater.position.set(bx, 1.05, bz);
           cityGroup.add(fWater);
 
-          // Fountain Spout
-          const fSpout = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.4, 0.6, 2.2, 12),
-            new THREE.MeshLambertMaterial({ color: 0x64748b })
-          );
-          fSpout.position.set(bx, 1.6, bz);
-          cityGroup.add(fSpout);
-
-          // Park Shady Trees & Colorful Flower Beds
+          // Trees
           const treeOffsets = [
             { x: -9, z: -9 }, { x: 9, z: -9 }, { x: -9, z: 9 }, { x: 9, z: 9 }
           ];
           treeOffsets.forEach((to) => {
-            // Trunk
             const trunk = new THREE.Mesh(
               new THREE.CylinderGeometry(0.35, 0.5, 3.2, 8),
               new THREE.MeshLambertMaterial({ color: 0x78350f })
@@ -479,7 +543,6 @@ export default function LivingCity3D({ onExit }) {
             trunk.castShadow = true;
             cityGroup.add(trunk);
 
-            // Foliage Cone/Sphere
             const foliage = new THREE.Mesh(
               new THREE.SphereGeometry(2.2, 10, 10),
               new THREE.MeshLambertMaterial({ color: 0x15803d })
@@ -487,28 +550,19 @@ export default function LivingCity3D({ onExit }) {
             foliage.position.set(bx + to.x, 4.2, bz + to.z);
             foliage.castShadow = true;
             cityGroup.add(foliage);
-
-            // Flower Bed
-            const flowers = new THREE.Mesh(
-              new THREE.BoxGeometry(2.4, 0.3, 2.4),
-              new THREE.MeshLambertMaterial({ color: (to.x * to.z > 0) ? 0xef4444 : 0xeab308 })
-            );
-            flowers.position.set(bx + to.x * 0.5, 0.45, bz + to.z * 0.5);
-            cityGroup.add(flowers);
           });
 
         } else if (isCafe) {
-          // ── MODERN ESPRESSO CAFE & BAKERY ──
+          // Cafe
           const cafeW = 20, cafeD = 18, cafeH = 7.5;
           const cafeBody = new THREE.Mesh(
             new THREE.BoxGeometry(cafeW, cafeH, cafeD),
-            new THREE.MeshLambertMaterial({ color: 0x292524 }) // Charcoal Cafe
+            new THREE.MeshLambertMaterial({ color: 0x292524 })
           );
           cafeBody.position.set(bx, cafeH / 2 + 0.4, bz);
           cafeBody.castShadow = true;
           cityGroup.add(cafeBody);
 
-          // Warm Glowing Glass Front
           const glass = new THREE.Mesh(
             new THREE.PlaneGeometry(cafeW * 0.85, 4.2),
             new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.85 })
@@ -516,17 +570,8 @@ export default function LivingCity3D({ onExit }) {
           glass.position.set(bx, 2.8, bz + cafeD / 2 + 0.05);
           cityGroup.add(glass);
 
-          // Orange Terrace Awning
-          const awning = new THREE.Mesh(
-            new THREE.BoxGeometry(cafeW * 0.9, 0.4, 4.0),
-            new THREE.MeshLambertMaterial({ color: 0xea580c })
-          );
-          awning.rotation.x = 0.2;
-          awning.position.set(bx, 5.2, bz + cafeD / 2 + 2.0);
-          cityGroup.add(awning);
-
         } else if (isHouse) {
-          // ── LOCAL RESIDENTIAL HOUSE WITH GABLE ROOF ──
+          // Residential Gable House
           const houseW = 18, houseD = 18, houseH = 8.0;
           const houseBody = new THREE.Mesh(
             new THREE.BoxGeometry(houseW, houseH, houseD),
@@ -546,7 +591,7 @@ export default function LivingCity3D({ onExit }) {
           cityGroup.add(roof);
 
         } else {
-          // ── CORPORATE COMMERCIAL SKYSCRAPER ──
+          // Commercial Tower
           const corpW = 22, corpD = 22, corpH = 22 + ((blockIndex * 5) % 18);
           const corpTower = new THREE.Mesh(
             new THREE.BoxGeometry(corpW, corpH, corpD),
@@ -564,28 +609,27 @@ export default function LivingCity3D({ onExit }) {
           cityGroup.add(windowGlass);
         }
 
-        // Place authentic 240L Wheelie SmartBins on curbs of 6 specific blocks
+        // Place 6 Wheelie SmartBins on designated curbs
         if ([2, 4, 7, 9, 12, 15].includes(blockIndex)) {
           const curbOffset = blockSize / 2 + 1.2;
           const binX = bx;
           const binZ = bz + curbOffset;
           const binId = smartBins.length + 1;
 
-          const binCategory = binId % 3 === 1 ? "Plastic & Packaging" : (binId % 3 === 2 ? "Organic Food Waste" : "Paper & Cardboard");
-          const binColorHex = binCategory.includes("Organic") ? 0x15803d : (binCategory.includes("Plastic") ? 0x1d4ed8 : 0xb45309);
+          const featureInfo = SPOT_APP_FEATURES[binId - 1] || SPOT_APP_FEATURES[0];
 
           const wheelieBinGroup = new THREE.Group();
 
-          // Tapered Rectangular Body
+          // Body
           const binBody = new THREE.Mesh(
             new THREE.BoxGeometry(1.4, 2.2, 1.2),
-            new THREE.MeshLambertMaterial({ color: binColorHex })
+            new THREE.MeshLambertMaterial({ color: new THREE.Color(featureInfo.color).getHex() })
           );
           binBody.position.y = 1.2;
           binBody.castShadow = true;
           wheelieBinGroup.add(binBody);
 
-          // Hinged Lid on Top
+          // Lid
           const binLid = new THREE.Mesh(
             new THREE.BoxGeometry(1.5, 0.25, 1.3),
             new THREE.MeshLambertMaterial({ color: 0x0f172a })
@@ -593,7 +637,7 @@ export default function LivingCity3D({ onExit }) {
           binLid.position.y = 2.4;
           wheelieBinGroup.add(binLid);
 
-          // Small Rear Rubber Wheels
+          // Rear Wheels
           const binWheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.15, 10);
           const binWheelMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
           [-0.65, 0.65].forEach((wx) => {
@@ -605,7 +649,12 @@ export default function LivingCity3D({ onExit }) {
 
           // Beacon Ring
           const beaconGeo = new THREE.RingGeometry(0.8, 1.4, 24);
-          const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+          const beaconMat = new THREE.MeshBasicMaterial({ 
+            color: new THREE.Color(featureInfo.color).getHex(), 
+            side: THREE.DoubleSide, 
+            transparent: true, 
+            opacity: 0.85 
+          });
           const beacon = new THREE.Mesh(beaconGeo, beaconMat);
           beacon.rotation.x = -Math.PI / 2;
           beacon.position.y = 3.6;
@@ -614,7 +663,11 @@ export default function LivingCity3D({ onExit }) {
           // Light Column
           const colMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(0.08, 0.08, 6.0, 8),
-            new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.6 })
+            new THREE.MeshBasicMaterial({ 
+              color: new THREE.Color(featureInfo.color).getHex(), 
+              transparent: true, 
+              opacity: 0.6 
+            })
           );
           colMesh.position.y = 5.6;
           wheelieBinGroup.add(colMesh);
@@ -630,8 +683,9 @@ export default function LivingCity3D({ onExit }) {
             column: colMesh,
             x: binX,
             z: binZ,
-            category: binCategory,
-            colorHex: binColorHex,
+            category: featureInfo.category,
+            feature: featureInfo,
+            colorHex: new THREE.Color(featureInfo.color).getHex(),
             collected: false
           });
         }
@@ -642,7 +696,7 @@ export default function LivingCity3D({ onExit }) {
     setTotalBins(smartBins.length);
 
     // ─────────────────────────────────────────────────────────────
-    // 7. SUCTION DEBRIS PARTICLE SYSTEM (Physical Waste Flow)
+    // 7. SUCTION DEBRIS & CRASH PARTICLE SYSTEMS
     // ─────────────────────────────────────────────────────────────
     const particleCount = 40;
     const particleGeo = new THREE.DodecahedronGeometry(0.2, 0);
@@ -663,7 +717,7 @@ export default function LivingCity3D({ onExit }) {
     }
     scene.add(particleGroup);
 
-    // Crash Sparks & Smoke Particles
+    // Crash Sparks
     const crashParticleCount = 25;
     const crashGeo = new THREE.DodecahedronGeometry(0.25, 0);
     const crashMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
@@ -682,11 +736,11 @@ export default function LivingCity3D({ onExit }) {
     scene.add(crashGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 8. AUTHENTIC HEAVY 3-AXLE GARBAGE COMPACTOR TRUCK
+    // 8. HEAVY 3-AXLE GARBAGE COMPACTOR TRUCK
     // ─────────────────────────────────────────────────────────────
     const truckGroup = new THREE.Group();
 
-    // ── Driver Cab (White Aerodynamic Forward Control) ──
+    // Driver Cab
     const cab = new THREE.Mesh(
       new THREE.BoxGeometry(2.7, 2.4, 2.4),
       new THREE.MeshLambertMaterial({ color: 0xf8fafc })
@@ -695,7 +749,7 @@ export default function LivingCity3D({ onExit }) {
     cab.castShadow = true;
     truckGroup.add(cab);
 
-    // Curved Panoramic Windshield
+    // Windshield
     const windshield = new THREE.Mesh(
       new THREE.BoxGeometry(2.4, 1.15, 0.2),
       new THREE.MeshLambertMaterial({ color: 0x0284c7 })
@@ -703,7 +757,7 @@ export default function LivingCity3D({ onExit }) {
     windshield.position.set(0, 2.05, 3.32);
     truckGroup.add(windshield);
 
-    // Side Mirrors with Chrome Brackets
+    // Side Mirrors
     const mirrorGeo = new THREE.BoxGeometry(0.2, 0.6, 0.3);
     const mirrorMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
     [-1.5, 1.5].forEach((mx) => {
@@ -712,7 +766,7 @@ export default function LivingCity3D({ onExit }) {
       truckGroup.add(m);
     });
 
-    // Front Chrome/Black Honeycomb Grille & Heavy Bumper
+    // Grille & Bumper
     const grille = new THREE.Mesh(
       new THREE.BoxGeometry(2.2, 0.8, 0.2),
       new THREE.MeshLambertMaterial({ color: 0x1e293b })
@@ -727,7 +781,7 @@ export default function LivingCity3D({ onExit }) {
     bumper.position.set(0, 0.65, 3.4);
     truckGroup.add(bumper);
 
-    // Roof Emergency Amber Strobe Light Bar
+    // Flashing Strobe Bar
     const strobeBar = new THREE.Mesh(
       new THREE.BoxGeometry(1.6, 0.25, 0.35),
       new THREE.MeshBasicMaterial({ color: 0xf59e0b })
@@ -735,7 +789,7 @@ export default function LivingCity3D({ onExit }) {
     strobeBar.position.set(0, 2.92, 2.1);
     truckGroup.add(strobeBar);
 
-    // Dual Roof Chrome Air Horns
+    // Air Horns
     const hornGeo = new THREE.CylinderGeometry(0.08, 0.15, 0.8, 8);
     const hornMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
     [-0.5, 0.5].forEach((hx) => {
@@ -745,16 +799,16 @@ export default function LivingCity3D({ onExit }) {
       truckGroup.add(hn);
     });
 
-    // ── Heavy Fluted Waste Compactor Tank (Forest Green with Hazard Tape) ──
+    // Compactor Body
     const compactor = new THREE.Mesh(
       new THREE.BoxGeometry(2.85, 2.7, 5.0),
-      new THREE.MeshLambertMaterial({ color: 0x105a39 }) // Municipal Forest Green
+      new THREE.MeshLambertMaterial({ color: 0x105a39 })
     );
     compactor.position.set(0, 1.85, -1.8);
     compactor.castShadow = true;
     truckGroup.add(compactor);
 
-    // Hazard Caution Strip on Sides (Neon Yellow/Black Strip)
+    // Hazard Caution Strip
     const hazardStrip = new THREE.Mesh(
       new THREE.BoxGeometry(2.9, 0.2, 4.8),
       new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
@@ -762,7 +816,7 @@ export default function LivingCity3D({ onExit }) {
     hazardStrip.position.set(0, 2.9, -1.8);
     truckGroup.add(hazardStrip);
 
-    // Rear Loading Tailgate & Hydraulic Lift Cylinders
+    // Tailgate
     const tailgate = new THREE.Mesh(
       new THREE.BoxGeometry(2.8, 1.6, 0.6),
       new THREE.MeshLambertMaterial({ color: 0x064e3b })
@@ -770,15 +824,7 @@ export default function LivingCity3D({ onExit }) {
     tailgate.position.set(0, 1.3, -4.4);
     truckGroup.add(tailgate);
 
-    const cylinderGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.6, 8);
-    const cylinderMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
-    [-1.25, 1.25].forEach((cx) => {
-      const cyl = new THREE.Mesh(cylinderGeo, cylinderMat);
-      cyl.position.set(cx, 1.8, -4.3);
-      truckGroup.add(cyl);
-    });
-
-    // Dual LED Headlights
+    // Headlights
     const hlLeft = new THREE.SpotLight(0xffedd5, 4.0, 35, Math.PI / 6, 0.4);
     hlLeft.position.set(-0.9, 1.5, 3.4);
     hlLeft.target.position.set(-0.9, 0, 25);
@@ -791,14 +837,14 @@ export default function LivingCity3D({ onExit }) {
     truckGroup.add(hlRight);
     truckGroup.add(hlRight.target);
 
-    // 6 Heavy-Duty Wheels (1 Front Steer Axle + 2 Rear Drive Axles)
+    // 6 Wheels
     const wheelGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.55, 16);
     const wheelMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
     const wheels = [];
     [
-      { x: -1.5, y: 0.7, z: 2.1 }, { x: 1.5, y: 0.7, z: 2.1 },   // Front steer axle
-      { x: -1.5, y: 0.7, z: -1.3 }, { x: 1.5, y: 0.7, z: -1.3 }, // Mid drive axle
-      { x: -1.5, y: 0.7, z: -3.1 }, { x: 1.5, y: 0.7, z: -3.1 }  // Rear drive axle
+      { x: -1.5, y: 0.7, z: 2.1 }, { x: 1.5, y: 0.7, z: 2.1 },
+      { x: -1.5, y: 0.7, z: -1.3 }, { x: 1.5, y: 0.7, z: -1.3 },
+      { x: -1.5, y: 0.7, z: -3.1 }, { x: 1.5, y: 0.7, z: -3.1 }
     ].forEach((wp) => {
       const w = new THREE.Mesh(wheelGeo, wheelMat);
       w.rotation.z = Math.PI / 2;
@@ -812,15 +858,14 @@ export default function LivingCity3D({ onExit }) {
     scene.add(truckGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 9. REALISTIC TRAFFIC PASSENGER CARS (Modern Sedans / SUVs)
+    // 9. SLOW & REALISTIC TRAFFIC PASSENGER CARS
     // ─────────────────────────────────────────────────────────────
     const trafficCars = [];
-    const carColors = [0x0f172a, 0xf8fafc, 0x1d4ed8, 0xb91c1c, 0x475569]; // Black, White, Blue, Red, Grey
+    const carColors = [0x0f172a, 0xf8fafc, 0x1d4ed8, 0xb91c1c, 0x475569];
 
     const createCarModel = (colorHex) => {
       const car = new THREE.Group();
 
-      // Lower Chassis & Hood
       const chassis = new THREE.Mesh(
         new THREE.BoxGeometry(2.1, 0.75, 4.2),
         new THREE.MeshLambertMaterial({ color: colorHex })
@@ -829,7 +874,6 @@ export default function LivingCity3D({ onExit }) {
       chassis.castShadow = true;
       car.add(chassis);
 
-      // Cabin Glass Top
       const cabinTop = new THREE.Mesh(
         new THREE.BoxGeometry(1.8, 0.65, 2.2),
         new THREE.MeshLambertMaterial({ color: 0x1e293b })
@@ -837,7 +881,6 @@ export default function LivingCity3D({ onExit }) {
       cabinTop.position.set(0, 1.25, -0.2);
       car.add(cabinTop);
 
-      // Windshield & Rear Window
       const frontGlass = new THREE.Mesh(
         new THREE.PlaneGeometry(1.7, 0.65),
         new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
@@ -846,7 +889,6 @@ export default function LivingCity3D({ onExit }) {
       frontGlass.position.set(0, 1.2, 0.95);
       car.add(frontGlass);
 
-      // Headlights & Taillights
       const hl = new THREE.Mesh(
         new THREE.BoxGeometry(1.8, 0.2, 0.1),
         new THREE.MeshBasicMaterial({ color: 0xffedd5 })
@@ -861,7 +903,6 @@ export default function LivingCity3D({ onExit }) {
       tl.position.set(0, 0.65, -2.12);
       car.add(tl);
 
-      // 4 Wheels with Silver Rim Hubs
       const carWheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.35, 12);
       const carWheelMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
       [
@@ -877,24 +918,20 @@ export default function LivingCity3D({ onExit }) {
       return car;
     };
 
-    // Populate 6 Moving Traffic Cars on Avenue Lanes
+    // Slower, calm city speeds (0.13 to 0.17)
     const trafficData = [
-      { avenue: 'h', line: -46, dir: 1, speed: 0.32, x: -70, z: -46 + 3.2 },
-      { avenue: 'h', line: 46, dir: -1, speed: 0.28, x: 70, z: 46 - 3.2 },
-      { avenue: 'v', line: -46, dir: 1, speed: 0.30, x: -46 + 3.2, z: -80 },
-      { avenue: 'v', line: 46, dir: -1, speed: 0.34, x: 46 - 3.2, z: 80 },
-      { avenue: 'h', line: 0, dir: 1, speed: 0.33, x: -90, z: 3.2 },
-      { avenue: 'v', line: 0, dir: -1, speed: 0.31, x: -3.2, z: 90 }
+      { avenue: 'h', line: -46, dir: 1, speed: 0.15, x: -70, z: -46 + 3.2 },
+      { avenue: 'h', line: 46, dir: -1, speed: 0.14, x: 70, z: 46 - 3.2 },
+      { avenue: 'v', line: -46, dir: 1, speed: 0.16, x: -46 + 3.2, z: -80 },
+      { avenue: 'v', line: 46, dir: -1, speed: 0.15, x: 46 - 3.2, z: 80 },
+      { avenue: 'h', line: 0, dir: 1, speed: 0.17, x: -90, z: 3.2 },
+      { avenue: 'v', line: 0, dir: -1, speed: 0.14, x: -3.2, z: 90 }
     ];
 
     trafficData.forEach((td, idx) => {
       const carMesh = createCarModel(carColors[idx % carColors.length]);
       carMesh.position.set(td.x, 0, td.z);
-      if (td.avenue === 'h') {
-        carMesh.rotation.y = td.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
-      } else {
-        carMesh.rotation.y = td.dir > 0 ? 0 : Math.PI;
-      }
+      carMesh.rotation.y = td.avenue === 'h' ? (td.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (td.dir > 0 ? 0 : Math.PI);
       scene.add(carMesh);
       trafficCars.push({
         group: carMesh,
@@ -908,9 +945,10 @@ export default function LivingCity3D({ onExit }) {
     });
 
     // ─────────────────────────────────────────────────────────────
-    // 10. DRIVING MECHANICS & ROAD BOUNDARY CHECK
+    // 10. ROBUST ROAD CONFINEMENT & TUNED DRIVING PHYSICS
     // ─────────────────────────────────────────────────────────────
-    const halfRoad = roadWidth / 2 - 0.8; // 6.2 units tolerance
+    const halfRoad = roadWidth / 2 - 0.4; // 6.6 units (forgiving road margin for smooth cornering)
+    
     const isPointOnRoad = (px, pz) => {
       const onH = roadLines.some((rz) => Math.abs(pz - rz) <= halfRoad);
       const onV = roadLines.some((rx) => Math.abs(px - rx) <= halfRoad);
@@ -940,58 +978,68 @@ export default function LivingCity3D({ onExit }) {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    // Tuned Slower, Easy-to-Control Driving Physics
     let truckSpeed = 0;
-    const maxSpeed = 0.58;
-    const acceleration = 0.022;
-    const deceleration = 0.016;
-    const turnSpeed = 0.045;
+    const maxSpeed = 0.32;       // Slower, calm, pleasant city cruising speed
+    const acceleration = 0.016;  // Gentle, predictable acceleration
+    const deceleration = 0.028;  // Fast auto-braking when releasing keys
+    const turnSpeed = 0.055;     // Responsive, tight turning radius for 90° corners
     let truckAngle = 0;
 
-    // Suction Collection State
     let activeCollectionBin = null;
     let collectionTimer = 0;
-    const COLLECTION_DURATION = 2.5; // 2.5s physical suction loading
+    const COLLECTION_DURATION = 2.5;
 
-    // Reset Truck / Crash Respawn Procedure
-    const resetTruck = (reason = "Route Restarted") => {
-      truckGroup.position.set(0, 0, 0);
+    // Respawn Procedure with PROGRESS 100% PRESERVED
+    const resetTruck = (reason = "Route Repaired") => {
+      // Find nearest safe avenue intersection to current position or depot
+      let bestX = 0;
+      let bestZ = 0;
+      let minD = 99999;
+      roadLines.forEach((rx) => {
+        roadLines.forEach((rz) => {
+          const d = Math.hypot(truckGroup.position.x - rx, truckGroup.position.z - rz);
+          if (d < minD && Math.abs(rx) < fenceLimit - 10 && Math.abs(rz) < fenceLimit - 10) {
+            minD = d;
+            bestX = rx;
+            bestZ = rz;
+          }
+        });
+      });
+
+      truckGroup.position.set(bestX, 0, bestZ);
       truckAngle = 0;
       truckSpeed = 0;
       truckGroup.rotation.y = 0;
       isCrashedRef.current = false;
       setCrashState(null);
-      setNotification(`🚨 ${reason}: Truck safely respawned at Central Depot!`);
+      setNotification(`✅ ${reason}: Truck safely repositioned. Progress preserved! (Bins: ${wasteCollectedRef.current}/6)`);
     };
     resetTruckTriggerRef.current = resetTruck;
 
-    // Trigger Vehicle Collision Crash
+    // Collision Trigger (Zero Progress Lost)
     const triggerCrash = (obstacleName = "Traffic Vehicle") => {
       if (isCrashedRef.current) return;
       isCrashedRef.current = true;
       playSound('crash');
-      cameraShakeRef.current = 0.65; // Shake screen
+      cameraShakeRef.current = 0.6;
 
-      // Deduct Eco-Points penalty
-      setEcoPoints((prev) => Math.max(0, prev - 50));
-      
-      // Burst Crash Sparks
       const hitPos = truckGroup.position.clone();
       crashParticles.forEach((cp) => {
         cp.mesh.visible = true;
         cp.mesh.position.copy(hitPos);
         cp.vel.set(
-          (Math.random() - 0.5) * 0.6,
-          Math.random() * 0.5 + 0.2,
-          (Math.random() - 0.5) * 0.6
+          (Math.random() - 0.5) * 0.5,
+          Math.random() * 0.4 + 0.2,
+          (Math.random() - 0.5) * 0.5
         );
         cp.life = 1.0;
       });
 
-      // Update Lives
       setLives((prev) => {
-        const remaining = Math.max(0, prev - 1);
-        livesRef.current = remaining;
-        return remaining;
+        const rem = Math.max(0, prev - 1);
+        livesRef.current = rem;
+        return rem;
       });
 
       setCrashState({
@@ -999,14 +1047,13 @@ export default function LivingCity3D({ onExit }) {
         countdown: 2
       });
 
-      // Auto-Respawn after 2.2 seconds
       setTimeout(() => {
         resetTruck(`Vehicle Repaired after Collision with ${obstacleName}`);
-      }, 2200);
+      }, 2000);
     };
 
     // ─────────────────────────────────────────────────────────────
-    // 11. MAIN ANIMATION LOOP
+    // 11. MAIN ANIMATION & GAME LOOP
     // ─────────────────────────────────────────────────────────────
     let animId;
     let clock = new THREE.Clock();
@@ -1017,20 +1064,19 @@ export default function LivingCity3D({ onExit }) {
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
 
-      // If in crashed state, freeze controls and animate smoke/sparks
       if (isCrashedRef.current) {
         truckSpeed = 0;
         crashParticles.forEach((cp) => {
           if (cp.life > 0) {
             cp.mesh.position.add(cp.vel);
-            cp.vel.y -= 0.015; // Gravity
+            cp.vel.y -= 0.015;
             cp.life -= delta * 1.5;
             cp.mesh.scale.setScalar(Math.max(0.1, cp.life));
             if (cp.life <= 0) cp.mesh.visible = false;
           }
         });
       } else {
-        // Normal Driving Controls
+        // Driving Input
         if (keys.forward) {
           truckSpeed = Math.min(maxSpeed, truckSpeed + acceleration);
         } else if (keys.backward) {
@@ -1040,42 +1086,49 @@ export default function LivingCity3D({ onExit }) {
           else if (truckSpeed < 0) truckSpeed = Math.min(0, truckSpeed + deceleration);
         }
 
-        if (Math.abs(truckSpeed) > 0.01) {
+        if (Math.abs(truckSpeed) > 0.005) {
           const dir = truckSpeed > 0 ? 1 : -1;
           if (keys.left) truckAngle += turnSpeed * dir;
           if (keys.right) truckAngle -= turnSpeed * dir;
         }
 
-        // Propose Next Position
+        // Proposed Position
         const nextX = truckGroup.position.x + Math.sin(truckAngle) * truckSpeed;
         const nextZ = truckGroup.position.z + Math.cos(truckAngle) * truckSpeed;
 
-        // Check Outer World Border Collision
+        // Perimeter Check
         if (Math.abs(nextX) >= fenceLimit - 2 || Math.abs(nextZ) >= fenceLimit - 2) {
-          if (Math.abs(truckSpeed) > 0.35) {
+          if (Math.abs(truckSpeed) > 0.22) {
             triggerCrash("Perimeter Security Fence");
           } else {
             truckSpeed = 0;
           }
         } else if (isPointOnRoad(nextX, nextZ)) {
-          // Accepted on asphalt road!
           truckGroup.position.x = nextX;
           truckGroup.position.z = nextZ;
         } else {
-          // Collided with sidewalk or building
-          if (Math.abs(truckSpeed) > 0.38) {
-            triggerCrash("Sidewalk Curb / Building");
+          // Check for smooth wall glide (slide on X or Z if one component is on road)
+          if (isPointOnRoad(nextX, truckGroup.position.z)) {
+            truckGroup.position.x = nextX;
+            truckSpeed *= 0.85; // Gentle friction slide
+          } else if (isPointOnRoad(truckGroup.position.x, nextZ)) {
+            truckGroup.position.z = nextZ;
+            truckSpeed *= 0.85;
           } else {
-            truckSpeed = 0;
+            if (Math.abs(truckSpeed) > 0.28) {
+              triggerCrash("Sidewalk Curb / Building");
+            } else {
+              truckSpeed = 0; // Gentle stop, no crash at low speed
+            }
           }
         }
 
         truckGroup.rotation.y = truckAngle;
 
         // Wheel Rotation
-        if (Math.abs(truckSpeed) > 0.04) {
+        if (Math.abs(truckSpeed) > 0.03) {
           wheels.forEach((w) => (w.rotation.x += truckSpeed * 2.2));
-          truckGroup.position.y = Math.sin(time * 16) * 0.03;
+          truckGroup.position.y = Math.sin(time * 16) * 0.02;
         } else {
           truckGroup.position.y = 0;
         }
@@ -1083,11 +1136,11 @@ export default function LivingCity3D({ onExit }) {
         setCurrentSpeed(Math.round(Math.abs(truckSpeed) * 85));
       }
 
-      // Flash Roof Strobe Bar
-      strobeBar.material.color.setHex((Math.sin(time * 18) > 0) ? 0xf59e0b : 0xffffff);
+      // Flash Roof Strobe
+      strobeBar.material.color.setHex((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
 
       // ─────────────────────────────────────────────────────────────
-      // 12. TRAFFIC CARS SIMULATION & COLLISION CHECK
+      // 12. TRAFFIC SIMULATION & STRONG COLLISION DETECTION
       // ─────────────────────────────────────────────────────────────
       trafficCars.forEach((tc) => {
         if (tc.avenue === 'h') {
@@ -1102,17 +1155,16 @@ export default function LivingCity3D({ onExit }) {
           tc.group.position.z = tc.z;
         }
 
-        // Check Collision with Garbage Truck (Radius ~ 3.6m)
         if (!isCrashedRef.current) {
           const distToCar = Math.hypot(truckGroup.position.x - tc.x, truckGroup.position.z - tc.z);
-          if (distToCar < 3.6) {
+          if (distToCar < 3.4) {
             triggerCrash("Traffic Vehicle");
           }
         }
       });
 
       // ─────────────────────────────────────────────────────────────
-      // 13. TRUCK STOPPED AT DUSTBIN → SUCTION & FLYING DEBRIS
+      // 13. TRUCK STOPPED AT BIN → SUCTION & FEATURE SPOTLIGHT
       // ─────────────────────────────────────────────────────────────
       const stoppedNearBin = smartBins.find(
         (b) => !b.collected && Math.hypot(truckGroup.position.x - b.x, truckGroup.position.z - b.z) < 7.5
@@ -1124,6 +1176,17 @@ export default function LivingCity3D({ onExit }) {
           collectionTimer = 0;
           setCollectingBinId(stoppedNearBin.id);
           playSound('suction');
+
+          // Trigger feature spotlight for this spot
+          if (stoppedNearBin.feature) {
+            setActiveFeatureSpotlight(stoppedNearBin.feature);
+            setDiscoveredFeatures((prev) => {
+              if (!prev.includes(stoppedNearBin.feature.id)) {
+                return [...prev, stoppedNearBin.feature.id];
+              }
+              return prev;
+            });
+          }
         }
 
         collectionTimer += delta;
@@ -1142,9 +1205,9 @@ export default function LivingCity3D({ onExit }) {
         });
 
         if (collectionTimer >= COLLECTION_DURATION) {
-          // Full Collection Complete!
+          // Bin Completed
           stoppedNearBin.collected = true;
-          stoppedNearBin.beacon.material.color.setHex(0x10b981); // Green empty
+          stoppedNearBin.beacon.material.color.setHex(0x10b981);
           stoppedNearBin.column.material.color.setHex(0x10b981);
           stoppedNearBin.body.material.color.setHex(0x10b981);
 
@@ -1157,16 +1220,26 @@ export default function LivingCity3D({ onExit }) {
 
           setWasteCollected((prev) => {
             const nextVal = prev + 1;
+            wasteCollectedRef.current = nextVal;
             if (nextVal >= smartBins.length) {
-              setNotification("🚀 ALL DUSTBINS EMPTIED! Drive to northern Municipal Dumpyard!");
+              setNotification("🚀 ALL 6 BINS COLLECTED! Proceed to northern Municipal Dumpyard to finish!");
             } else {
-              setNotification(`✅ Emptied SmartBin #${stoppedNearBin.id}! (+25kg waste, +100 Eco-Points)`);
+              setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +100 Eco-Points)`);
             }
             return nextVal;
           });
 
-          setCurrentLoad((prev) => Math.min(truckCapacity, prev + 25));
-          setEcoPoints((prev) => prev + 100);
+          setCurrentLoad((prev) => {
+            const nextLoad = Math.min(truckCapacity, prev + 25);
+            currentLoadRef.current = nextLoad;
+            return nextLoad;
+          });
+
+          setEcoPoints((prev) => {
+            const nextPts = prev + 100;
+            ecoPointsRef.current = nextPts;
+            return nextPts;
+          });
         }
       } else {
         if (activeCollectionBin !== null) {
@@ -1184,7 +1257,8 @@ export default function LivingCity3D({ onExit }) {
       if (distToDumpyard < 12.0 && currentLoadRef.current > 0 && Math.abs(truckSpeed) < 0.08 && !isCrashedRef.current) {
         playSound('dump');
         setCurrentLoad(0);
-        setEcoPoints((prev) => prev + 500); // Massive victory bonus
+        currentLoadRef.current = 0;
+        setEcoPoints((prev) => prev + 500);
         setMissionComplete(true);
         setNotification("🏆 SHIFT COMPLETE: All waste processed at Municipal Facility! (+500 Bonus Points)");
       }
@@ -1202,7 +1276,7 @@ export default function LivingCity3D({ onExit }) {
         if (nextTargetBin) {
           tgtX = nextTargetBin.x;
           tgtZ = nextTargetBin.z;
-          tgtLabel = `SmartBin #${nextTargetBin.id} (${nextTargetBin.category})`;
+          tgtLabel = `Spot #${nextTargetBin.id}: ${nextTargetBin.category}`;
         }
 
         setCurrentTargetName(tgtLabel);
@@ -1227,8 +1301,8 @@ export default function LivingCity3D({ onExit }) {
       let shakeX = 0;
       let shakeY = 0;
       if (cameraShakeRef.current > 0) {
-        shakeX = (Math.random() - 0.5) * cameraShakeRef.current * 3;
-        shakeY = (Math.random() - 0.5) * cameraShakeRef.current * 3;
+        shakeX = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
+        shakeY = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
         cameraShakeRef.current = Math.max(0, cameraShakeRef.current - delta * 1.8);
       }
 
@@ -1246,7 +1320,6 @@ export default function LivingCity3D({ onExit }) {
         camera.position.set(tPos.x + 36 + shakeX, 44 + shakeY, tPos.z + 36);
         camera.lookAt(tPos.x, tPos.y, tPos.z);
       } else {
-        // Topdown Satellite
         camera.position.set(tPos.x + shakeX, 85 + shakeY, tPos.z + 0.1);
         camera.lookAt(tPos.x, tPos.y, tPos.z);
       }
@@ -1276,7 +1349,7 @@ export default function LivingCity3D({ onExit }) {
       }
       renderer.dispose();
     };
-  }, []); // Run ONCE on mount: fixes waste collection reset bug!
+  }, []);
 
   return (
     <div className="relative w-full h-screen bg-slate-950 overflow-hidden select-none font-sans">
@@ -1299,18 +1372,14 @@ export default function LivingCity3D({ onExit }) {
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-white text-sm">SmartBin Living City</span>
                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                  SIM V2
+                  PRECISION MODE
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Fleet Integrity:</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3].map((heart) => (
-                    <span key={heart} className={`text-xs ${heart <= lives ? 'text-rose-500' : 'text-slate-600'}`}>
-                      ❤️
-                    </span>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Features Discovered:</span>
+                <span className="text-[11px] font-extrabold text-[#e2fd00]">
+                  {discoveredFeatures.length} / 6
+                </span>
               </div>
             </div>
           </div>
@@ -1380,7 +1449,7 @@ export default function LivingCity3D({ onExit }) {
           ACTIVE SUCTION COUNTDOWN & DEBRIS FLOW MODAL
           ───────────────────────────────────────────────────────────── */}
       {collectingBinId && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white p-5 rounded-3xl border border-emerald-500 shadow-2xl backdrop-blur-xl flex items-center gap-5 z-30 animate-in fade-in zoom-in-95 pointer-events-none">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white p-5 rounded-3xl border border-emerald-500 shadow-2xl backdrop-blur-xl flex items-center gap-5 z-30 animate-in fade-in zoom-in-95 pointer-events-none">
           <div className="relative w-14 h-14 flex items-center justify-center">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <path
@@ -1414,7 +1483,70 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          ACCIDENT / CRASH OVERLAY BANNER
+          SMARTBIN PLATFORM FEATURE SPOTLIGHT MODAL (At each spot)
+          ───────────────────────────────────────────────────────────── */}
+      {activeFeatureSpotlight && (
+        <div className="absolute top-24 right-6 max-w-sm w-full bg-slate-900/95 backdrop-blur-xl border border-emerald-500/80 rounded-3xl p-5 shadow-2xl z-40 text-white animate-in slide-in-from-right-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white"
+                style={{ backgroundColor: activeFeatureSpotlight.color }}
+              >
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Spot #{activeFeatureSpotlight.id} • SmartBin Feature
+                </span>
+                <h4 className="font-black text-sm text-white leading-tight">
+                  {activeFeatureSpotlight.title}
+                </h4>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveFeatureSpotlight(null)}
+              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-2.5 text-xs text-slate-300">
+            <div className="inline-block px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-extrabold border border-emerald-500/20">
+              {activeFeatureSpotlight.subtitle}
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              {activeFeatureSpotlight.description}
+            </p>
+            <div className="bg-slate-800/80 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-bold">
+              <span className="text-slate-400">{activeFeatureSpotlight.statLabel}:</span>
+              <span className="text-[#e2fd00] font-black">{activeFeatureSpotlight.statValue}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+            <a
+              href={activeFeatureSpotlight.route}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-center font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
+            >
+              <span>Explore Feature in App</span>
+              <ExternalLink size={12} />
+            </a>
+            <button
+              onClick={() => setActiveFeatureSpotlight(null)}
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          ACCIDENT / CRASH OVERLAY (Progress 100% Preserved)
           ───────────────────────────────────────────────────────────── */}
       {crashState && (
         <div className="absolute inset-0 bg-red-950/40 backdrop-blur-sm z-40 flex items-center justify-center p-4">
@@ -1424,15 +1556,17 @@ export default function LivingCity3D({ onExit }) {
             </div>
             <h3 className="text-xl font-black text-white">{crashState.message}</h3>
             <p className="text-slate-300 text-xs leading-relaxed">
-              Vehicle damaged during service route. Road boundary or vehicle collision detected!
-              <span className="text-rose-400 font-bold block mt-1">-50 Eco-Points Penalty Deducted</span>
+              Minor impact detected! Vehicle chassis safety system engaged.
+              <span className="text-emerald-400 font-bold block mt-1.5">
+                🛡️ Progress Preserved: {wasteCollected} of {totalBins} Bins Emptied ({currentLoad} kg load safe)
+              </span>
             </p>
             <div className="pt-2 flex gap-3 justify-center">
               <button
                 onClick={handleManualRespawn}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-6 py-3 rounded-xl shadow-lg transition active:scale-95 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3 rounded-xl shadow-lg transition active:scale-95 cursor-pointer"
               >
-                Respawn Truck Now (Depot)
+                Instant Respawn on Road
               </button>
             </div>
           </div>
@@ -1451,7 +1585,7 @@ export default function LivingCity3D({ onExit }) {
             <div>
               <h2 className="text-2xl font-black text-white">🏆 MUNICIPAL SHIFT COMPLETED!</h2>
               <p className="text-slate-400 text-xs mt-1">
-                All SmartBins emptied and waste unloaded at Central Recycling Depot.
+                All SmartBins emptied, platform features audited, and waste unloaded at Central Recycling Depot.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-3 bg-slate-800/80 p-4 rounded-2xl text-white">
@@ -1495,19 +1629,16 @@ export default function LivingCity3D({ onExit }) {
       <div className="absolute bottom-6 left-6 z-30 pointer-events-auto flex flex-col gap-2">
         <div className="relative w-44 h-44 rounded-full bg-slate-950/90 border-4 border-slate-700/80 shadow-2xl backdrop-blur-md overflow-hidden flex items-center justify-center">
           
-          {/* Compass Rings & Crosshairs */}
           <div className="absolute inset-0 rounded-full border border-slate-800/60 pointer-events-none" />
           <span className="absolute top-1 text-[9px] font-black text-rose-500 z-10">N</span>
           <span className="absolute bottom-1 text-[9px] font-black text-slate-500 z-10">S</span>
           <span className="absolute left-1 text-[9px] font-black text-slate-500 z-10">W</span>
           <span className="absolute right-1 text-[9px] font-black text-slate-500 z-10">E</span>
 
-          {/* SVG Map Projection */}
           <svg className="w-full h-full" viewBox="-130 -130 260 260">
-            {/* Dark background */}
             <circle cx="0" cy="0" r="128" fill="#090d16" />
 
-            {/* Asphalt Roads */}
+            {/* Roads */}
             {[-92, -46, 0, 46, 92].map((coord) => (
               <React.Fragment key={coord}>
                 <line x1="-125" y1={coord} x2="125" y2={coord} stroke="#1e293b" strokeWidth="14" />
@@ -1517,20 +1648,20 @@ export default function LivingCity3D({ onExit }) {
               </React.Fragment>
             ))}
 
-            {/* Gardens / Parks on Radar (Green Blocks) */}
+            {/* Gardens */}
             <rect x="-85" y="9" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
             <rect x="7" y="-37" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
 
-            {/* Dumpyard Zone at North */}
+            {/* Dumpyard */}
             <rect x="-18" y="-125" width="36" height="20" fill="#0f766e" rx="3" />
             <circle cx={radarData.dumpyard.x} cy={radarData.dumpyard.z} r="4.5" fill="#10b981" />
 
-            {/* AI Traffic Vehicles (Yellow Dots) */}
+            {/* AI Traffic */}
             {radarData.traffic.map((tc, idx) => (
               <circle key={idx} cx={tc.x} cy={tc.z} r="2.2" fill="#facc15" />
             ))}
 
-            {/* SmartBins (Pulsing Category Blips) */}
+            {/* SmartBins */}
             {radarData.bins.map((b) => (
               <circle
                 key={b.id}
@@ -1543,7 +1674,7 @@ export default function LivingCity3D({ onExit }) {
               />
             ))}
 
-            {/* GPS Target Route Line */}
+            {/* Target Route Line */}
             {radarData.target && (
               <line
                 x1={radarData.playerX}
@@ -1557,7 +1688,7 @@ export default function LivingCity3D({ onExit }) {
               />
             )}
 
-            {/* Rotating Player Arrow / Triangle Blip */}
+            {/* Player Blip */}
             <g transform={`translate(${radarData.playerX}, ${radarData.playerZ}) rotate(${(-radarData.playerAngle * 180) / Math.PI})`}>
               <polygon points="0,-7 5,6 0,3 -5,6" fill="#ffffff" stroke="#000000" strokeWidth="1" />
             </g>
@@ -1587,8 +1718,8 @@ export default function LivingCity3D({ onExit }) {
           </div>
           <div className="h-8 w-[1px] bg-slate-800" />
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Road Status</p>
-            <p className="font-extrabold text-xs text-emerald-400">Asphalt Confined (Protected)</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Handling Mode</p>
+            <p className="font-extrabold text-xs text-emerald-400">Precision Easy-Turn</p>
           </div>
         </div>
 
@@ -1641,23 +1772,19 @@ export default function LivingCity3D({ onExit }) {
             <div className="space-y-4 my-6 text-sm text-slate-300">
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                <p><strong className="text-white">W / A / S / D or Arrow Keys:</strong> Drive the garbage truck. Press <strong>H</strong> for air horn.</p>
+                <p><strong className="text-white">Precision Control:</strong> W/A/S/D or Arrow Keys. Speed is capped for smooth, calm handling. Release W to auto-brake.</p>
               </div>
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                <p><strong className="text-white">GTA-Style Radar (Bottom-Left):</strong> Follow the yellow dashed GPS line to the next SmartBin.</p>
+                <p><strong className="text-white">GTA Radar (Bottom-Left):</strong> Follow yellow dashed line to the next SmartBin.</p>
               </div>
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                <p><strong className="text-white">Stop at Bin to Collect:</strong> Come to a full stop (<span className="text-amber-300">0 km/h</span>) near a bin. 2.5s suction timer will load trash debris into truck.</p>
+                <p><strong className="text-white">App Features at Every Spot:</strong> Each bin reveals a real feature of the SmartBin platform (AI Classifier, IoT Telemetry, C++ VRP, etc.).</p>
               </div>
               <div className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs shrink-0">4</span>
-                <p><strong className="text-white">Avoid Collisions:</strong> Ramming traffic cars or perimeter fences damages the truck and costs -50 points.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">5</span>
-                <p><strong className="text-white">Deliver to Dumpyard:</strong> After emptying all bins, drive to the northern Dumpyard to unload for +500 points.</p>
+                <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">4</span>
+                <p><strong className="text-white">Zero Progress Loss:</strong> Even if a collision occurs, your collected bins and load stay 100% saved.</p>
               </div>
             </div>
 
