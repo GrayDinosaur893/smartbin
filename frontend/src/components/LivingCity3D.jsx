@@ -714,6 +714,14 @@ export default function LivingCity3D({ onExit }) {
   // Respawn Coin Modal (Prompted on 3rd death to pay 1 Coin or forfeit)
   const [showRespawnCoinModal, setShowRespawnCoinModal] = useState(false);
 
+  // Safe Zone Immunity & Transition Refs (Immune & paused in Garage/Menu, spawn shield on drive)
+  const saveCityTransformRef = useRef(null);
+  const restoreCityDriveRef = useRef(null);
+  const previousScreenRef = useRef('menu');
+  const savedCityTransformRef = useRef({ x: 0, z: -45, angle: 0 });
+  const spawnImmunityUntilRef = useRef(0);
+  const [isShieldActive, setIsShieldActive] = useState(false);
+
   // Citizen Redeemed Vouchers Storage
   const [redeemedVouchers, setRedeemedVouchers] = useState(() => {
     try {
@@ -1103,6 +1111,58 @@ export default function LivingCity3D({ onExit }) {
     if (resetTruckTriggerRef.current) {
       resetTruckTriggerRef.current();
     }
+  };
+
+  const openGarageView = (fromScreen = 'city') => {
+    if (fromScreen === 'city' || gameScreenRef.current === 'city') {
+      saveCityTransformRef.current?.();
+      previousScreenRef.current = 'city';
+    } else {
+      previousScreenRef.current = 'menu';
+    }
+    const curIdx = truckKeysList.indexOf(selectedTruckModelRef.current);
+    setPreviewTruckIndex(curIdx >= 0 ? curIdx : 0);
+    previewTruckIndexRef.current = curIdx >= 0 ? curIdx : 0;
+    applyTruckModelVisualsRef.current?.(selectedTruckModelRef.current);
+    setGameScreen('garage');
+    gameScreenRef.current = 'garage';
+    setIsPaused(false);
+    isPausedRef.current = false;
+    playSound('horn');
+  };
+
+  const resumeOrStartCityDriving = (modelId = null) => {
+    const chosenModel = modelId || selectedTruckModelRef.current;
+    setSelectedTruckModel(chosenModel);
+    selectedTruckModelRef.current = chosenModel;
+    localStorage.setItem('smartbin_active_truck', chosenModel);
+    applyTruckModelVisualsRef.current?.(chosenModel);
+
+    restoreCityDriveRef.current?.();
+
+    setGameScreen('city');
+    gameScreenRef.current = 'city';
+    setIsPaused(false);
+    isPausedRef.current = false;
+    playSound('horn');
+    setNotification(`🛡️ Active Patrol: ${TRUCK_MODELS_DATA[chosenModel]?.name || 'Truck'} deployed. (3.5s Spawn Shield Active)`);
+  };
+
+  const startNewShiftFromMenu = () => {
+    applyTruckModelVisualsRef.current?.(selectedTruckModelRef.current);
+    savedCityTransformRef.current = { x: 0, z: -45, angle: 0 };
+    restoreCityDriveRef.current?.();
+    setGameScreen('city');
+    gameScreenRef.current = 'city';
+    setIsPaused(false);
+    isPausedRef.current = false;
+    setShiftTime(0);
+    shiftTimeRef.current = 0;
+    setCollisionCount(0);
+    collisionCountRef.current = 0;
+    setMissionResultData(null);
+    playSound('horn');
+    setNotification(`🚀 Shift started! [${DIFFICULTY_TIERS[difficultyTier]?.name}] Deliver bins to Northern Dumpyard within ${DIFFICULTY_TIERS[difficultyTier]?.timeLimit}s!`);
   };
 
   useEffect(() => {
@@ -3488,8 +3548,12 @@ export default function LivingCity3D({ onExit }) {
           return;
         }
         if (e.key === 'Escape') {
-          setGameScreen('menu');
-          gameScreenRef.current = 'menu';
+          if (previousScreenRef.current === 'city') {
+            resumeOrStartCityDriving();
+          } else {
+            setGameScreen('menu');
+            gameScreenRef.current = 'menu';
+          }
           return;
         }
       }
@@ -3500,6 +3564,11 @@ export default function LivingCity3D({ onExit }) {
           setIsPaused((p) => {
             const nextP = !p;
             isPausedRef.current = nextP;
+            if (!nextP) {
+              spawnImmunityUntilRef.current = performance.now() + 2500;
+              setIsShieldActive(true);
+              setTimeout(() => setIsShieldActive(false), 2500);
+            }
             return nextP;
           });
           return;
@@ -3522,9 +3591,7 @@ export default function LivingCity3D({ onExit }) {
       }
       if (k === 'h') playSound('horn');
       if (k === 'g' || (k === 'e' && isNearWorkshopRef.current)) {
-        setGameScreen('garage');
-        gameScreenRef.current = 'garage';
-        playSound('horn');
+        openGarageView('city');
         return;
       }
       if (k === 'q' && isNearWorkshopRef.current) {
@@ -3649,7 +3716,49 @@ export default function LivingCity3D({ onExit }) {
     };
     resetTruckTriggerRef.current = resetTruck;
 
+    // City Transform Save & Safe Restore Handlers
+    const saveCurrentCityTransform = () => {
+      if (gameScreenRef.current === 'city') {
+        savedCityTransformRef.current = {
+          x: truckGroup.position.x,
+          z: truckGroup.position.z,
+          angle: truckAngle
+        };
+      }
+    };
+    saveCityTransformRef.current = saveCurrentCityTransform;
+
+    const restoreCityDrive = () => {
+      const saved = savedCityTransformRef.current;
+      if (saved && (saved.x !== 0 || saved.z !== 0)) {
+        truckGroup.position.set(saved.x, 0, saved.z);
+        truckAngle = saved.angle;
+        truckGroup.rotation.y = truckAngle;
+      } else {
+        truckGroup.position.set(0, 0, -45);
+        truckAngle = 0;
+        truckGroup.rotation.y = 0;
+      }
+      truckSpeed = 0;
+      keys.forward = false;
+      keys.backward = false;
+      keys.left = false;
+      keys.right = false;
+
+      // 3.5s Spawn Immunity Shield
+      spawnImmunityUntilRef.current = performance.now() + 3500;
+      setIsShieldActive(true);
+      setTimeout(() => setIsShieldActive(false), 3500);
+    };
+    restoreCityDriveRef.current = restoreCityDrive;
+
     const triggerCrash = (obstacleName = "Traffic Vehicle") => {
+      // 1. NEVER CRASH OR TAKE DAMAGE IN GARAGE, MENU, OR WHILE PAUSED!
+      if (gameScreenRef.current !== 'city' || isPausedRef.current) return;
+
+      // 2. SPAWN IMMUNITY GRACE PERIOD (Zero damage after entering city / unpausing)
+      if (performance.now() < spawnImmunityUntilRef.current) return;
+
       if (isCrashedRef.current) return;
       isCrashedRef.current = true;
       playSound('crash');
@@ -3748,13 +3857,46 @@ export default function LivingCity3D({ onExit }) {
         setShiftTime((prevSec) => (prevSec !== currentSec ? currentSec : prevSec));
       }
 
+      // ─────────────────────────────────────────────────────────────
+      // GARAGE SHOWROOM & MENU: 100% PAUSED FROM ACTIVE CITY SIMULATION
+      // NO TRAFFIC MOVEMENT, NO COLLISIONS, NO ROAD DAMAGE, NO MISSION TIMERS!
+      // ─────────────────────────────────────────────────────────────
       if (gameScreenRef.current !== 'city') {
-        // In Garage Showroom or Main Menu: Truck rests on showroom turntable
         truckSpeed = 0;
         keys.forward = false;
         keys.backward = false;
         keys.left = false;
         keys.right = false;
+
+        // Slow automatic idle rotation if not dragging
+        if (!isShowroomDraggingRef.current) {
+          showroomAngleRef.current += delta * 0.45;
+        }
+
+        // Dr. Driving Garage Showroom Turntable
+        const angle = showroomAngleRef.current;
+        const camDistance = 8.8;
+        const camElevation = 2.8;
+
+        camera.position.x = Math.sin(angle) * camDistance;
+        camera.position.y = camElevation;
+        camera.position.z = Math.cos(angle) * camDistance;
+        camera.lookAt(0, 1.3, 0);
+
+        truckGroup.position.set(0, 0, 0);
+        truckGroup.rotation.y = 0;
+
+        // Turntable visual flair for active showroom truck
+        if (strobeBar && strobeBar.material) {
+          strobeBar.material.color.setHex((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
+        }
+        if (vectorFieldContainer) {
+          vectorFieldContainer.rotation.y += 0.005;
+        }
+
+        // Render turntable showroom and immediately return — ZERO traffic, ZERO collisions, ZERO damage!
+        renderer.render(scene, camera);
+        return;
       }
 
       if (isCrashedRef.current) {
@@ -4051,7 +4193,7 @@ export default function LivingCity3D({ onExit }) {
 
         // ── TWO-WAY COLLISION SYSTEM (COLLISION FROM BOTH SIDES) ──
         // Trigger crash if player rams car OR if fast-moving traffic car rams into truck!
-        if (!isCrashedRef.current) {
+        if (!isCrashedRef.current && performance.now() >= spawnImmunityUntilRef.current) {
           // Check collision distance threshold between truck bounding box and traffic car
           if (distToTruck < 3.4) {
             const playerMoving = Math.abs(truckSpeed) > 0.08;
@@ -4474,30 +4616,9 @@ export default function LivingCity3D({ onExit }) {
       // ─────────────────────────────────────────────────────────────
       // 17. CAMERA VIEWS (SHOWROOM TURNTABLE VS CITY CHASE / TOPDOWN)
       // ─────────────────────────────────────────────────────────────
-      const isShowroom = (gameScreenRef.current === 'garage' || gameScreenRef.current === 'menu');
-
-      if (isShowroom) {
-        // Slow automatic idle rotation if not dragging
-        if (!isShowroomDraggingRef.current) {
-          showroomAngleRef.current += delta * 0.45;
-        }
-
-        // Dr. Driving Garage Showroom Turntable
-        const angle = showroomAngleRef.current;
-        const camDistance = 8.8;
-        const camElevation = 2.8;
-
-        // Position camera around the truck centered at origin
-        camera.position.x = Math.sin(angle) * camDistance;
-        camera.position.y = camElevation;
-        camera.position.z = Math.cos(angle) * camDistance;
-        camera.lookAt(0, 1.3, 0);
-
-        // Keep truck group centered on the turntable in garage view
-        truckGroup.position.set(0, 0, 0);
-        truckGroup.rotation.y = 0;
-      } else {
-        const tPos = truckGroup.position;
+      // 17. CAMERA VIEWS IN CITY (CHASE / ISOMETRIC / OVERHEAD)
+      // ─────────────────────────────────────────────────────────────
+      const tPos = truckGroup.position;
         let shakeX = 0;
         let shakeY = 0;
         if (cameraShakeRef.current > 0) {
@@ -4523,7 +4644,6 @@ export default function LivingCity3D({ onExit }) {
           camera.position.set(tPos.x + shakeX, 85 + shakeY, tPos.z + 0.1);
           camera.lookAt(tPos.x, tPos.y, tPos.z);
         }
-      }
 
       renderer.render(scene, camera);
     };
@@ -4651,17 +4771,17 @@ export default function LivingCity3D({ onExit }) {
             </div>
           </div>
 
-          {/* Right: Garage Quick-Switch, Pause, Audio & Exit */}
+          {/* Right: Spawn Shield, Garage Quick-Switch, Pause, Audio & Exit */}
           <div className="pointer-events-auto flex items-center gap-2">
+            {isShieldActive && (
+              <div className="bg-emerald-500/25 border-2 border-emerald-400 text-emerald-300 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.5)] animate-pulse">
+                <span>🛡️</span>
+                <span className="hidden sm:inline">SPAWN SHIELD</span>
+              </div>
+            )}
+
             <button
-              onClick={() => {
-                const curIdx = truckKeysList.indexOf(selectedTruckModel);
-                setPreviewTruckIndex(curIdx >= 0 ? curIdx : 0);
-                previewTruckIndexRef.current = curIdx >= 0 ? curIdx : 0;
-                applyTruckModelVisualsRef.current?.(selectedTruckModel);
-                setGameScreen('garage');
-                gameScreenRef.current = 'garage';
-              }}
+              onClick={() => openGarageView('city')}
               className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/80 border border-white/10 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
               title="Open 3D Truck Garage"
             >
@@ -4674,6 +4794,11 @@ export default function LivingCity3D({ onExit }) {
                 setIsPaused((p) => {
                   const nextP = !p;
                   isPausedRef.current = nextP;
+                  if (!nextP) {
+                    spawnImmunityUntilRef.current = performance.now() + 2500;
+                    setIsShieldActive(true);
+                    setTimeout(() => setIsShieldActive(false), 2500);
+                  }
                   return nextP;
                 });
               }}
@@ -4889,11 +5014,7 @@ export default function LivingCity3D({ onExit }) {
       {isNearWorkshop && !showGarageShop && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto animate-in zoom-in-95 flex items-center gap-3">
           <button
-            onClick={() => {
-              setGameScreen('garage');
-              gameScreenRef.current = 'garage';
-              playSound('horn');
-            }}
+            onClick={() => openGarageView('city')}
             className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.6)] flex items-center gap-2.5 active:scale-95 transition cursor-pointer uppercase"
           >
             <span className="text-base">🚗</span>
@@ -5142,8 +5263,7 @@ export default function LivingCity3D({ onExit }) {
                 onClick={() => {
                   setMissionComplete(false);
                   setMissionResultData(null);
-                  setGameScreen('garage');
-                  gameScreenRef.current = 'garage';
+                  openGarageView('city');
                 }}
                 className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs uppercase rounded-xl shadow-md cursor-pointer transition active:scale-95"
               >
@@ -5776,20 +5896,7 @@ export default function LivingCity3D({ onExit }) {
           {/* Menu Bottom Action Deck */}
           <div className="max-w-xl mx-auto w-full pointer-events-auto flex flex-col sm:flex-row items-center gap-3">
             <button
-              onClick={() => {
-                applyTruckModelVisualsRef.current?.(selectedTruckModel);
-                setGameScreen('city');
-                gameScreenRef.current = 'city';
-                setIsPaused(false);
-                isPausedRef.current = false;
-                setShiftTime(0);
-                shiftTimeRef.current = 0;
-                setCollisionCount(0);
-                collisionCountRef.current = 0;
-                setMissionResultData(null);
-                playSound('horn');
-                setNotification(`🚀 Shift started! [${DIFFICULTY_TIERS[difficultyTier]?.name}] Deliver bins to Northern Dumpyard within ${DIFFICULTY_TIERS[difficultyTier]?.timeLimit}s!`);
-              }}
+              onClick={startNewShiftFromMenu}
               className="w-full sm:flex-1 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-base uppercase tracking-wider shadow-[0_0_35px_rgba(16,185,129,0.4)] active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <Gamepad2 size={20} />
@@ -5797,15 +5904,7 @@ export default function LivingCity3D({ onExit }) {
             </button>
 
             <button
-              onClick={() => {
-                const curIdx = truckKeysList.indexOf(selectedTruckModel);
-                setPreviewTruckIndex(curIdx >= 0 ? curIdx : 0);
-                previewTruckIndexRef.current = curIdx >= 0 ? curIdx : 0;
-                applyTruckModelVisualsRef.current?.(selectedTruckModel);
-                setGameScreen('garage');
-                gameScreenRef.current = 'garage';
-                playSound('horn');
-              }}
+              onClick={() => openGarageView('menu')}
               className="w-full sm:flex-1 py-4 rounded-2xl bg-slate-900/95 hover:bg-slate-800 border-2 border-emerald-500/60 text-white font-black text-sm uppercase tracking-wider shadow-2xl active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <Wrench size={18} className="text-emerald-400" />
@@ -5850,19 +5949,39 @@ export default function LivingCity3D({ onExit }) {
                 <button
                   onClick={() => {
                     applyTruckModelVisualsRef.current?.(selectedTruckModel);
-                    setGameScreen('menu');
-                    gameScreenRef.current = 'menu';
+                    if (previousScreenRef.current === 'city') {
+                      resumeOrStartCityDriving();
+                    } else {
+                      setGameScreen('menu');
+                      gameScreenRef.current = 'menu';
+                    }
                   }}
                   className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/10 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
                 >
                   <span>←</span>
-                  <span>Back to Menu</span>
+                  <span>{previousScreenRef.current === 'city' ? 'Back to City Drive' : 'Back to Menu'}</span>
                 </button>
-                <div className="hidden sm:block">
+                {previousScreenRef.current === 'city' && (
+                  <button
+                    onClick={() => {
+                      applyTruckModelVisualsRef.current?.(selectedTruckModel);
+                      setGameScreen('menu');
+                      gameScreenRef.current = 'menu';
+                    }}
+                    className="px-3 py-2 rounded-xl bg-slate-900/70 hover:bg-slate-800 border border-white/10 text-slate-300 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <span>Main Menu</span>
+                  </button>
+                )}
+                <div className="hidden sm:flex items-center gap-2">
                   <h2 className="text-lg font-black text-white flex items-center gap-2">
                     <span>MUNICIPAL 3D GARAGE</span>
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-950">DR. DRIVING SHOWROOM</span>
                   </h2>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <span>🛡️</span>
+                    <span>SAFE ZONE (CITY PAUSED)</span>
+                  </span>
                 </div>
               </div>
 
@@ -6050,16 +6169,7 @@ export default function LivingCity3D({ onExit }) {
                   disabled={!isOwned && !isSelected}
                   onClick={() => {
                     if (isOwned || isSelected) {
-                      setSelectedTruckModel(truck.id);
-                      selectedTruckModelRef.current = truck.id;
-                      localStorage.setItem('smartbin_active_truck', truck.id);
-                      applyTruckModelVisualsRef.current?.(truck.id);
-                      setGameScreen('city');
-                      gameScreenRef.current = 'city';
-                      setIsPaused(false);
-                      isPausedRef.current = false;
-                      playSound('horn');
-                      setNotification(`🚀 Launched in city with ${truck.name}! Happy driving!`);
+                      resumeOrStartCityDriving(truck.id);
                     }
                   }}
                   className={`w-full sm:flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-2 ${
@@ -6123,6 +6233,9 @@ export default function LivingCity3D({ onExit }) {
                 onClick={() => {
                   setIsPaused(false);
                   isPausedRef.current = false;
+                  spawnImmunityUntilRef.current = performance.now() + 2500;
+                  setIsShieldActive(true);
+                  setTimeout(() => setIsShieldActive(false), 2500);
                 }}
                 className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-95 cursor-pointer"
               >
@@ -6133,8 +6246,7 @@ export default function LivingCity3D({ onExit }) {
                 onClick={() => {
                   setIsPaused(false);
                   isPausedRef.current = false;
-                  setGameScreen('garage');
-                  gameScreenRef.current = 'garage';
+                  openGarageView('city');
                 }}
                 className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
               >
