@@ -21,12 +21,14 @@ import {
   Gift,
   Building2,
   ExternalLink,
-  X
+  X,
+  MousePointer,
+  UserCheck
 } from 'lucide-react';
 
 /**
- * SMARTBIN APP FEATURES DATASET
- * Showcased dynamically at each of the 6 city garbage collection spots.
+ * SMARTBIN PLATFORM APP FEATURES DATASET
+ * Showcased dynamically at each of the 6 city garbage spots.
  */
 const SPOT_APP_FEATURES = [
   {
@@ -35,7 +37,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Gemini 2.5 Flash Neural Vision Engine",
     category: "Plastic & Packaging",
     color: "#3b82f6",
-    icon: "Bot",
     highlight: "Computer Vision & Auto-Tagging",
     description: "Our edge and cloud AI scans trash photos in real-time, categorizing items into Recyclable, Compostable, or Hazardous with >98.4% accuracy.",
     statLabel: "Detection Accuracy",
@@ -48,7 +49,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Real-time Bin Volume & LoRaWAN Alerts",
     category: "Organic Food Waste",
     color: "#22c55e",
-    icon: "Radio",
     highlight: "Zero-Overflow Urban Monitoring",
     description: "Every physical SmartBin contains an ultrasonic distance sensor that reports live fill percentages to municipal servers every 15 minutes, avoiding overflow.",
     statLabel: "Telemetry Latency",
@@ -61,7 +61,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Capacitated Vehicle Routing Problem Solver",
     category: "Paper & Cardboard",
     color: "#f59e0b",
-    icon: "Navigation",
     highlight: "34% Fuel & Diesel Reduction",
     description: "Our high-speed C++ engine solves the Capacitated Vehicle Routing Problem (CVRP), calculating the shortest fuel-efficient routes for garbage trucks.",
     statLabel: "Fuel Savings",
@@ -74,7 +73,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Civic Incentives & Micro-Cash Wallet",
     category: "Hazardous & Dry Waste",
     color: "#ec4899",
-    icon: "Award",
     highlight: "100 Eco-Points = ₹1.00 Digital Cash",
     description: "Citizens upload verified photos of cleanings and earn Eco-Points credited directly to their civic digital wallet for government tax & bill rebates.",
     statLabel: "Reward Rate",
@@ -87,7 +85,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Local Businesses Sponsor Cleanliness",
     category: "Commercial Recyclables",
     color: "#8b5cf6",
-    icon: "Gift",
     highlight: "Sponsor Discounts & EV Vouchers",
     description: "Local stores and CSR partners (Jindal, Tata EV, CG Compost) sponsor discounts and free passes that citizens redeem using earned Eco-Points.",
     statLabel: "Partner Sponsors",
@@ -100,7 +97,6 @@ const SPOT_APP_FEATURES = [
     subtitle: "Centralized Administrative Fleet Control",
     category: "Public Sector Waste",
     color: "#10b981",
-    icon: "Building2",
     highlight: "Bilaspur Municipal Real-Time GIS",
     description: "City administrators view live heatmap clusters, track garbage fleet GPS in real time, and audit contractor cleaning verifications.",
     statLabel: "City Coverage",
@@ -121,9 +117,11 @@ export default function LivingCity3D({ onExit }) {
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [collectingBinId, setCollectingBinId] = useState(null);
   const [collectProgress, setCollectProgress] = useState(0);
+  const [isWorkerAtBin, setIsWorkerAtBin] = useState(false);
+  const [isHoldingCollect, setIsHoldingCollect] = useState(false);
   const [currentTargetName, setCurrentTargetName] = useState("SmartBin #1 (Plastic)");
   const [targetDistance, setTargetDistance] = useState(0);
-  const [notification, setNotification] = useState("Shift Started: Slower, smooth steering activated. Follow GTA Radar at bottom-left!");
+  const [notification, setNotification] = useState("Shift Started: Capped 0-30 KM/H smooth steering. Park near dustbin to send worker!");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [viewMode, setViewMode] = useState('chase');
   const [showHelp, setShowHelp] = useState(false);
@@ -166,6 +164,9 @@ export default function LivingCity3D({ onExit }) {
 
   const livesRef = useRef(lives);
   livesRef.current = lives;
+
+  const isHoldingCollectRef = useRef(false);
+  isHoldingCollectRef.current = isHoldingCollect;
 
   const isCrashedRef = useRef(false);
   const cameraShakeRef = useRef(0);
@@ -393,47 +394,32 @@ export default function LivingCity3D({ onExit }) {
     buildPerimeterSide(-fenceLimit, -fenceLimit, -fenceLimit, fenceLimit, false);
     buildPerimeterSide(fenceLimit, -fenceLimit, fenceLimit, fenceLimit, false);
 
-    // Hazard Signs on Fences
-    const signGeo = new THREE.BoxGeometry(7, 1.8, 0.2);
-    const signMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
-    [
-      { x: 0, z: -fenceLimit + 0.4, rotY: 0 },
-      { x: 0, z: fenceLimit - 0.4, rotY: Math.PI },
-      { x: -fenceLimit + 0.4, z: 0, rotY: Math.PI / 2 },
-      { x: fenceLimit - 0.4, z: 0, rotY: -Math.PI / 2 }
-    ].forEach((sp) => {
-      const sign = new THREE.Mesh(signGeo, signMat);
-      sign.position.set(sp.x, 4.2, sp.z);
-      sign.rotation.y = sp.rotY;
-      fenceGroup.add(sign);
-    });
-
     scene.add(fenceGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 5. MUNICIPAL DUMPYARD & RECYCLING FACILITY
+    // 5. SCRAPYARD & LANDFILL DUMPYARD (With Cranes, Broken Cars & Trash Mounds)
     // ─────────────────────────────────────────────────────────────
     const dumpyardPos = { x: 0, z: -115 };
     const dumpyardGroup = new THREE.Group();
 
-    // Apron
+    // Heavy Concrete Apron
     const apron = new THREE.Mesh(
-      new THREE.BoxGeometry(36, 0.4, 24),
-      new THREE.MeshLambertMaterial({ color: 0x475569 })
+      new THREE.BoxGeometry(42, 0.4, 26),
+      new THREE.MeshLambertMaterial({ color: 0x334155 })
     );
     apron.position.set(dumpyardPos.x, 0.2, dumpyardPos.z);
     apron.receiveShadow = true;
     dumpyardGroup.add(apron);
 
-    // Striped Curb
+    // Yellow/Black Hazard Curb
     const curbStripe = new THREE.Mesh(
-      new THREE.BoxGeometry(36.4, 0.5, 0.8),
+      new THREE.BoxGeometry(42.4, 0.5, 0.8),
       new THREE.MeshBasicMaterial({ color: 0xfacc15 })
     );
-    curbStripe.position.set(dumpyardPos.x, 0.26, dumpyardPos.z + 11.8);
+    curbStripe.position.set(dumpyardPos.x, 0.26, dumpyardPos.z + 12.8);
     dumpyardGroup.add(curbStripe);
 
-    // Hangar
+    // Main Municipal Recycling Facility Warehouse Hangar
     const hangar = new THREE.Mesh(
       new THREE.BoxGeometry(32, 13, 16),
       new THREE.MeshLambertMaterial({ color: 0x0f766e })
@@ -442,7 +428,7 @@ export default function LivingCity3D({ onExit }) {
     hangar.castShadow = true;
     dumpyardGroup.add(hangar);
 
-    // Signboard
+    // Signboard: "CENTRAL MUNICIPAL RECYCLING FACILITY & SALVAGE YARD"
     const dumpSign = new THREE.Mesh(
       new THREE.BoxGeometry(26, 2.8, 0.5),
       new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
@@ -450,17 +436,154 @@ export default function LivingCity3D({ onExit }) {
     dumpSign.position.set(dumpyardPos.x, 14.8, dumpyardPos.z + 4.2);
     dumpyardGroup.add(dumpSign);
 
-    // Sorting Dumpsters
-    const sorterColors = [0x2563eb, 0x475569, 0x16a34a];
-    [-10, 0, 10].forEach((sx, idx) => {
-      const sorter = new THREE.Mesh(
-        new THREE.BoxGeometry(7, 3.2, 5.5),
-        new THREE.MeshLambertMaterial({ color: sorterColors[idx] })
-      );
-      sorter.position.set(dumpyardPos.x + sx, 1.8, dumpyardPos.z + 5.5);
-      sorter.castShadow = true;
-      dumpyardGroup.add(sorter);
+    // ── MASSIVE SCRAP & TRASH MOUNDS (Bahut Sara Kachra) ──
+    const moundMat1 = new THREE.MeshLambertMaterial({ color: 0x475569 }); // Scrap metal pile
+    const moundMat2 = new THREE.MeshLambertMaterial({ color: 0x78350f }); // Rusted junk & compost
+    const moundMat3 = new THREE.MeshLambertMaterial({ color: 0x1e293b }); // Compressed tire pile
+
+    // Mound 1: Left Scrap Metal Mounds
+    const mound1 = new THREE.Mesh(new THREE.DodecahedronGeometry(5.5, 1), moundMat1);
+    mound1.scale.set(1.4, 0.65, 1.2);
+    mound1.position.set(dumpyardPos.x - 14, 2.2, dumpyardPos.z + 2);
+    mound1.castShadow = true;
+    dumpyardGroup.add(mound1);
+
+    // Mound 2: Right Mixed Waste & Tire Heap
+    const mound2 = new THREE.Mesh(new THREE.DodecahedronGeometry(6.2, 1), moundMat2);
+    mound2.scale.set(1.3, 0.6, 1.1);
+    mound2.position.set(dumpyardPos.x + 14, 2.4, dumpyardPos.z + 3);
+    mound2.castShadow = true;
+    dumpyardGroup.add(mound2);
+
+    // Mound 3: Center Rear Rubble Pile
+    const mound3 = new THREE.Mesh(new THREE.DodecahedronGeometry(4.8, 1), moundMat3);
+    mound3.scale.set(1.5, 0.7, 1.0);
+    mound3.position.set(dumpyardPos.x + 8, 2.0, dumpyardPos.z - 9);
+    dumpyardGroup.add(mound3);
+
+    // Discarded Rusted Oil Drums & Barrels Scattered on Mounds
+    const drumGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 10);
+    const drumMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+    [
+      { x: -11, y: 1.2, z: 6, rotZ: 0 },
+      { x: -12.2, y: 1.2, z: 5.5, rotZ: Math.PI / 2 },
+      { x: 12, y: 1.2, z: 7, rotZ: 0.3 },
+      { x: 13.5, y: 1.2, z: 6.2, rotZ: Math.PI / 2 }
+    ].forEach((dp) => {
+      const drum = new THREE.Mesh(drumGeo, drumMat);
+      drum.position.set(dumpyardPos.x + dp.x, dp.y, dumpyardPos.z + dp.z);
+      drum.rotation.z = dp.rotZ;
+      dumpyardGroup.add(drum);
     });
+
+    // ── TUTI FUTI WRECKED & CRASHED CARS (Salvage Vehicles) ──
+    const createWreckedCar = (bodyColor, rotX, rotY, rotZ, pos) => {
+      const wreck = new THREE.Group();
+      // Crumpled chassis
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 0.7, 3.8),
+        new THREE.MeshLambertMaterial({ color: bodyColor })
+      );
+      body.castShadow = true;
+      wreck.add(body);
+
+      // Smashed bent roof
+      const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 0.5, 1.8),
+        new THREE.MeshLambertMaterial({ color: 0x1e293b })
+      );
+      roof.position.set(0.1, 0.55, -0.2);
+      roof.rotation.z = 0.15;
+      wreck.add(roof);
+
+      // Remaining rusted wheels
+      const rWheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.3, 10);
+      const rWheelMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      [
+        { x: -1.0, z: 1.1 }, { x: 1.0, z: -1.1 }
+      ].forEach((wp) => {
+        const rw = new THREE.Mesh(rWheelGeo, rWheelMat);
+        rw.rotation.z = Math.PI / 2;
+        rw.position.set(wp.x, -0.2, wp.z);
+        wreck.add(rw);
+      });
+
+      wreck.position.set(pos.x, pos.y, pos.z);
+      wreck.rotation.set(rotX, rotY, rotZ);
+      return wreck;
+    };
+
+    // Wrecked Car 1: Tilted on Left Scrap Heap (Rusted Brown)
+    const wreck1 = createWreckedCar(0x78350f, 0.25, 0.4, -0.3, {
+      x: dumpyardPos.x - 13.5,
+      y: 3.2,
+      z: dumpyardPos.z + 1.5
+    });
+    dumpyardGroup.add(wreck1);
+
+    // Wrecked Car 2: Half-buried on Right Trash Mound (Burnt Orange)
+    const wreck2 = createWreckedCar(0x9a3412, -0.35, -0.6, 0.4, {
+      x: dumpyardPos.x + 13.2,
+      y: 3.4,
+      z: dumpyardPos.z + 2.8
+    });
+    dumpyardGroup.add(wreck2);
+
+    // Wrecked Car 3: Upside-down crushed shell in salvage bay (Oxidized Blue)
+    const wreck3 = createWreckedCar(0x334155, Math.PI, 0.8, 0.1, {
+      x: dumpyardPos.x + 15.5,
+      y: 1.2,
+      z: dumpyardPos.z + 7.5
+    });
+    dumpyardGroup.add(wreck3);
+
+    // ── INDUSTRIAL SALVAGE GRAPPLE CRANE (Heavy Scrapyard Crane) ──
+    const craneGroup = new THREE.Group();
+    // Crawler Tracks Base
+    const tracks = new THREE.Mesh(
+      new THREE.BoxGeometry(5.5, 1.6, 6.5),
+      new THREE.MeshLambertMaterial({ color: 0x1e293b })
+    );
+    tracks.position.y = 0.8;
+    craneGroup.add(tracks);
+
+    // Rotating Cabin
+    const craneCabin = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 3.4, 4.4),
+      new THREE.MeshLambertMaterial({ color: 0xeab308 }) // Industrial Equipment Yellow
+    );
+    craneCabin.position.set(0, 3.2, 0);
+    craneCabin.castShadow = true;
+    craneGroup.add(craneCabin);
+
+    // Slanted Crane Boom / Arm
+    const boom = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 17, 0.8),
+      new THREE.MeshLambertMaterial({ color: 0xfacc15 })
+    );
+    boom.rotation.x = -Math.PI / 3.6;
+    boom.position.set(0, 10.5, 6.5);
+    boom.castShadow = true;
+    craneGroup.add(boom);
+
+    // Hoist Cable & 4-Jaw Mechanical Scrap Grapple Claw
+    const cable = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 6.0, 6),
+      new THREE.MeshBasicMaterial({ color: 0x0f172a })
+    );
+    cable.position.set(0, 12.0, 11.5);
+    craneGroup.add(cable);
+
+    const grapple = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1.2, 0),
+      new THREE.MeshLambertMaterial({ color: 0x334155 })
+    );
+    grapple.position.set(0, 8.8, 11.5);
+    craneGroup.add(grapple);
+
+    craneGroup.position.set(dumpyardPos.x - 12, 0.2, dumpyardPos.z - 7);
+    craneGroup.rotation.y = 0.55;
+    dumpyardGroup.add(craneGroup);
 
     // Beacon Tower
     const beaconTower = new THREE.Mesh(
@@ -469,14 +592,6 @@ export default function LivingCity3D({ onExit }) {
     );
     beaconTower.position.set(dumpyardPos.x, 10.0, dumpyardPos.z + 6);
     dumpyardGroup.add(beaconTower);
-
-    const beaconPulsar = new THREE.Mesh(
-      new THREE.RingGeometry(1.6, 3.2, 24),
-      new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
-    );
-    beaconPulsar.rotation.x = -Math.PI / 2;
-    beaconPulsar.position.set(dumpyardPos.x, 18.0, dumpyardPos.z + 6);
-    dumpyardGroup.add(beaconPulsar);
 
     scene.add(dumpyardGroup);
 
@@ -609,7 +724,7 @@ export default function LivingCity3D({ onExit }) {
           cityGroup.add(windowGlass);
         }
 
-        // Place 6 Wheelie SmartBins on designated curbs
+        // Place 6 Wheelie SmartBins on curbs
         if ([2, 4, 7, 9, 12, 15].includes(blockIndex)) {
           const curbOffset = blockSize / 2 + 1.2;
           const binX = bx;
@@ -858,7 +973,66 @@ export default function LivingCity3D({ onExit }) {
     scene.add(truckGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 9. SLOW & REALISTIC TRAFFIC PASSENGER CARS
+    // 9. SANITATION WORKER NPC (Gets down from truck & empties dustbin)
+    // ─────────────────────────────────────────────────────────────
+    const workerGroup = new THREE.Group();
+
+    // Torso with Safety Vest
+    const vestMat = new THREE.MeshLambertMaterial({ color: 0xf97316 }); // Municipal Safety Orange
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.85, 0.4), vestMat);
+    torso.position.y = 1.15;
+    torso.castShadow = true;
+    workerGroup.add(torso);
+
+    const reflectiveStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.12, 0.42),
+      new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+    );
+    reflectiveStripe.position.y = 1.15;
+    workerGroup.add(reflectiveStripe);
+
+    // Head with Hard Hat
+    const skinMat = new THREE.MeshLambertMaterial({ color: 0xd4a373 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), skinMat);
+    head.position.y = 1.78;
+    workerGroup.add(head);
+
+    const helmet = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12),
+      new THREE.MeshLambertMaterial({ color: 0xfacc15 })
+    );
+    helmet.position.y = 1.94;
+    workerGroup.add(helmet);
+
+    // Articulated Arms
+    const armGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.6, 8);
+    const armMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+    const leftArm = new THREE.Mesh(armGeo, armMat);
+    leftArm.position.set(-0.44, 1.15, 0);
+    workerGroup.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeo, armMat);
+    rightArm.position.set(0.44, 1.15, 0);
+    workerGroup.add(rightArm);
+
+    // Articulated Legs
+    const legGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 8);
+    const pantsMat = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
+    const leftLeg = new THREE.Mesh(legGeo, pantsMat);
+    leftLeg.position.set(-0.2, 0.38, 0);
+    workerGroup.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeo, pantsMat);
+    rightLeg.position.set(0.2, 0.38, 0);
+    workerGroup.add(rightLeg);
+
+    workerGroup.visible = false;
+    scene.add(workerGroup);
+
+    let workerPhase = 'inside_truck'; // 'inside_truck' | 'walking_to_bin' | 'at_bin' | 'walking_back'
+
+    // ─────────────────────────────────────────────────────────────
+    // 10. SLOW & REALISTIC TRAFFIC PASSENGER CARS
     // ─────────────────────────────────────────────────────────────
     const trafficCars = [];
     const carColors = [0x0f172a, 0xf8fafc, 0x1d4ed8, 0xb91c1c, 0x475569];
@@ -918,7 +1092,7 @@ export default function LivingCity3D({ onExit }) {
       return { car, taillight: tl };
     };
 
-    // IoT Smart Fleet Vector Field Holographic Ground Ring (around truck)
+    // Holographic Vector Field Ring under truck
     const vectorFieldGeo = new THREE.RingGeometry(13.5, 14.2, 48);
     const vectorFieldMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
@@ -931,14 +1105,14 @@ export default function LivingCity3D({ onExit }) {
     vectorFieldRing.position.y = 0.04;
     truckGroup.add(vectorFieldRing);
 
-    // Slower, calm city speeds (0.13 to 0.17)
+    // Calm city speeds
     const trafficData = [
-      { avenue: 'h', line: -46, dir: 1, speed: 0.15, x: -70, z: -46 + 3.2 },
-      { avenue: 'h', line: 46, dir: -1, speed: 0.14, x: 70, z: 46 - 3.2 },
-      { avenue: 'v', line: -46, dir: 1, speed: 0.16, x: -46 + 3.2, z: -80 },
-      { avenue: 'v', line: 46, dir: -1, speed: 0.15, x: 46 - 3.2, z: 80 },
-      { avenue: 'h', line: 0, dir: 1, speed: 0.17, x: -90, z: 3.2 },
-      { avenue: 'v', line: 0, dir: -1, speed: 0.14, x: -3.2, z: 90 }
+      { avenue: 'h', line: -46, dir: 1, speed: 0.14, x: -70, z: -46 + 3.2 },
+      { avenue: 'h', line: 46, dir: -1, speed: 0.13, x: 70, z: 46 - 3.2 },
+      { avenue: 'v', line: -46, dir: 1, speed: 0.15, x: -46 + 3.2, z: -80 },
+      { avenue: 'v', line: 46, dir: -1, speed: 0.14, x: 46 - 3.2, z: 80 },
+      { avenue: 'h', line: 0, dir: 1, speed: 0.15, x: -90, z: 3.2 },
+      { avenue: 'v', line: 0, dir: -1, speed: 0.13, x: -3.2, z: 90 }
     ];
 
     trafficData.forEach((td, idx) => {
@@ -960,14 +1134,13 @@ export default function LivingCity3D({ onExit }) {
     });
 
     // ─────────────────────────────────────────────────────────────
-    // 10. ROBUST ROAD CONFINEMENT & TUNED DRIVING PHYSICS
+    // 11. FINITE CONTROL PHYSICS (0-30 KM/H STRICT CAP & SMOOTH TURNING)
     // ─────────────────────────────────────────────────────────────
-    const halfRoad = roadWidth / 2 - 0.4; // 6.6 units (forgiving road margin for smooth cornering)
-    
+    const halfRoad = roadWidth / 2 - 0.4;
     const isPointOnRoad = (px, pz) => {
       const onH = roadLines.some((rz) => Math.abs(pz - rz) <= halfRoad);
       const onV = roadLines.some((rx) => Math.abs(px - rx) <= halfRoad);
-      const onDumpYard = (Math.abs(px - dumpyardPos.x) <= 17 && Math.abs(pz - dumpyardPos.z) <= 16);
+      const onDumpYard = (Math.abs(px - dumpyardPos.x) <= 20 && Math.abs(pz - dumpyardPos.z) <= 16);
       return onH || onV || onDumpYard;
     };
 
@@ -979,6 +1152,10 @@ export default function LivingCity3D({ onExit }) {
       if (k === 'a' || k === 'arrowleft') keys.left = true;
       if (k === 'd' || k === 'arrowright') keys.right = true;
       if (k === 'h') playSound('horn');
+      if (k === 'e' || k === ' ') {
+        isHoldingCollectRef.current = true;
+        setIsHoldingCollect(true);
+      }
       if (k === 'r' && isCrashedRef.current) handleManualRespawn();
     };
 
@@ -988,29 +1165,46 @@ export default function LivingCity3D({ onExit }) {
       if (k === 's' || k === 'arrowdown') keys.backward = false;
       if (k === 'a' || k === 'arrowleft') keys.left = false;
       if (k === 'd' || k === 'arrowright') keys.right = false;
+      if (k === 'e' || k === ' ') {
+        isHoldingCollectRef.current = false;
+        setIsHoldingCollect(false);
+      }
+    };
+
+    // Mouse Left-Click Hold Handlers
+    const onMouseDown = (e) => {
+      if (e.button === 0) {
+        isHoldingCollectRef.current = true;
+        setIsHoldingCollect(true);
+      }
+    };
+    const onMouseUp = (e) => {
+      if (e.button === 0) {
+        isHoldingCollectRef.current = false;
+        setIsHoldingCollect(false);
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
 
-    // Tuned Slower, Easy-to-Control Driving Physics
+    // Tuned Driving Physics (Strict 0-30 KM/H Finite Cap, Heavy Realistic Steering)
     let truckSpeed = 0;
-    const maxSpeed = 0.32;       // Slower, calm, pleasant city cruising speed
-    const acceleration = 0.016;  // Gentle, predictable acceleration
-    const deceleration = 0.028;  // Fast auto-braking when releasing keys
-    const turnSpeed = 0.055;     // Responsive, tight turning radius for 90° corners
+    const maxSpeed = 0.20;       // Finite Cap: Exactly 30 KM/H
+    const acceleration = 0.007;  // Gentle, steady acceleration
+    const deceleration = 0.016;  // Progressive braking
+    const turnSpeed = 0.024;     // Smooth, non-snappy gradual turning
     let truckAngle = 0;
 
     let activeCollectionBin = null;
     let collectionTimer = 0;
     const COLLECTION_DURATION = 2.5;
 
-    // Respawn Procedure with PROGRESS 100% PRESERVED
+    // Respawn Procedure (Zero Progress Lost)
     const resetTruck = (reason = "Route Repaired") => {
-      // Find nearest safe avenue intersection to current position or depot
-      let bestX = 0;
-      let bestZ = 0;
-      let minD = 99999;
+      let bestX = 0, bestZ = 0, minD = 99999;
       roadLines.forEach((rx) => {
         roadLines.forEach((rz) => {
           const d = Math.hypot(truckGroup.position.x - rx, truckGroup.position.z - rz);
@@ -1028,25 +1222,24 @@ export default function LivingCity3D({ onExit }) {
       truckGroup.rotation.y = 0;
       isCrashedRef.current = false;
       setCrashState(null);
-      setNotification(`✅ ${reason}: Truck safely repositioned. Progress preserved! (Bins: ${wasteCollectedRef.current}/6)`);
+      setNotification(`✅ ${reason}: Truck repositioned. All collected bins & load intact!`);
     };
     resetTruckTriggerRef.current = resetTruck;
 
-    // Collision Trigger (Zero Progress Lost)
     const triggerCrash = (obstacleName = "Traffic Vehicle") => {
       if (isCrashedRef.current) return;
       isCrashedRef.current = true;
       playSound('crash');
-      cameraShakeRef.current = 0.6;
+      cameraShakeRef.current = 0.55;
 
       const hitPos = truckGroup.position.clone();
       crashParticles.forEach((cp) => {
         cp.mesh.visible = true;
         cp.mesh.position.copy(hitPos);
         cp.vel.set(
-          (Math.random() - 0.5) * 0.5,
-          Math.random() * 0.4 + 0.2,
-          (Math.random() - 0.5) * 0.5
+          (Math.random() - 0.5) * 0.45,
+          Math.random() * 0.4 + 0.15,
+          (Math.random() - 0.5) * 0.45
         );
         cp.life = 1.0;
       });
@@ -1068,7 +1261,7 @@ export default function LivingCity3D({ onExit }) {
     };
 
     // ─────────────────────────────────────────────────────────────
-    // 11. MAIN ANIMATION & GAME LOOP
+    // 12. MAIN ANIMATION & GAME LOOP
     // ─────────────────────────────────────────────────────────────
     let animId;
     let clock = new THREE.Clock();
@@ -1107,13 +1300,12 @@ export default function LivingCity3D({ onExit }) {
           if (keys.right) truckAngle -= turnSpeed * dir;
         }
 
-        // Proposed Position
         const nextX = truckGroup.position.x + Math.sin(truckAngle) * truckSpeed;
         const nextZ = truckGroup.position.z + Math.cos(truckAngle) * truckSpeed;
 
         // Perimeter Check
         if (Math.abs(nextX) >= fenceLimit - 2 || Math.abs(nextZ) >= fenceLimit - 2) {
-          if (Math.abs(truckSpeed) > 0.22) {
+          if (Math.abs(truckSpeed) > 0.16) {
             triggerCrash("Perimeter Security Fence");
           } else {
             truckSpeed = 0;
@@ -1122,18 +1314,18 @@ export default function LivingCity3D({ onExit }) {
           truckGroup.position.x = nextX;
           truckGroup.position.z = nextZ;
         } else {
-          // Check for smooth wall glide (slide on X or Z if one component is on road)
+          // Smooth wall glide
           if (isPointOnRoad(nextX, truckGroup.position.z)) {
             truckGroup.position.x = nextX;
-            truckSpeed *= 0.85; // Gentle friction slide
+            truckSpeed *= 0.85;
           } else if (isPointOnRoad(truckGroup.position.x, nextZ)) {
             truckGroup.position.z = nextZ;
             truckSpeed *= 0.85;
           } else {
-            if (Math.abs(truckSpeed) > 0.28) {
+            if (Math.abs(truckSpeed) > 0.18) {
               triggerCrash("Sidewalk Curb / Building");
             } else {
-              truckSpeed = 0; // Gentle stop, no crash at low speed
+              truckSpeed = 0;
             }
           }
         }
@@ -1141,14 +1333,16 @@ export default function LivingCity3D({ onExit }) {
         truckGroup.rotation.y = truckAngle;
 
         // Wheel Rotation
-        if (Math.abs(truckSpeed) > 0.03) {
+        if (Math.abs(truckSpeed) > 0.02) {
           wheels.forEach((w) => (w.rotation.x += truckSpeed * 2.2));
           truckGroup.position.y = Math.sin(time * 16) * 0.02;
         } else {
           truckGroup.position.y = 0;
         }
 
-        setCurrentSpeed(Math.round(Math.abs(truckSpeed) * 85));
+        // Strict 0 - 30 KM/H Speedometer
+        const speedKmh = Math.min(30, Math.round((Math.abs(truckSpeed) / maxSpeed) * 30));
+        setCurrentSpeed(speedKmh);
       }
 
       // Flash Roof Strobe & Pulse Vector Field Ring
@@ -1158,10 +1352,14 @@ export default function LivingCity3D({ onExit }) {
         vectorFieldRing.rotation.z += 0.005;
       }
 
+      // Gently sway grapple claw over dumpyard scrap heap
+      if (grapple) {
+        grapple.position.x = Math.sin(time * 1.5) * 1.4;
+      }
+
       // ─────────────────────────────────────────────────────────────
-      // 12. TRAFFIC SIMULATION & SMART VECTOR FIELD PROXIMITY BRAKING
+      // 13. TRAFFIC SIMULATION & SMART VECTOR FIELD PROXIMITY BRAKING
       // ─────────────────────────────────────────────────────────────
-      // Cars slow down inside the 28m vector field and come to a FULL STOP at 8.5m
       const VECTOR_FIELD_RADIUS = 28.0;
       const FULL_STOP_DISTANCE = 8.5;
 
@@ -1170,24 +1368,19 @@ export default function LivingCity3D({ onExit }) {
         let targetCarSpeed = tc.baseSpeed;
 
         if (distToTruck < FULL_STOP_DISTANCE) {
-          // Cars completely halt & yield before hitting the player!
           targetCarSpeed = 0;
-          if (tc.taillight) tc.taillight.material.color.setHex(0xff0000); // Glowing brake light
+          if (tc.taillight) tc.taillight.material.color.setHex(0xff0000);
         } else if (distToTruck < VECTOR_FIELD_RADIUS) {
-          // Inside player's vector field: smooth deceleration
           const ratio = (distToTruck - FULL_STOP_DISTANCE) / (VECTOR_FIELD_RADIUS - FULL_STOP_DISTANCE);
           targetCarSpeed = tc.baseSpeed * Math.max(0.04, ratio * ratio);
           if (tc.taillight) tc.taillight.material.color.setHex(0xef4444);
         } else {
-          // Normal cruising
           targetCarSpeed = tc.baseSpeed;
           if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
         }
 
-        // Smooth speed transition
         tc.currentSpeed += (targetCarSpeed - tc.currentSpeed) * 0.16;
 
-        // Move car
         if (tc.avenue === 'h') {
           tc.x += tc.dir * tc.currentSpeed;
           if (tc.x > fenceLimit - 6) tc.x = -fenceLimit + 6;
@@ -1200,107 +1393,170 @@ export default function LivingCity3D({ onExit }) {
           tc.group.position.z = tc.z;
         }
 
-        // Collision only triggers if the PLAYER drives into the car at speed:
-        // (AI cars will NEVER ram the player because they halt at 8.5m distance!)
+        // Only player ramming causes crash
         if (!isCrashedRef.current) {
-          if (Math.abs(truckSpeed) > 0.16 && distToTruck < 3.2) {
+          if (Math.abs(truckSpeed) > 0.14 && distToTruck < 3.2) {
             triggerCrash("Traffic Vehicle");
           }
         }
       });
 
       // ─────────────────────────────────────────────────────────────
-      // 13. TRUCK STOPPED AT BIN → SUCTION & FEATURE SPOTLIGHT
+      // 14. SANITATION WORKER ANIMATION & HOLD LEFT-CLICK TO EMPTY
       // ─────────────────────────────────────────────────────────────
       const stoppedNearBin = smartBins.find(
         (b) => !b.collected && Math.hypot(truckGroup.position.x - b.x, truckGroup.position.z - b.z) < 7.5
       );
 
-      if (stoppedNearBin && Math.abs(truckSpeed) < 0.08 && !isCrashedRef.current) {
-        if (activeCollectionBin !== stoppedNearBin.id) {
-          activeCollectionBin = stoppedNearBin.id;
-          collectionTimer = 0;
-          setCollectingBinId(stoppedNearBin.id);
-          playSound('suction');
+      if (stoppedNearBin && Math.abs(truckSpeed) < 0.05 && !isCrashedRef.current) {
+        activeCollectionBin = stoppedNearBin.id;
+        setCollectingBinId(stoppedNearBin.id);
 
-          // Trigger feature spotlight for this spot
-          if (stoppedNearBin.feature) {
-            setActiveFeatureSpotlight(stoppedNearBin.feature);
-            setDiscoveredFeatures((prev) => {
-              if (!prev.includes(stoppedNearBin.feature.id)) {
-                return [...prev, stoppedNearBin.feature.id];
-              }
-              return prev;
-            });
+        const doorPos = new THREE.Vector3(1.8, 0, 1.4).applyMatrix4(truckGroup.matrixWorld);
+        const binTargetPos = new THREE.Vector3(stoppedNearBin.x, 0, stoppedNearBin.z + 1.2);
+
+        if (workerPhase === 'inside_truck') {
+          // Worker gets down from passenger door
+          workerGroup.position.copy(doorPos);
+          workerGroup.visible = true;
+          workerPhase = 'walking_to_bin';
+        }
+
+        if (workerPhase === 'walking_to_bin') {
+          // Walk to bin
+          workerGroup.position.lerp(binTargetPos, 0.08);
+          workerGroup.lookAt(stoppedNearBin.x, 0, stoppedNearBin.z);
+          // Leg swing
+          leftLeg.rotation.x = Math.sin(time * 14) * 0.6;
+          rightLeg.rotation.x = -Math.sin(time * 14) * 0.6;
+          leftArm.rotation.x = -Math.sin(time * 14) * 0.6;
+          rightArm.rotation.x = Math.sin(time * 14) * 0.6;
+
+          if (workerGroup.position.distanceTo(binTargetPos) < 0.8) {
+            workerPhase = 'at_bin';
+            setIsWorkerAtBin(true);
+            leftLeg.rotation.x = 0;
+            rightLeg.rotation.x = 0;
           }
         }
 
-        collectionTimer += delta;
-        const progressPct = Math.min(100, Math.round((collectionTimer / COLLECTION_DURATION) * 100));
-        setCollectProgress(progressPct);
+        if (workerPhase === 'at_bin') {
+          // Standing at bin. Check if user is HOLDING LEFT CLICK
+          if (isHoldingCollectRef.current) {
+            // Worker tilts bin backwards towards truck!
+            stoppedNearBin.group.rotation.x = -0.42;
+            leftArm.rotation.x = -1.2;
+            rightArm.rotation.x = -1.2;
 
-        // Debris Flying Particles
-        const binPos = new THREE.Vector3(stoppedNearBin.x, 2.0, stoppedNearBin.z);
-        const compactorPos = new THREE.Vector3(0, 1.8, -2.4).applyMatrix4(truckGroup.matrixWorld);
+            collectionTimer += delta;
+            const progressPct = Math.min(100, Math.round((collectionTimer / COLLECTION_DURATION) * 100));
+            setCollectProgress(progressPct);
 
-        particles.forEach((p) => {
-          p.mesh.visible = true;
-          p.progress = (p.progress + p.speed) % 1;
-          p.mesh.position.lerpVectors(binPos, compactorPos, p.progress);
-          p.mesh.position.addScaledVector(p.offset, (1 - p.progress) * 0.5);
-        });
+            playSound('suction');
 
-        if (collectionTimer >= COLLECTION_DURATION) {
-          // Bin Completed
-          stoppedNearBin.collected = true;
-          stoppedNearBin.beacon.material.color.setHex(0x10b981);
-          stoppedNearBin.column.material.color.setHex(0x10b981);
-          stoppedNearBin.body.material.color.setHex(0x10b981);
+            // Debris flying particles
+            const binPos = new THREE.Vector3(stoppedNearBin.x, 2.0, stoppedNearBin.z);
+            const compactorPos = new THREE.Vector3(0, 1.8, -2.4).applyMatrix4(truckGroup.matrixWorld);
 
-          playSound('collect');
+            particles.forEach((p) => {
+              p.mesh.visible = true;
+              p.progress = (p.progress + p.speed) % 1;
+              p.mesh.position.lerpVectors(binPos, compactorPos, p.progress);
+              p.mesh.position.addScaledVector(p.offset, (1 - p.progress) * 0.5);
+            });
 
-          particles.forEach((p) => (p.mesh.visible = false));
-          activeCollectionBin = null;
-          setCollectingBinId(null);
-          setCollectProgress(0);
+            if (collectionTimer >= COLLECTION_DURATION) {
+              // 100% Emptied!
+              stoppedNearBin.collected = true;
+              stoppedNearBin.group.rotation.x = 0; // Return bin upright
+              stoppedNearBin.beacon.material.color.setHex(0x10b981);
+              stoppedNearBin.column.material.color.setHex(0x10b981);
+              stoppedNearBin.body.material.color.setHex(0x10b981);
 
-          setWasteCollected((prev) => {
-            const nextVal = prev + 1;
-            wasteCollectedRef.current = nextVal;
-            if (nextVal >= smartBins.length) {
-              setNotification("🚀 ALL 6 BINS COLLECTED! Proceed to northern Municipal Dumpyard to finish!");
-            } else {
-              setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +100 Eco-Points)`);
+              playSound('collect');
+
+              particles.forEach((p) => (p.mesh.visible = false));
+              collectionTimer = 0;
+              setCollectProgress(0);
+
+              if (stoppedNearBin.feature) {
+                setActiveFeatureSpotlight(stoppedNearBin.feature);
+                setDiscoveredFeatures((prev) => {
+                  if (!prev.includes(stoppedNearBin.feature.id)) return [...prev, stoppedNearBin.feature.id];
+                  return prev;
+                });
+              }
+
+              setWasteCollected((prev) => {
+                const nextVal = prev + 1;
+                wasteCollectedRef.current = nextVal;
+                if (nextVal >= smartBins.length) {
+                  setNotification("🚀 ALL 6 BINS COLLECTED! Proceed to northern Municipal Dumpyard to finish!");
+                } else {
+                  setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +100 Eco-Points)`);
+                }
+                return nextVal;
+              });
+
+              setCurrentLoad((prev) => {
+                const nextLoad = Math.min(truckCapacity, prev + 25);
+                currentLoadRef.current = nextLoad;
+                return nextLoad;
+              });
+
+              setEcoPoints((prev) => {
+                const nextPts = prev + 100;
+                ecoPointsRef.current = nextPts;
+                return nextPts;
+              });
+
+              workerPhase = 'walking_back';
             }
-            return nextVal;
-          });
-
-          setCurrentLoad((prev) => {
-            const nextLoad = Math.min(truckCapacity, prev + 25);
-            currentLoadRef.current = nextLoad;
-            return nextLoad;
-          });
-
-          setEcoPoints((prev) => {
-            const nextPts = prev + 100;
-            ecoPointsRef.current = nextPts;
-            return nextPts;
-          });
+          } else {
+            // User not holding click: bin rests upright
+            stoppedNearBin.group.rotation.x = 0;
+            leftArm.rotation.x = -0.3;
+            rightArm.rotation.x = -0.3;
+            particles.forEach((p) => (p.mesh.visible = false));
+          }
         }
+
+        if (workerPhase === 'walking_back') {
+          // Worker walks back to truck door
+          workerGroup.position.lerp(doorPos, 0.08);
+          workerGroup.lookAt(doorPos.x, 0, doorPos.z);
+          leftLeg.rotation.x = Math.sin(time * 14) * 0.6;
+          rightLeg.rotation.x = -Math.sin(time * 14) * 0.6;
+          leftArm.rotation.x = -Math.sin(time * 14) * 0.6;
+          rightArm.rotation.x = Math.sin(time * 14) * 0.6;
+
+          if (workerGroup.position.distanceTo(doorPos) < 0.9) {
+            workerGroup.visible = false;
+            workerPhase = 'inside_truck';
+            setIsWorkerAtBin(false);
+            setCollectingBinId(null);
+          }
+        }
+
       } else {
-        if (activeCollectionBin !== null) {
-          activeCollectionBin = null;
+        // Truck drove away
+        if (workerPhase !== 'inside_truck') {
+          workerGroup.visible = false;
+          workerPhase = 'inside_truck';
+          setIsWorkerAtBin(false);
           setCollectingBinId(null);
           setCollectProgress(0);
+          collectionTimer = 0;
           particles.forEach((p) => (p.mesh.visible = false));
+          if (stoppedNearBin) stoppedNearBin.group.rotation.x = 0;
         }
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 14. DUMPYARD UNLOADING & VICTORY SHIFT TRIGGER
+      // 15. DUMPYARD UNLOADING & VICTORY SHIFT TRIGGER
       // ─────────────────────────────────────────────────────────────
       const distToDumpyard = Math.hypot(truckGroup.position.x - dumpyardPos.x, truckGroup.position.z - dumpyardPos.z);
-      if (distToDumpyard < 12.0 && currentLoadRef.current > 0 && Math.abs(truckSpeed) < 0.08 && !isCrashedRef.current) {
+      if (distToDumpyard < 14.0 && currentLoadRef.current > 0 && Math.abs(truckSpeed) < 0.05 && !isCrashedRef.current) {
         playSound('dump');
         setCurrentLoad(0);
         currentLoadRef.current = 0;
@@ -1310,7 +1566,7 @@ export default function LivingCity3D({ onExit }) {
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 15. GTA-STYLE RADAR DATA SYNC
+      // 16. GTA-STYLE RADAR DATA SYNC
       // ─────────────────────────────────────────────────────────────
       radarTick++;
       if (radarTick % 3 === 0) {
@@ -1341,7 +1597,7 @@ export default function LivingCity3D({ onExit }) {
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 16. CAMERA VIEWS WITH CRASH SCREEN-SHAKE
+      // 17. CAMERA VIEWS WITH CRASH SCREEN-SHAKE
       // ─────────────────────────────────────────────────────────────
       const tPos = truckGroup.position;
       let shakeX = 0;
@@ -1389,6 +1645,8 @@ export default function LivingCity3D({ onExit }) {
       cancelAnimationFrame(animId);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('resize', handleResize);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -1416,13 +1674,13 @@ export default function LivingCity3D({ onExit }) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-white text-sm">SmartBin Living City</span>
+                <span className="font-extrabold text-white text-sm">SmartBin Fleet Sim</span>
                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                  PRECISION MODE
+                  0-30 KM/H CAP
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Features Discovered:</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Features Audited:</span>
                 <span className="text-[11px] font-extrabold text-[#e2fd00]">
                   {discoveredFeatures.length} / 6
                 </span>
@@ -1492,10 +1750,10 @@ export default function LivingCity3D({ onExit }) {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          ACTIVE SUCTION COUNTDOWN & DEBRIS FLOW MODAL
+          HOLD LEFT-CLICK INTERACTIVE PROMPT (When worker reaches bin)
           ───────────────────────────────────────────────────────────── */}
       {collectingBinId && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white p-5 rounded-3xl border border-emerald-500 shadow-2xl backdrop-blur-xl flex items-center gap-5 z-30 animate-in fade-in zoom-in-95 pointer-events-none">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white p-5 rounded-3xl border-2 border-emerald-400 shadow-2xl backdrop-blur-xl flex items-center gap-5 z-30 animate-in fade-in zoom-in-95 pointer-events-auto">
           <div className="relative w-14 h-14 flex items-center justify-center">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <path
@@ -1519,17 +1777,34 @@ export default function LivingCity3D({ onExit }) {
           </div>
           <div>
             <div className="flex items-center gap-1.5 text-[#e2fd00] text-xs font-bold uppercase tracking-wider">
-              <Truck size={14} className="animate-bounce" />
-              <span>Hydraulic Compactor Suction</span>
+              <UserCheck size={14} className="animate-bounce" />
+              <span>Sanitation Worker Active at Spot #{collectingBinId}</span>
             </div>
-            <h4 className="font-extrabold text-white text-base">Emptying SmartBin #{collectingBinId}...</h4>
-            <p className="text-slate-400 text-xs mt-0.5">Physical waste particles flying into truck compactor</p>
+            <h4 className="font-extrabold text-white text-base">
+              {isHoldingCollect ? "Emptying Waste Into Compactor..." : "HOLD LEFT-CLICK (or SPACE / E)"}
+            </h4>
+            <p className="text-slate-300 text-xs mt-0.5">
+              {isHoldingCollect 
+                ? "Worker is tilting dustbin into rear hopper • Keep holding until 100%!" 
+                : "Hold Left-Click to instruct worker to lift and empty bin into truck"}
+            </p>
           </div>
+          <button
+            onMouseDown={() => { isHoldingCollectRef.current = true; setIsHoldingCollect(true); }}
+            onMouseUp={() => { isHoldingCollectRef.current = false; setIsHoldingCollect(false); }}
+            onTouchStart={() => { isHoldingCollectRef.current = true; setIsHoldingCollect(true); }}
+            onTouchEnd={() => { isHoldingCollectRef.current = false; setIsHoldingCollect(false); }}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-lg cursor-pointer ${
+              isHoldingCollect ? 'bg-[#e2fd00] text-slate-950 scale-105' : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+            }`}
+          >
+            {isHoldingCollect ? "HOLDING..." : "HOLD TO EMPTY"}
+          </button>
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          SMARTBIN PLATFORM FEATURE SPOTLIGHT MODAL (At each spot)
+          SMARTBIN PLATFORM FEATURE SPOTLIGHT MODAL
           ───────────────────────────────────────────────────────────── */}
       {activeFeatureSpotlight && (
         <div className="absolute top-24 right-6 max-w-sm w-full bg-slate-900/95 backdrop-blur-xl border border-emerald-500/80 rounded-3xl p-5 shadow-2xl z-40 text-white animate-in slide-in-from-right-4">
@@ -1631,7 +1906,7 @@ export default function LivingCity3D({ onExit }) {
             <div>
               <h2 className="text-2xl font-black text-white">🏆 MUNICIPAL SHIFT COMPLETED!</h2>
               <p className="text-slate-400 text-xs mt-1">
-                All SmartBins emptied, platform features audited, and waste unloaded at Central Recycling Depot.
+                All SmartBins emptied, platform features audited, and waste delivered to Central Landfill & Salvage Yard.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-3 bg-slate-800/80 p-4 rounded-2xl text-white">
@@ -1698,8 +1973,8 @@ export default function LivingCity3D({ onExit }) {
             <rect x="-85" y="9" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
             <rect x="7" y="-37" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
 
-            {/* Dumpyard */}
-            <rect x="-18" y="-125" width="36" height="20" fill="#0f766e" rx="3" />
+            {/* Dumpyard Salvage Landfill */}
+            <rect x="-22" y="-128" width="44" height="24" fill="#0f766e" rx="3" />
             <circle cx={radarData.dumpyard.x} cy={radarData.dumpyard.z} r="4.5" fill="#10b981" />
 
             {/* AI Traffic */}
@@ -1768,16 +2043,16 @@ export default function LivingCity3D({ onExit }) {
           ───────────────────────────────────────────────────────────── */}
       <div className="absolute bottom-6 right-6 flex items-center gap-4 pointer-events-none z-20">
         
-        {/* Speedometer */}
+        {/* Speedometer (Strictly 0 - 30 KM/H) */}
         <div className="bg-slate-900/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-white/10 flex items-center gap-4 pointer-events-auto text-white">
           <div className="text-center">
             <span className="text-3xl font-black text-white tracking-tight">{currentSpeed}</span>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase">KM / H</span>
+            <span className="text-[10px] text-slate-400 font-bold block uppercase">KM / H (MAX 30)</span>
           </div>
           <div className="h-8 w-[1px] bg-slate-800" />
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Proximity Field</p>
-            <p className="font-extrabold text-xs text-cyan-400">IoT Auto-Brake (AI Yields)</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Governor Speed Cap</p>
+            <p className="font-extrabold text-xs text-emerald-400">Finite 30 KM/H Limit</p>
           </div>
         </div>
 
@@ -1830,19 +2105,15 @@ export default function LivingCity3D({ onExit }) {
             <div className="space-y-4 my-6 text-sm text-slate-300">
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                <p><strong className="text-white">Precision Control:</strong> W/A/S/D or Arrow Keys. Speed is capped for smooth, calm handling. Release W to auto-brake.</p>
+                <p><strong className="text-white">Finite Speed Cap (0 - 30 KM/H):</strong> Truck accelerates gently up to 30 KM/H and no further. Steering is smooth and realistic.</p>
               </div>
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                <p><strong className="text-white">GTA Radar (Bottom-Left):</strong> Follow yellow dashed line to the next SmartBin.</p>
+                <p><strong className="text-white">Hold Left-Click to Empty:</strong> Stop near dustbin. Sanitation worker steps down. Hold Left-Click (or Space/E) to empty bin into truck.</p>
               </div>
               <div className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                <p><strong className="text-white">App Features at Every Spot:</strong> Each bin reveals a real feature of the SmartBin platform (AI Classifier, IoT Telemetry, C++ VRP, etc.).</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">4</span>
-                <p><strong className="text-white">Zero Progress Loss:</strong> Even if a collision occurs, your collected bins and load stay 100% saved.</p>
+                <p><strong className="text-white">Scrapyard & Landfill:</strong> North end features salvage cranes, broken scrap cars, and mounds of compressed waste.</p>
               </div>
             </div>
 
