@@ -207,23 +207,164 @@ export default function LivingCity3D({ onExit }) {
         plotPlatform.receiveShadow = true;
         buildingsGroup.add(plotPlatform);
 
-        // Blocks (1, 1) and (2, 2) are Lush Green Eco-Parks
-        const isPark = (rowIdx === 1 && colIdx === 1) || (rowIdx === 2 && colIdx === 2);
+        // Assign distinct architectural identities to the 16 blocks:
+        // Types: 'cafe', 'corporate', 'house', 'park'
+        let buildingType = 'corporate';
+        if (blockCounter === 1 || blockCounter === 7) buildingType = 'cafe';
+        else if (blockCounter === 5 || blockCounter === 11 || blockCounter === 14) buildingType = 'house';
+        else if (blockCounter === 6 || blockCounter === 10) buildingType = 'park';
+        else buildingType = 'corporate';
 
-        if (isPark) {
+        // ─────────────────────────────────────────────
+        // TYPE A: MODERN ROOFTOP / CORNER CAFE
+        // ─────────────────────────────────────────────
+        if (buildingType === 'cafe') {
+          // Warm terracotta / espresso cafe base structure
+          const cafeW = 20;
+          const cafeD = 18;
+          const cafeH = 7.5;
+
+          const cafeBody = new THREE.Mesh(
+            new THREE.BoxGeometry(cafeW, cafeH, cafeD),
+            new THREE.MeshLambertMaterial({ color: 0x292524 }) // Warm dark espresso facade
+          );
+          cafeBody.position.set(bx, cafeH / 2 + 0.4, bz);
+          cafeBody.castShadow = true;
+          cafeBody.receiveShadow = true;
+          buildingsGroup.add(cafeBody);
+
+          // Glass Front Display with Warm Interior Glow
+          const cafeGlass = new THREE.Mesh(
+            new THREE.PlaneGeometry(cafeW * 0.85, 4.2),
+            new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.85 }) // Warm coffee shop glow
+          );
+          cafeGlass.position.set(bx, 2.8, bz + cafeD / 2 + 0.05);
+          buildingsGroup.add(cafeGlass);
+
+          // Striped Cafe Sun Canopy / Awning (Orange & White)
+          const awning = new THREE.Mesh(
+            new THREE.BoxGeometry(cafeW * 0.9, 0.4, 4.0),
+            new THREE.MeshLambertMaterial({ color: 0xea580c }) // Vibrant cafe orange
+          );
+          awning.rotation.x = 0.2;
+          awning.position.set(bx, 5.2, bz + cafeD / 2 + 2.0);
+          awning.castShadow = true;
+          buildingsGroup.add(awning);
+
+          // "COFFEE & BAKERY" Glowing Neon Signboard
+          const signBoard = new THREE.Mesh(
+            new THREE.BoxGeometry(10, 1.4, 0.4),
+            new THREE.MeshBasicMaterial({ color: 0xe2fd00 }) // Neon acid lime signboard
+          );
+          signBoard.position.set(bx, 6.8, bz + cafeD / 2 + 0.4);
+          buildingsGroup.add(signBoard);
+
+          // Outdoor Patio Dining Tables & Parasols on Sidewalk
+          const tableOffsets = [[-5, cafeD / 2 + 4.5], [5, cafeD / 2 + 4.5]];
+          tableOffsets.forEach(([tox, toz]) => {
+            // Table
+            const table = new THREE.Mesh(
+              new THREE.CylinderGeometry(1.0, 1.0, 0.1, 12),
+              new THREE.MeshLambertMaterial({ color: 0xffffff })
+            );
+            table.position.set(bx + tox, 1.1, bz + toz);
+            buildingsGroup.add(table);
+
+            const tableLeg = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.08, 1.0, 6),
+              new THREE.MeshLambertMaterial({ color: 0x1e293b })
+            );
+            tableLeg.position.set(bx + tox, 0.5, bz + toz);
+            buildingsGroup.add(tableLeg);
+
+            // Parasol Umbrella
+            const umbrella = new THREE.Mesh(
+              new THREE.ConeGeometry(1.8, 0.8, 8),
+              new THREE.MeshLambertMaterial({ color: 0x0284c7 })
+            );
+            umbrella.position.set(bx + tox, 2.5, bz + toz);
+            umbrella.castShadow = true;
+            buildingsGroup.add(umbrella);
+          });
+
+        // ─────────────────────────────────────────────
+        // TYPE B: RESIDENTIAL LOCAL HOUSE (Pitched Roof)
+        // ─────────────────────────────────────────────
+        } else if (buildingType === 'house') {
+          const houseW = 18;
+          const houseD = 18;
+          const houseH = 8.0;
+
+          // Main House Walls (Cozy Cream / Sandstone)
+          const houseBody = new THREE.Mesh(
+            new THREE.BoxGeometry(houseW, houseH, houseD),
+            new THREE.MeshLambertMaterial({ color: 0xfef3c7 }) // Warm cream
+          );
+          houseBody.position.set(bx, houseH / 2 + 0.4, bz);
+          houseBody.castShadow = true;
+          houseBody.receiveShadow = true;
+          buildingsGroup.add(houseBody);
+
+          // Pitched Terracotta Roof (Prism / Pyramid Roof)
+          const roofGeo = new THREE.ConeGeometry(houseW * 0.75, 5.0, 4);
+          const roofMat = new THREE.MeshLambertMaterial({ color: 0xb45309 }); // Terracotta tile brown
+          const roof = new THREE.Mesh(roofGeo, roofMat);
+          roof.rotation.y = Math.PI / 4;
+          roof.position.set(bx, houseH + 2.7, bz);
+          roof.castShadow = true;
+          buildingsGroup.add(roof);
+
+          // Front Door & Entrance Porch
+          const door = new THREE.Mesh(
+            new THREE.PlaneGeometry(2.0, 3.4),
+            new THREE.MeshLambertMaterial({ color: 0x451a03 })
+          );
+          door.position.set(bx, 1.7 + 0.4, bz + houseD / 2 + 0.05);
+          buildingsGroup.add(door);
+
+          // Windows with Crossframes
+          const winOffsets = [-5, 5];
+          winOffsets.forEach((wo) => {
+            const hWin = new THREE.Mesh(
+              new THREE.PlaneGeometry(2.4, 2.4),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            hWin.position.set(bx + wo, 4.0, bz + houseD / 2 + 0.05);
+            buildingsGroup.add(hWin);
+          });
+
+          // Small Garden Fence & Shrub
+          const shrub = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(1.2, 0),
+            new THREE.MeshLambertMaterial({ color: 0x16a34a })
+          );
+          shrub.position.set(bx - 6, 1.2, bz + houseD / 2 + 2.5);
+          shrub.castShadow = true;
+          buildingsGroup.add(shrub);
+
+        // ─────────────────────────────────────────────
+        // TYPE C: LUSH GREEN ECO-PARK
+        // ─────────────────────────────────────────────
+        } else if (buildingType === 'park') {
           // Park Lawn
           const lawn = new THREE.Mesh(
             new THREE.BoxGeometry(blockSize - 4, 0.3, blockSize - 4),
-            new THREE.MeshLambertMaterial({ color: 0x16a34a }) // Emerald lawn
+            new THREE.MeshLambertMaterial({ color: 0x15803d }) // Deep Emerald grass
           );
           lawn.position.set(bx, 0.4, bz);
           lawn.receiveShadow = true;
           buildingsGroup.add(lawn);
 
+          // Park Central Fountain
+          const fountain = new THREE.Mesh(
+            new THREE.CylinderGeometry(3.5, 3.5, 0.6, 16),
+            new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
+          );
+          fountain.position.set(bx, 0.6, bz);
+          buildingsGroup.add(fountain);
+
           // Park Trees inside plot
-          const treeOffsets = [
-            [-8, -8], [8, -8], [-8, 8], [8, 8], [0, 0]
-          ];
+          const treeOffsets = [[-8, -8], [8, -8], [-8, 8], [8, 8]];
           treeOffsets.forEach(([ox, oz]) => {
             const trunk = new THREE.Mesh(
               new THREE.CylinderGeometry(0.3, 0.4, 2.6, 6),
@@ -233,38 +374,48 @@ export default function LivingCity3D({ onExit }) {
             trunk.castShadow = true;
             buildingsGroup.add(trunk);
 
-            const leaves = new THREE.Mesh(
+            const foliage = new THREE.Mesh(
               new THREE.DodecahedronGeometry(1.8, 1),
-              new THREE.MeshLambertMaterial({ color: 0x15803d })
+              new THREE.MeshLambertMaterial({ color: 0x16a34a })
             );
-            leaves.position.set(bx + ox, 3.6, bz + oz);
-            leaves.castShadow = true;
-            buildingsGroup.add(leaves);
+            foliage.position.set(bx + ox, 3.6, bz + oz);
+            foliage.castShadow = true;
+            buildingsGroup.add(foliage);
           });
+
+        // ─────────────────────────────────────────────
+        // TYPE D: CORPORATE SKYSCRAPER & TECH HQ
+        // ─────────────────────────────────────────────
         } else {
-          // Commercial / Residential Building Complex strictly within this plot
-          // Building is 22x22 inside the 32x32 block (Leaving 5-unit safe sidewalk buffer around it!)
-          const buildW = 20 + (Math.sin(blockCounter * 3) * 3);
-          const buildD = 20 + (Math.cos(blockCounter * 2) * 3);
-          const buildH = 12 + ((blockCounter * 7) % 24); // Varied skyline (12 to 36 units)
+          const corpW = 22;
+          const corpD = 22;
+          const corpH = 22 + ((blockCounter * 6) % 18); // Tall corporate towers (22 to 38 units)
 
-          const color = buildingColors[blockCounter % buildingColors.length];
-          const bMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(buildW, buildH, buildD),
-            new THREE.MeshLambertMaterial({ color: color })
+          // Modern Glass & Steel Architecture Tower
+          const corpTower = new THREE.Mesh(
+            new THREE.BoxGeometry(corpW, corpH, corpD),
+            new THREE.MeshLambertMaterial({ color: 0x0f172a }) // Slate / Gunmetal tower
           );
-          bMesh.position.set(bx, buildH / 2 + 0.4, bz);
-          bMesh.castShadow = true;
-          bMesh.receiveShadow = true;
-          buildingsGroup.add(bMesh);
+          corpTower.position.set(bx, corpH / 2 + 0.4, bz);
+          corpTower.castShadow = true;
+          corpTower.receiveShadow = true;
+          buildingsGroup.add(corpTower);
 
-          // Front Window Paneling
-          const winMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(buildW * 0.85, buildH * 0.8),
-            new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.45 })
+          // Reflective Cyan Glass Curtain Walls
+          const glassCurtain = new THREE.Mesh(
+            new THREE.PlaneGeometry(corpW * 0.88, corpH * 0.82),
+            new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 })
           );
-          winMesh.position.set(bx, buildH / 2 + 0.4, bz + buildD / 2 + 0.05);
-          buildingsGroup.add(winMesh);
+          glassCurtain.position.set(bx, corpH / 2 + 0.4, bz + corpD / 2 + 0.05);
+          buildingsGroup.add(glassCurtain);
+
+          // Rooftop Communications Antenna / Helipad rim
+          const antenna = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.2, 6, 8),
+            new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
+          );
+          antenna.position.set(bx + 4, corpH + 3.0, bz + 4);
+          buildingsGroup.add(antenna);
         }
 
         // Place a SmartBin on the sidewalk curbs of alternating blocks (Safe from road center!)
