@@ -9,76 +9,9 @@
   --color-text-primary: #111827;
   --color-text-secondary: #6b7280;
   
-  --font-sans: "Space Grotesk", system-ui, sans-serif;
-  --font-display: "Syne", "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 @import "leaflet/dist/leaflet.css";
-
-/* Typography Utilities */
-.font-display {
-  font-family: var(--font-display);
-}
-.font-mono-code {
-  font-family: var(--font-mono);
-}
-
-/* Marquee Animations */
-@keyframes marqueeLeft {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes marqueeRight {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0%); }
-}
-
-.animate-marquee-left {
-  display: flex;
-  width: max-content;
-  animation: marqueeLeft 32s linear infinite;
-}
-
-.animate-marquee-left-fast {
-  display: flex;
-  width: max-content;
-  animation: marqueeLeft 18s linear infinite;
-}
-
-.animate-marquee-right {
-  display: flex;
-  width: max-content;
-  animation: marqueeRight 32s linear infinite;
-}
-
-.animate-marquee-left:hover,
-.animate-marquee-right:hover {
-  animation-play-state: paused;
-}
-
-/* Glowing Aura & Glass Morphism */
-.glass-panel {
-  background: rgba(18, 22, 25, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-panel-light {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.glow-acid {
-  box-shadow: 0 0 35px -5px rgba(226, 253, 0, 0.35);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 45px -5px rgba(16, 185, 129, 0.4);
-}
 
 /* Leaflet Z-Index Isolation Fix to prevent map bleeding over header/navbar */
 .leaflet-container {
