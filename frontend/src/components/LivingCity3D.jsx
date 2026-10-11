@@ -915,8 +915,21 @@ export default function LivingCity3D({ onExit }) {
         car.add(cw);
       });
 
-      return car;
+      return { car, taillight: tl };
     };
+
+    // IoT Smart Fleet Vector Field Holographic Ground Ring (around truck)
+    const vectorFieldGeo = new THREE.RingGeometry(13.5, 14.2, 48);
+    const vectorFieldMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.35
+    });
+    const vectorFieldRing = new THREE.Mesh(vectorFieldGeo, vectorFieldMat);
+    vectorFieldRing.rotation.x = -Math.PI / 2;
+    vectorFieldRing.position.y = 0.04;
+    truckGroup.add(vectorFieldRing);
 
     // Slower, calm city speeds (0.13 to 0.17)
     const trafficData = [
@@ -929,16 +942,18 @@ export default function LivingCity3D({ onExit }) {
     ];
 
     trafficData.forEach((td, idx) => {
-      const carMesh = createCarModel(carColors[idx % carColors.length]);
-      carMesh.position.set(td.x, 0, td.z);
-      carMesh.rotation.y = td.avenue === 'h' ? (td.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (td.dir > 0 ? 0 : Math.PI);
-      scene.add(carMesh);
+      const carObj = createCarModel(carColors[idx % carColors.length]);
+      carObj.car.position.set(td.x, 0, td.z);
+      carObj.car.rotation.y = td.avenue === 'h' ? (td.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (td.dir > 0 ? 0 : Math.PI);
+      scene.add(carObj.car);
       trafficCars.push({
-        group: carMesh,
+        group: carObj.car,
+        taillight: carObj.taillight,
         avenue: td.avenue,
         line: td.line,
         dir: td.dir,
-        speed: td.speed,
+        baseSpeed: td.speed,
+        currentSpeed: td.speed,
         x: td.x,
         z: td.z
       });
@@ -1136,28 +1151,59 @@ export default function LivingCity3D({ onExit }) {
         setCurrentSpeed(Math.round(Math.abs(truckSpeed) * 85));
       }
 
-      // Flash Roof Strobe
+      // Flash Roof Strobe & Pulse Vector Field Ring
       strobeBar.material.color.setHex((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
+      if (vectorFieldRing) {
+        vectorFieldRing.material.opacity = 0.22 + Math.sin(time * 3.5) * 0.12;
+        vectorFieldRing.rotation.z += 0.005;
+      }
 
       // ─────────────────────────────────────────────────────────────
-      // 12. TRAFFIC SIMULATION & STRONG COLLISION DETECTION
+      // 12. TRAFFIC SIMULATION & SMART VECTOR FIELD PROXIMITY BRAKING
       // ─────────────────────────────────────────────────────────────
+      // Cars slow down inside the 28m vector field and come to a FULL STOP at 8.5m
+      const VECTOR_FIELD_RADIUS = 28.0;
+      const FULL_STOP_DISTANCE = 8.5;
+
       trafficCars.forEach((tc) => {
+        const distToTruck = Math.hypot(truckGroup.position.x - tc.x, truckGroup.position.z - tc.z);
+        let targetCarSpeed = tc.baseSpeed;
+
+        if (distToTruck < FULL_STOP_DISTANCE) {
+          // Cars completely halt & yield before hitting the player!
+          targetCarSpeed = 0;
+          if (tc.taillight) tc.taillight.material.color.setHex(0xff0000); // Glowing brake light
+        } else if (distToTruck < VECTOR_FIELD_RADIUS) {
+          // Inside player's vector field: smooth deceleration
+          const ratio = (distToTruck - FULL_STOP_DISTANCE) / (VECTOR_FIELD_RADIUS - FULL_STOP_DISTANCE);
+          targetCarSpeed = tc.baseSpeed * Math.max(0.04, ratio * ratio);
+          if (tc.taillight) tc.taillight.material.color.setHex(0xef4444);
+        } else {
+          // Normal cruising
+          targetCarSpeed = tc.baseSpeed;
+          if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
+        }
+
+        // Smooth speed transition
+        tc.currentSpeed += (targetCarSpeed - tc.currentSpeed) * 0.16;
+
+        // Move car
         if (tc.avenue === 'h') {
-          tc.x += tc.dir * tc.speed;
+          tc.x += tc.dir * tc.currentSpeed;
           if (tc.x > fenceLimit - 6) tc.x = -fenceLimit + 6;
           if (tc.x < -fenceLimit + 6) tc.x = fenceLimit - 6;
           tc.group.position.x = tc.x;
         } else {
-          tc.z += tc.dir * tc.speed;
+          tc.z += tc.dir * tc.currentSpeed;
           if (tc.z > fenceLimit - 6) tc.z = -fenceLimit + 6;
           if (tc.z < -fenceLimit + 6) tc.z = fenceLimit - 6;
           tc.group.position.z = tc.z;
         }
 
+        // Collision only triggers if the PLAYER drives into the car at speed:
+        // (AI cars will NEVER ram the player because they halt at 8.5m distance!)
         if (!isCrashedRef.current) {
-          const distToCar = Math.hypot(truckGroup.position.x - tc.x, truckGroup.position.z - tc.z);
-          if (distToCar < 3.4) {
+          if (Math.abs(truckSpeed) > 0.16 && distToTruck < 3.2) {
             triggerCrash("Traffic Vehicle");
           }
         }
@@ -1688,6 +1734,18 @@ export default function LivingCity3D({ onExit }) {
               />
             )}
 
+            {/* IoT Fleet Vector Field Aura on Radar (28m radius) */}
+            <circle
+              cx={radarData.playerX}
+              cy={radarData.playerZ}
+              r="28"
+              fill="rgba(56, 189, 248, 0.08)"
+              stroke="#38bdf8"
+              strokeWidth="0.8"
+              strokeDasharray="3, 3"
+              opacity="0.65"
+            />
+
             {/* Player Blip */}
             <g transform={`translate(${radarData.playerX}, ${radarData.playerZ}) rotate(${(-radarData.playerAngle * 180) / Math.PI})`}>
               <polygon points="0,-7 5,6 0,3 -5,6" fill="#ffffff" stroke="#000000" strokeWidth="1" />
@@ -1718,8 +1776,8 @@ export default function LivingCity3D({ onExit }) {
           </div>
           <div className="h-8 w-[1px] bg-slate-800" />
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Handling Mode</p>
-            <p className="font-extrabold text-xs text-emerald-400">Precision Easy-Turn</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Proximity Field</p>
+            <p className="font-extrabold text-xs text-cyan-400">IoT Auto-Brake (AI Yields)</p>
           </div>
         </div>
 
