@@ -50,8 +50,20 @@ export default function Sponsors({ user, lang }) {
     }, 2500);
   };
 
+  const getActiveUser = () => {
+    if (user && user.id) return user;
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+      if (stored && (stored.id || stored.email)) return stored;
+    } catch (e) {}
+    return user || {};
+  };
+
+  const activeUser = getActiveUser();
+
   const handleRedeem = async (sponsor) => {
-    if (!user || !user.id) {
+    const currentUser = getActiveUser();
+    if (!currentUser || !currentUser.id) {
       setRedeemError(lang === 'hi' ? 'वाउचर भुनाने के लिए कृपया पहले अपने खाते में लॉगिन करें!' : 'Please login to your citizen account first to redeem sponsor vouchers!');
       return;
     }
@@ -60,13 +72,13 @@ export default function Sponsors({ user, lang }) {
       const res = await fetch(`${API_BASE}/sponsors/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, sponsor_id: sponsor.id })
+        body: JSON.stringify({ user_id: currentUser.id, sponsor_id: sponsor.id })
       });
       const data = await res.json();
 
       if (data.success) {
         const updatedUser = {
-          ...user,
+          ...currentUser,
           eco_points: data.remaining_points,
           cash_wallet_balance: data.remaining_wallet
         };

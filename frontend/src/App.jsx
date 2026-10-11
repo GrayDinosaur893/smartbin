@@ -27,6 +27,21 @@ export default function App() {
     }
   });
 
+  React.useEffect(() => {
+    const syncUser = () => {
+      try {
+        const u = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+        setCurrentUser(u);
+      } catch {}
+    };
+    window.addEventListener('storage', syncUser);
+    window.addEventListener('focus', syncUser);
+    return () => {
+      window.removeEventListener('storage', syncUser);
+      window.removeEventListener('focus', syncUser);
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>

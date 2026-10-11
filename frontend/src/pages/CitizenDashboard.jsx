@@ -25,7 +25,13 @@ export default function CitizenDashboard({ user, lang }) {
   };
 
   const handleRedeemVoucher = (voucherCode, ptsCost, offerTitle = 'Municipal Voucher') => {
-    const currentUserId = data.user?.id || user?.id;
+    let currentUserId = data.user?.id || user?.id;
+    if (!currentUserId) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+        if (stored && stored.id) currentUserId = stored.id;
+      } catch (e) {}
+    }
     if (!currentUserId) {
       alert(lang === 'hi' ? 'कृपया पहले अपने खाते में लॉगिन करें!' : 'Please login to your citizen account first!');
       return;
