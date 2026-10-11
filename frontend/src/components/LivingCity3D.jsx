@@ -36,8 +36,283 @@ import {
   Zap,
   BarChart2,
   Check,
-  Smartphone
+  Smartphone,
+  Wrench,
+  Copy,
+  Cpu,
+  ShieldCheck,
+  Timer
 } from 'lucide-react';
+
+/**
+ * PLAYABLE MUNICIPAL TRUCKS CATALOG
+ * Playable Garbage Trucks: Swachh Bharat Standard, Overdrive, and Deflector
+ */
+export const TRUCK_MODELS_DATA = {
+  swachh_bharat_standard: {
+    id: 'swachh_bharat_standard',
+    name: 'Swachh Bharat Standard',
+    tagline: 'Standard Municipal Compactor',
+    cost: 0,
+    costType: 'free',
+    capacity: 150,
+    speedKmh: 45,
+    maxSpeedVal: 0.30,
+    accelVal: 0.012,
+    turnSpeedVal: 0.026,
+    collectionDuration: 3.0,
+    fieldRadius: 28.0,
+    themeColor: '#105a39',
+    accentColor: '#38bdf8',
+    fieldName: 'Calming Braking Field',
+    fieldDesc: 'Smoothly slows oncoming AI traffic within 28m down to 1x speed to maintain street safety.',
+    tradeoff: 'Standard 45 KM/H speed cap and balanced collection time.'
+  },
+  overdrive: {
+    id: 'overdrive',
+    name: 'Overdrive',
+    tagline: 'Cab-Over Heavy Duty Municipal Compactor',
+    cost: 500,
+    costType: 'coins',
+    capacity: 320,
+    speedKmh: 54,
+    maxSpeedVal: 0.36,
+    accelVal: 0.015,
+    turnSpeedVal: 0.028,
+    collectionDuration: 1.5,
+    fieldRadius: 28.0,
+    speedMultiplier: 1.45,
+    themeColor: '#06b6d4',
+    accentColor: '#22d3ee',
+    fieldName: 'Kinetic Surge & Rapid Suction',
+    fieldDesc: 'Traffic inside the cyan field smoothly accelerates and dustbin collection is ultra-fast at 1.5s!',
+    tradeoff: 'Faster traffic makes avoiding high-speed collisions more challenging.'
+  },
+  deflector: {
+    id: 'deflector',
+    name: 'Deflector',
+    tagline: 'Futuristic Cyber 8x8 Chunky Compactor',
+    cost: 750,
+    costType: 'coins',
+    capacity: 450,
+    speedKmh: 48,
+    maxSpeedVal: 0.32,
+    accelVal: 0.012,
+    turnSpeedVal: 0.020,
+    collectionDuration: 2.0,
+    fieldRadius: 28.0,
+    themeColor: '#00c9c8',
+    accentColor: '#f97316',
+    fieldName: 'Gravitational Path Deflector',
+    fieldDesc: 'Smoothly bends traffic trajectory away from truck path; balanced 2.0s collection time!',
+    tradeoff: 'Armored heavy chassis makes steering response slightly heavier.'
+  }
+};
+
+/**
+ * MUNICIPAL ECO-TRUCK PARTS UPGRADES MATRIX
+ * Upgradeable truck components using earned Game Coins (🪙)!
+ */
+export const UPGRADE_CONFIGS = {
+  engine: {
+    id: 'engine',
+    title: 'Twin-Turbo Engine Block',
+    icon: '⚡',
+    desc: 'Increases top speed cap and improves throttle response.',
+    levels: [
+      { lvl: 1, label: 'Standard 30 KM/H', cost: 0, speedKmh: 30, maxSpeedVal: 0.20, accelVal: 0.007 },
+      { lvl: 2, label: 'Stage-1 Turbo 34 KM/H', cost: 100, speedKmh: 34, maxSpeedVal: 0.23, accelVal: 0.0085 },
+      { lvl: 3, label: 'Twin-Turbo 38 KM/H', cost: 200, speedKmh: 38, maxSpeedVal: 0.26, accelVal: 0.010 },
+      { lvl: 4, label: 'Hyper-EV Drive 42 KM/H', cost: 350, speedKmh: 42, maxSpeedVal: 0.29, accelVal: 0.012 },
+    ]
+  },
+  capacity: {
+    id: 'capacity',
+    title: 'Hydraulic Compactor Hopper',
+    icon: '📦',
+    desc: 'Expands rear hopper volume so you can hold more waste before dumpyard.',
+    levels: [
+      { lvl: 1, label: '150 kg Hopper', cost: 0, cap: 150 },
+      { lvl: 2, label: '250 kg Reinforced Hopper', cost: 90, cap: 250 },
+      { lvl: 3, label: '400 kg Double Ram Press', cost: 180, cap: 400 },
+      { lvl: 4, label: '600 kg Titan Compactor', cost: 320, cap: 600 },
+    ]
+  },
+  suction: {
+    id: 'suction',
+    title: 'Pneumatic Lift & Empty Arm',
+    icon: '🌪️',
+    desc: 'Cuts sanitation worker bin empty duration for faster collection routes.',
+    levels: [
+      { lvl: 1, label: '2.5s Standard Tipper', cost: 0, duration: 2.5 },
+      { lvl: 2, label: '1.8s Rapid Tipper', cost: 80, duration: 1.8 },
+      { lvl: 3, label: '1.2s High-Flow Suction', cost: 160, duration: 1.2 },
+      { lvl: 4, label: '0.6s Robotic Instant Empty', cost: 260, duration: 0.6 },
+    ]
+  },
+  magnet: {
+    id: 'magnet',
+    title: 'Vector Field Proximity Coil',
+    icon: '🧲',
+    desc: 'Expands the electromagnetic braking aura that slows down AI cars around you.',
+    levels: [
+      { lvl: 1, label: '28m Safety Radius', cost: 0, radius: 28 },
+      { lvl: 2, label: '36m Expanded Aura', cost: 70, radius: 36 },
+      { lvl: 3, label: '45m High-Field Collector', cost: 150, radius: 45 },
+      { lvl: 4, label: '55m Civic Stasis Dome', cost: 250, radius: 55 },
+    ]
+  }
+};
+
+/**
+ * MISSION-BASED DIFFICULTY CONFIGURATION MATRIX (4 TIERS)
+ * Controls traffic count, mission deadlines, objective bins, collision damage multipliers,
+ * repair costs, and reward multipliers.
+ */
+export const DIFFICULTY_TIERS = {
+  rookie: {
+    id: 'rookie',
+    name: 'Rookie Driver',
+    badge: '🟢 ROOKIE',
+    color: '#22c55e',
+    desc: 'Low traffic density, generous 300s deadline, 4 bins required. Perfect for learning municipal navigation.',
+    trafficCount: 10,
+    timeLimit: 300, // 5 minutes
+    requiredBins: 4,
+    damageMultiplier: 0.6,
+    repairCostPerPct: 1, // 1 Coin per 1% repair
+    baseReward: 200,
+    fullCollectionBonus: 50,
+    timeBonus: 30,
+    optionalObjectiveBonus: 40,
+    rewardMultiplier: 1.0,
+    xpComplete: 100
+  },
+  rush_hour: {
+    id: 'rush_hour',
+    name: 'Rush Hour',
+    badge: '🟡 RUSH HOUR',
+    color: '#eab308',
+    desc: 'Moderate-high traffic (18 cars), tighter 210s deadline, 5 bins required. Strategic navigation essential.',
+    trafficCount: 18,
+    timeLimit: 210, // 3.5 minutes
+    requiredBins: 5,
+    damageMultiplier: 1.0,
+    repairCostPerPct: 2, // 2 Coins per 1% repair
+    baseReward: 260,
+    fullCollectionBonus: 70,
+    timeBonus: 45,
+    optionalObjectiveBonus: 50,
+    rewardMultiplier: 1.3,
+    xpComplete: 140
+  },
+  city_pressure: {
+    id: 'city_pressure',
+    name: 'City Under Pressure',
+    badge: '🟠 PRESSURE',
+    color: '#f97316',
+    desc: 'Dense traffic (24 cars), strict 150s deadline, all 6 bins required. Severe collision consequences.',
+    trafficCount: 24,
+    timeLimit: 150, // 2.5 minutes
+    requiredBins: 6,
+    damageMultiplier: 1.5,
+    repairCostPerPct: 3, // 3 Coins per 1% repair
+    baseReward: 350,
+    fullCollectionBonus: 100,
+    timeBonus: 60,
+    optionalObjectiveBonus: 60,
+    rewardMultiplier: 1.6,
+    xpComplete: 190
+  },
+  master_operator: {
+    id: 'master_operator',
+    name: 'Master Operator',
+    badge: '🔴 MASTER',
+    color: '#ef4444',
+    desc: 'Maximum traffic intensity (28 cars), cutthroat 110s deadline, 6 bins + zero collisions challenge!',
+    trafficCount: 28,
+    timeLimit: 110, // 1m 50s
+    requiredBins: 6,
+    damageMultiplier: 2.0,
+    repairCostPerPct: 4, // 4 Coins per 1% repair
+    baseReward: 480,
+    fullCollectionBonus: 140,
+    timeBonus: 80,
+    optionalObjectiveBonus: 80,
+    rewardMultiplier: 2.0,
+    xpComplete: 260
+  }
+};
+
+/**
+ * Formula for XP required to advance from current level to next level:
+ * XP Required = 100 + 50 * (Current Level - 1)
+ */
+export const getRequiredXp = (lvl) => {
+  const current = Math.max(1, parseInt(lvl, 10) || 1);
+  return 100 + 50 * (current - 1);
+};
+
+/**
+ * CITIZEN MUNICIPAL REWARDS VOUCHERS CATALOG
+ * Displayed in Citizen Rewards Bureau (Block 16) with 1-click redemption!
+ */
+export const MUNICIPAL_VOUCHERS = [
+  {
+    id: 'dmart_100',
+    brand: 'D-Mart Supermarket',
+    title: '₹100 Grocery Voucher',
+    desc: 'Valid on fresh fruits, organic pulses, and household cleaning supplies.',
+    cost: 150,
+    category: 'Grocery',
+    codePrefix: 'DMART-SBN-'
+  },
+  {
+    id: 'pvr_bogo',
+    brand: 'PVR Inox Cinemas',
+    title: 'Buy-1-Get-1 Movie Ticket',
+    desc: 'Valid at all Bilaspur & Raipur PVR screens for any movie showtime.',
+    cost: 200,
+    category: 'Entertainment',
+    codePrefix: 'PVR-ECO-'
+  },
+  {
+    id: 'bus_pass_7d',
+    brand: 'Bilaspur City Transit',
+    title: '7-Day Unlimited Bus Pass',
+    desc: 'Free zero-emission AC electric bus transit across all city municipal routes.',
+    cost: 120,
+    category: 'Transit',
+    codePrefix: 'BCT-FREE-'
+  },
+  {
+    id: 'apollo_150',
+    brand: 'Apollo Pharmacy',
+    title: '₹150 Health & Wellness Coupon',
+    desc: 'Applicable on essential medicines, vitamins, and first-aid supplies.',
+    cost: 100,
+    category: 'Healthcare',
+    codePrefix: 'APOLLO-HLTH-'
+  },
+  {
+    id: 'chai_snack',
+    brand: "Chai Point & Baker's",
+    title: 'Free Organic Brew & Snack',
+    desc: 'Complimentary tea/coffee in ceramic mug and biodegradable millet snack.',
+    cost: 80,
+    category: 'Food & Beverage',
+    codePrefix: 'CHAI-ZERO-'
+  },
+  {
+    id: 'solar_token',
+    brand: 'C.G. Renewable Energy',
+    title: 'Solar LED Lantern Token',
+    desc: 'Municipal voucher redeemable for a home emergency solar LED study lantern.',
+    cost: 250,
+    category: 'Clean Energy',
+    codePrefix: 'CG-SOLAR-'
+  }
+];
 
 /**
  * SMARTBIN PLATFORM APP FEATURES DATASET
@@ -335,17 +610,131 @@ export default function LivingCity3D({ onExit }) {
   // Game state displayed on HUD
   const [wasteCollected, setWasteCollected] = useState(0);
   const [totalBins, setTotalBins] = useState(6);
-  const [truckCapacity] = useState(150);
   const [currentLoad, setCurrentLoad] = useState(0);
-  const [ecoPoints, setEcoPoints] = useState(250);
+
+  // ── SEPARATE CURRENCIES ──
+  // 1. Game Coins: Earned in-game by collecting bins, used for truck parts & garage upgrades (500 starter balance)
+  const [gameCoins, setGameCoins] = useState(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_game_coins');
+      if (stored === null || stored === undefined) {
+        localStorage.setItem('smartbin_game_coins', '500');
+        return 500;
+      }
+      return parseInt(stored, 10) || 0;
+    } catch {
+      return 500;
+    }
+  });
+  const gameCoinsRef = useRef(gameCoins);
+  gameCoinsRef.current = gameCoins;
+
+  // 2. Eco-Points: Earned for civic cleaning and strictly used for redeeming municipal vouchers
+  const [ecoPoints, setEcoPoints] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+      return typeof u.eco_points === 'number' ? u.eco_points : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const ecoPointsRef = useRef(ecoPoints);
+  ecoPointsRef.current = ecoPoints;
+
+  // Truck Parts Upgrades Matrix (Bought using Game Coins in Workshop)
+  const [truckUpgrades, setTruckUpgrades] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartbin_truck_upgrades') || '{"engine":1,"capacity":1,"suction":1,"magnet":1}');
+    } catch {
+      return { engine: 1, capacity: 1, suction: 1, magnet: 1 };
+    }
+  });
+  const truckUpgradesRef = useRef(truckUpgrades);
+  truckUpgradesRef.current = truckUpgrades;
+
+  // Game Screen State: 'menu' (Game Title/Hub), 'garage' (Dr. Driving 3D Vehicle Showcase), 'city' (Driving in 3D City)
+  const [gameScreen, setGameScreen] = useState(() => {
+    // Check if player came directly to city or prefer garage
+    const pref = sessionStorage.getItem('smartbin_game_initial_screen');
+    if (pref) return pref;
+    return 'menu';
+  });
+  const gameScreenRef = useRef(gameScreen);
+  gameScreenRef.current = gameScreen;
+
+  // Pause Menu State
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
+
+  // Dr. Driving Garage Carousel Index & Turntable Control
+  const truckKeysList = Object.keys(TRUCK_MODELS_DATA);
+  const [previewTruckIndex, setPreviewTruckIndex] = useState(() => {
+    const activeId = localStorage.getItem('smartbin_active_truck') || 'swachh_bharat_standard';
+    const idx = Object.keys(TRUCK_MODELS_DATA).indexOf(activeId);
+    return idx >= 0 ? idx : 0;
+  });
+  const previewTruckIndexRef = useRef(previewTruckIndex);
+  previewTruckIndexRef.current = previewTruckIndex;
+
+  const showroomAngleRef = useRef(0);
+  const isShowroomDraggingRef = useRef(false);
+  const showroomDragStartXRef = useRef(0);
+  const showroomDragStartAngleRef = useRef(0);
+
+  // Eco-Truck Garage & Vector Shop System
+  const [showGarageShop, setShowGarageShop] = useState(false);
+  const [selectedTruckModel, setSelectedTruckModel] = useState(() => {
+    return localStorage.getItem('smartbin_active_truck') || 'swachh_bharat_standard';
+  });
+  const selectedTruckModelRef = useRef(selectedTruckModel);
+  selectedTruckModelRef.current = selectedTruckModel;
+  const applyTruckModelVisualsRef = useRef(null);
+
+  const [ownedTrucks, setOwnedTrucks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartbin_owned_trucks') || '["swachh_bharat_standard"]');
+    } catch {
+      return ['swachh_bharat_standard'];
+    }
+  });
+
+  // Hopper Capacity derived strictly from equipped truck model (Truck stats do not scale on citizen level up)
+  const activeTruckConfig = TRUCK_MODELS_DATA[selectedTruckModel] || TRUCK_MODELS_DATA.swachh_bharat_standard;
+  const truckCapacity = activeTruckConfig.capacity;
+  const truckCapacityRef = useRef(truckCapacity);
+  truckCapacityRef.current = truckCapacity;
+
+  // Physical 3D Workshop In-Game Proximity State
+  const [isNearWorkshop, setIsNearWorkshop] = useState(false);
+  const isNearWorkshopRef = useRef(false);
+  isNearWorkshopRef.current = isNearWorkshop;
+  const [workshopTab, setWorkshopTab] = useState('models'); // 'models' | 'parts'
+
+  // Respawn Coin Modal (Prompted on 3rd death to pay 1 Coin or forfeit)
+  const [showRespawnCoinModal, setShowRespawnCoinModal] = useState(false);
+
+  // Citizen Redeemed Vouchers Storage
+  const [redeemedVouchers, setRedeemedVouchers] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('smartbin_redeemed_vouchers') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [copiedVoucherCode, setCopiedVoucherCode] = useState(null);
+
   const [currentSpeed, setCurrentSpeed] = useState(0);
+  const [shiftTime, setShiftTime] = useState(0); // Active Shift Timer in seconds
+  const shiftTimeRef = useRef(0);
+  shiftTimeRef.current = shiftTime;
   const [collectingBinId, setCollectingBinId] = useState(null);
   const [collectProgress, setCollectProgress] = useState(0);
   const [isWorkerAtBin, setIsWorkerAtBin] = useState(false);
   const [isHoldingCollect, setIsHoldingCollect] = useState(false);
   const [currentTargetName, setCurrentTargetName] = useState("SmartBin #1 (Plastic)");
   const [targetDistance, setTargetDistance] = useState(0);
-  const [notification, setNotification] = useState("Shift Started: Capped 0-30 KM/H smooth steering. Park near dustbin to send worker!");
+  const [notification, setNotification] = useState("Shift Started: Real-time traffic active. Park near dustbins to empty!");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [viewMode, setViewMode] = useState('chase');
   const [showHelp, setShowHelp] = useState(false);
@@ -360,30 +749,62 @@ export default function LivingCity3D({ onExit }) {
   // Launcher Mode Selection Modal (Shown upfront on load)
   const [showLauncherModal, setShowLauncherModal] = useState(false);
 
-  // Citizen Level & Superpower System
-  const [citizenLevel, setCitizenLevel] = useState(1);
-  const citizenLevelRef = useRef(1);
+  // Mission Difficulty System (Rookie, Rush Hour, City Pressure, Master Operator)
+  const [difficultyTier, setDifficultyTier] = useState(() => {
+    return localStorage.getItem('smartbin_difficulty_tier') || 'rookie';
+  });
+  const difficultyTierRef = useRef(difficultyTier);
+  difficultyTierRef.current = difficultyTier;
+
+  // Truck Condition & Damage System (100% down to 0%)
+  const [truckCondition, setTruckCondition] = useState(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_truck_condition');
+      return stored !== null ? Math.max(0, Math.min(100, parseInt(stored, 10))) : 100;
+    } catch {
+      return 100;
+    }
+  });
+  const truckConditionRef = useRef(truckCondition);
+  truckConditionRef.current = truckCondition;
+
+  // Collision tracking during active mission
+  const [collisionCount, setCollisionCount] = useState(0);
+  const collisionCountRef = useRef(0);
+  collisionCountRef.current = collisionCount;
+  const lastCollisionTimeRef = useRef(0);
+
+  // Permanent Driver Level & XP Progression System
+  const [citizenLevel, setCitizenLevel] = useState(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_driver_level');
+      return stored ? Math.max(1, parseInt(stored, 10)) : 1;
+    } catch {
+      return 1;
+    }
+  });
+  const citizenLevelRef = useRef(citizenLevel);
   citizenLevelRef.current = citizenLevel;
 
-  const [levelXP, setLevelXP] = useState(0);
+  const [levelXP, setLevelXP] = useState(() => {
+    try {
+      const stored = localStorage.getItem('smartbin_driver_xp');
+      return stored ? Math.max(0, parseInt(stored, 10)) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const levelXPRef = useRef(levelXP);
+  levelXPRef.current = levelXP;
+
+  // Mission Summary / Evaluation Result Modal state
+  const [missionResultData, setMissionResultData] = useState(null);
+
   const [unlockedPowers, setUnlockedPowers] = useState(['standard_compactor']);
   const [nitroActive, setNitroActive] = useState(false);
   const nitroActiveRef = useRef(false);
   nitroActiveRef.current = nitroActive;
   const [showLevelUpModal, setShowLevelUpModal] = useState(null);
-
-  // Eco-Truck Garage & Vector Shop System
-  const [showGarageShop, setShowGarageShop] = useState(false);
-  const [selectedTruckModel, setSelectedTruckModel] = useState(() => {
-    return localStorage.getItem('smartbin_active_truck') || 'swachh_bharat_standard';
-  });
-  const [ownedTrucks, setOwnedTrucks] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('smartbin_owned_trucks') || '["swachh_bharat_standard"]');
-    } catch {
-      return ['swachh_bharat_standard'];
-    }
-  });
 
   const [showBuildingPieceModal, setShowBuildingPieceModal] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -415,8 +836,9 @@ export default function LivingCity3D({ onExit }) {
         setCitizenLevel(data.level || 1);
         citizenLevelRef.current = data.level || 1;
         setLevelXP(data.xp_current || 0);
-        setEcoPoints(data.eco_points || 250);
-        ecoPointsRef.current = data.eco_points || 250;
+        const ptsVal = (typeof data.eco_points === 'number') ? data.eco_points : 0;
+        setEcoPoints(ptsVal);
+        ecoPointsRef.current = ptsVal;
         setUnlockedPowers((data.unlocked_powers || []).map((p) => p.id));
       }
     } catch (e) {
@@ -424,31 +846,72 @@ export default function LivingCity3D({ onExit }) {
     }
   };
 
-  const saveCitizenPoints = async (addedPoints) => {
-    try {
-      const u = getCitizenUser();
-      if (!u || !u.id) return;
-      const res = await fetch('/api/city/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: u.id, points_earned: addedPoints })
-      });
-      const data = await res.json();
-      if (data.success) {
-        if (data.level > citizenLevelRef.current) {
-          setCitizenLevel(data.level);
-          citizenLevelRef.current = data.level;
-          setShowLevelUpModal({
-            level: data.level,
-            powers: data.unlocked_powers
-          });
-          playSound('level_up');
-        }
-        setLevelXP(data.xp_current || 0);
-      }
-    } catch (e) {
-      console.warn("Could not save citizen progress:", e);
+  // ── DRIVER LEVEL & XP PROGRESSION SYSTEM ──
+  // Formula: XP Required = 100 + 50 * (Current Level - 1)
+  const addDriverExperience = (earnedXp) => {
+    let curLvl = citizenLevelRef.current;
+    let curXp = levelXPRef.current + earnedXp;
+    let leveledUp = false;
+    let newUnlockedContent = [];
+
+    while (curXp >= getRequiredXp(curLvl)) {
+      curXp -= getRequiredXp(curLvl);
+      curLvl += 1;
+      leveledUp = true;
+      if (curLvl === 2) newUnlockedContent.push("Stage-1 Twin-Turbo Engine Unlocked");
+      if (curLvl === 3) newUnlockedContent.push("Nitro Afterburner Booster Unlocked");
+      if (curLvl === 4) newUnlockedContent.push("Double Ram Compactor Press Unlocked");
+      if (curLvl === 5) newUnlockedContent.push("Strobe Hazard Safety Aura Unlocked");
+      if (curLvl === 6) newUnlockedContent.push("Titan Compactor Hopper Unlocked");
     }
+
+    setCitizenLevel(curLvl);
+    citizenLevelRef.current = curLvl;
+    setLevelXP(curXp);
+    levelXPRef.current = curXp;
+
+    localStorage.setItem('smartbin_driver_level', curLvl.toString());
+    localStorage.setItem('smartbin_driver_xp', curXp.toString());
+
+    if (leveledUp) {
+      playSound('level_up');
+      setShowLevelUpModal({
+        level: curLvl,
+        powers: newUnlockedContent
+      });
+      setNotification(`🎉 LEVEL UP! You reached Driver Level ${curLvl}!`);
+    }
+
+    return { newLevel: curLvl, newXp: curXp, leveledUp };
+  };
+
+  // ── TRUCK REPAIR & GARAGE ECONOMY ──
+  const repairTruckInGarage = () => {
+    const activeDiff = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
+    const missingCondition = 100 - truckConditionRef.current;
+    if (missingCondition <= 0) {
+      setNotification("✅ Truck is already in mint 100% condition!");
+      return;
+    }
+    const costPerPct = activeDiff.repairCostPerPct || 1;
+    const totalRepairCost = missingCondition * costPerPct;
+
+    if (gameCoinsRef.current < totalRepairCost) {
+      setNotification(`⚠️ Insufficient coins! Need ${totalRepairCost} Coins to fully repair (You have ${gameCoinsRef.current}).`);
+      return;
+    }
+
+    const nextCoins = gameCoinsRef.current - totalRepairCost;
+    setGameCoins(nextCoins);
+    gameCoinsRef.current = nextCoins;
+    localStorage.setItem('smartbin_game_coins', nextCoins.toString());
+
+    setTruckCondition(100);
+    truckConditionRef.current = 100;
+    localStorage.setItem('smartbin_truck_condition', '100');
+
+    playSound('collect');
+    setNotification(`🛠️ Truck fully restored to 100% condition! (-${totalRepairCost} Coins)`);
   };
 
   useEffect(() => {
@@ -521,9 +984,6 @@ export default function LivingCity3D({ onExit }) {
   const wasteCollectedRef = useRef(wasteCollected);
   wasteCollectedRef.current = wasteCollected;
 
-  const ecoPointsRef = useRef(ecoPoints);
-  ecoPointsRef.current = ecoPoints;
-
   const livesRef = useRef(lives);
   livesRef.current = lives;
 
@@ -534,6 +994,16 @@ export default function LivingCity3D({ onExit }) {
   const cameraShakeRef = useRef(0);
   const audioCtxRef = useRef(null);
   const resetTruckTriggerRef = useRef(null);
+
+  // Auto-synchronize 3D truck visuals in Garage showroom and City driving
+  useEffect(() => {
+    if (gameScreen === 'garage') {
+      const modelId = truckKeysList[previewTruckIndex] || 'swachh_bharat_standard';
+      applyTruckModelVisualsRef.current?.(modelId);
+    } else if (gameScreen === 'city') {
+      applyTruckModelVisualsRef.current?.(selectedTruckModel);
+    }
+  }, [gameScreen, previewTruckIndex, selectedTruckModel]);
 
   // Web Audio Synthesizer
   const playSound = (type) => {
@@ -982,6 +1452,35 @@ export default function LivingCity3D({ onExit }) {
     craneGroup.rotation.y = 0.55;
     dumpyardGroup.add(craneGroup);
 
+    // Helper to generate dynamic circular GTA badge texture
+    const createGTABadgeTex = (letter, bgColor, textColor) => {
+      const cv = document.createElement('canvas');
+      cv.width = 128; cv.height = 128;
+      const cx = cv.getContext('2d');
+      cx.fillStyle = bgColor;
+      cx.beginPath();
+      cx.arc(64, 64, 58, 0, Math.PI * 2);
+      cx.fill();
+      cx.lineWidth = 10;
+      cx.strokeStyle = '#ffffff';
+      cx.stroke();
+      cx.fillStyle = textColor;
+      cx.font = '900 82px system-ui, sans-serif';
+      cx.textAlign = 'center';
+      cx.textBaseline = 'middle';
+      cx.fillText(letter, 64, 68);
+      return new THREE.CanvasTexture(cv);
+    };
+
+    // 3D GTA "D" Beacon Badge above Dumpyard
+    const dumpyardBadgeMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.8, 2.8, 0.45, 24),
+      new THREE.MeshBasicMaterial({ map: createGTABadgeTex('D', '#059669', '#ffffff') })
+    );
+    dumpyardBadgeMesh.rotation.x = Math.PI / 2;
+    dumpyardBadgeMesh.position.set(dumpyardPos.x, 18.5, dumpyardPos.z + 6);
+    dumpyardGroup.add(dumpyardBadgeMesh);
+
     // Beacon Tower
     const beaconTower = new THREE.Mesh(
       new THREE.CylinderGeometry(0.25, 0.25, 16, 8),
@@ -991,6 +1490,129 @@ export default function LivingCity3D({ onExit }) {
     dumpyardGroup.add(beaconTower);
 
     scene.add(dumpyardGroup);
+
+    // ─────────────────────────────────────────────────────────────
+    // 5B. 3D MUNICIPAL GARAGE & TRUCK CUSTOMS SHOWROOM (At South x: 0, z: 115)
+    // ─────────────────────────────────────────────────────────────
+    const workshopPos = { x: 0, z: 115 };
+    const workshopGroup = new THREE.Group();
+
+    // Heavy Concrete Apron Pad & Approach Ramp
+    const wsApron = new THREE.Mesh(
+      new THREE.BoxGeometry(44, 0.4, 28),
+      new THREE.MeshLambertMaterial({ color: 0x1e293b })
+    );
+    wsApron.position.set(workshopPos.x, 0.2, workshopPos.z);
+    wsApron.receiveShadow = true;
+    workshopGroup.add(wsApron);
+
+    // Garage Driveway Apron connecting to Main Road
+    const wsDriveway = new THREE.Mesh(
+      new THREE.BoxGeometry(16, 0.35, 30),
+      new THREE.MeshLambertMaterial({ color: 0x0f172a })
+    );
+    wsDriveway.position.set(workshopPos.x, 0.18, workshopPos.z - 18);
+    workshopGroup.add(wsDriveway);
+
+    // Glowing Cyan Entrance Border
+    const wsCurb = new THREE.Mesh(
+      new THREE.BoxGeometry(44.4, 0.5, 0.8),
+      new THREE.MeshBasicMaterial({ color: 0x06b6d4 })
+    );
+    wsCurb.position.set(workshopPos.x, 0.26, workshopPos.z - 13.8);
+    workshopGroup.add(wsCurb);
+
+    // Main 3D Garage Hangar Building
+    const wsBuilding = new THREE.Mesh(
+      new THREE.BoxGeometry(34, 11, 16),
+      new THREE.MeshLambertMaterial({ color: 0x0f172a })
+    );
+    wsBuilding.position.set(workshopPos.x, 5.7, workshopPos.z + 4);
+    wsBuilding.castShadow = true;
+    workshopGroup.add(wsBuilding);
+
+    // 3 Service Bays Openings with Rollup Shutters
+    [-9, 0, 9].forEach((bx) => {
+      const bay = new THREE.Mesh(
+        new THREE.BoxGeometry(6.5, 7.5, 0.4),
+        new THREE.MeshLambertMaterial({ color: 0x020617 })
+      );
+      bay.position.set(workshopPos.x + bx, 4.0, workshopPos.z - 4.1);
+      workshopGroup.add(bay);
+
+      const rollup = new THREE.Mesh(
+        new THREE.BoxGeometry(6.4, 2.2, 0.45),
+        new THREE.MeshLambertMaterial({ color: 0x334155 })
+      );
+      rollup.position.set(workshopPos.x + bx, 6.7, workshopPos.z - 4.1);
+      workshopGroup.add(rollup);
+    });
+
+    // Glowing Neon Roof Signboard: "3D MUNICIPAL GARAGE & SHOWROOM"
+    const wsSign = new THREE.Mesh(
+      new THREE.BoxGeometry(32, 2.6, 0.5),
+      new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+    );
+    wsSign.position.set(workshopPos.x, 12.5, workshopPos.z - 4.2);
+    workshopGroup.add(wsSign);
+
+    // 3D GTA "G" Beacon Badge above Garage
+    const garageBadgeMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.0, 3.0, 0.45, 24),
+      new THREE.MeshBasicMaterial({ map: createGTABadgeTex('G', '#f59e0b', '#000000') })
+    );
+    garageBadgeMesh.rotation.x = Math.PI / 2;
+    garageBadgeMesh.position.set(workshopPos.x, 17.5, workshopPos.z - 4);
+    workshopGroup.add(garageBadgeMesh);
+
+    // ── 4 DISPLAY PEDESTALS WITH 3D TRUCK PARTS ──
+    // 1. Engine Block with Golden Spinning Turbo
+    const engPed = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.2, 16), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+    engPed.position.set(workshopPos.x - 12, 0.8, workshopPos.z - 2);
+    workshopGroup.add(engPed);
+    const engBlock = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 1.4), new THREE.MeshLambertMaterial({ color: 0x64748b }));
+    engBlock.position.set(workshopPos.x - 12, 1.9, workshopPos.z - 2);
+    workshopGroup.add(engBlock);
+    const turboTurbine = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.5, 12), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+    turboTurbine.rotation.z = Math.PI / 2;
+    turboTurbine.position.set(workshopPos.x - 11.2, 2.2, workshopPos.z - 2);
+    workshopGroup.add(turboTurbine);
+
+    // 2. Hydraulic Compactor Ram (Hopper Capacity)
+    const capPed = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.2, 16), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+    capPed.position.set(workshopPos.x - 4, 0.8, workshopPos.z - 2);
+    workshopGroup.add(capPed);
+    const ramMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.4, 1.5), new THREE.MeshLambertMaterial({ color: 0x10b981 }));
+    ramMesh.position.set(workshopPos.x - 4, 2.1, workshopPos.z - 2);
+    workshopGroup.add(ramMesh);
+
+    // 3. Pneumatic Vacuum Lifter Arm
+    const sucPed = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.2, 16), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+    sucPed.position.set(workshopPos.x + 4, 0.8, workshopPos.z - 2);
+    workshopGroup.add(sucPed);
+    const sucArm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.8, 8), new THREE.MeshLambertMaterial({ color: 0xf97316 }));
+    sucArm.rotation.z = 0.4;
+    sucArm.position.set(workshopPos.x + 4, 2.3, workshopPos.z - 2);
+    workshopGroup.add(sucArm);
+
+    // 4. Vector Field Magnetic Coil
+    const magPed = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.2, 16), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+    magPed.position.set(workshopPos.x + 12, 0.8, workshopPos.z - 2);
+    workshopGroup.add(magPed);
+    const magCoil = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.25, 12, 24), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    magCoil.rotation.x = Math.PI / 2;
+    magCoil.position.set(workshopPos.x + 12, 2.2, workshopPos.z - 2);
+    workshopGroup.add(magCoil);
+
+    // Rotating Holographic Wrench Beacon
+    const wrenchHolo = new THREE.Mesh(
+      new THREE.TorusGeometry(1.8, 0.3, 12, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true })
+    );
+    wrenchHolo.position.set(workshopPos.x, 15.5, workshopPos.z - 4);
+    workshopGroup.add(wrenchHolo);
+
+    scene.add(workshopGroup);
 
     // ─────────────────────────────────────────────────────────────
     // 6. CITY BLOCKS: REALISTIC ARCHITECTURE, GARDEN SWINGS & FOOTPATHS
@@ -1326,86 +1948,111 @@ export default function LivingCity3D({ onExit }) {
           cityGroup.add(canopy);
         });
 
-        // Place 6 Wheelie SmartBins on curbs
-        if ([2, 4, 7, 9, 12, 15].includes(blockIndex)) {
-          const curbOffset = blockSize / 2 + 1.2;
-          const binX = bx;
-          const binZ = bz + curbOffset;
-          const binId = smartBins.length + 1;
+      });
+    });
 
-          const featureInfo = SPOT_APP_FEATURES[binId - 1] || SPOT_APP_FEATURES[0];
+    // ─────────────────────────────────────────────────────────────
+    // 6A. RANDOM SMARTBIN SPAWN ON GRAY FOOTPATHS (Wo Gray Jagah M Hi)
+    // ─────────────────────────────────────────────────────────────
+    const candidateGrayCurbs = [];
+    blockCenters.forEach((bx) => {
+      blockCenters.forEach((bz) => {
+        const curbOffset = blockSize / 2 + 1.2;
+        // Distribute potential spots along each curb face (left, center, right)
+        [-8, 0, 8].forEach((slot) => {
+          candidateGrayCurbs.push({ x: bx + slot, z: bz + curbOffset, rotY: Math.PI });
+          candidateGrayCurbs.push({ x: bx + slot, z: bz - curbOffset, rotY: 0 });
+          candidateGrayCurbs.push({ x: bx + curbOffset, z: bz + slot, rotY: -Math.PI / 2 });
+          candidateGrayCurbs.push({ x: bx - curbOffset, z: bz + slot, rotY: Math.PI / 2 });
+        });
+      });
+    });
 
-          const wheelieBinGroup = new THREE.Group();
+    // Randomize and pick 6 well-spaced gray pavement spots with dynamic positions
+    const shuffledCurbs = [...candidateGrayCurbs].sort(() => Math.random() - 0.5);
+    const chosenCurbSpots = [];
+    for (const spot of shuffledCurbs) {
+      if (chosenCurbSpots.length >= 6) break;
+      const isFarEnough = chosenCurbSpots.every(
+        (chosen) => Math.hypot(chosen.x - spot.x, chosen.z - spot.z) >= 32
+      );
+      if (isFarEnough) {
+        chosenCurbSpots.push(spot);
+      }
+    }
+    for (const spot of shuffledCurbs) {
+      if (chosenCurbSpots.length >= 6) break;
+      if (!chosenCurbSpots.includes(spot)) chosenCurbSpots.push(spot);
+    }
 
-          // Body
-          const binBody = new THREE.Mesh(
-            new THREE.BoxGeometry(1.4, 2.2, 1.2),
-            new THREE.MeshLambertMaterial({ color: new THREE.Color(featureInfo.color).getHex() })
-          );
-          binBody.position.y = 1.2;
-          binBody.castShadow = true;
-          wheelieBinGroup.add(binBody);
+    chosenCurbSpots.forEach((spot, idx) => {
+      const binId = idx + 1;
+      const featureInfo = SPOT_APP_FEATURES[idx] || SPOT_APP_FEATURES[0];
+      const wheelieBinGroup = new THREE.Group();
+      if (spot.rotY !== undefined) wheelieBinGroup.rotation.y = spot.rotY;
 
-          // Lid
-          const binLid = new THREE.Mesh(
-            new THREE.BoxGeometry(1.5, 0.25, 1.3),
-            new THREE.MeshLambertMaterial({ color: 0x0f172a })
-          );
-          binLid.position.y = 2.4;
-          wheelieBinGroup.add(binLid);
+      const binBody = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4, 2.2, 1.2),
+        new THREE.MeshLambertMaterial({ color: new THREE.Color(featureInfo.color).getHex() })
+      );
+      binBody.position.y = 1.2;
+      binBody.castShadow = true;
+      wheelieBinGroup.add(binBody);
 
-          // Rear Wheels
-          const binWheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.15, 10);
-          const binWheelMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
-          [-0.65, 0.65].forEach((wx) => {
-            const bw = new THREE.Mesh(binWheelGeo, binWheelMat);
-            bw.rotation.z = Math.PI / 2;
-            bw.position.set(wx, 0.3, -0.55);
-            wheelieBinGroup.add(bw);
-          });
+      const binLid = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.25, 1.3),
+        new THREE.MeshLambertMaterial({ color: 0x0f172a })
+      );
+      binLid.position.y = 2.4;
+      wheelieBinGroup.add(binLid);
 
-          // Beacon Ring
-          const beaconGeo = new THREE.RingGeometry(0.8, 1.4, 24);
-          const beaconMat = new THREE.MeshBasicMaterial({ 
-            color: new THREE.Color(featureInfo.color).getHex(), 
-            side: THREE.DoubleSide, 
-            transparent: true, 
-            opacity: 0.85 
-          });
-          const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-          beacon.rotation.x = -Math.PI / 2;
-          beacon.position.y = 3.6;
-          wheelieBinGroup.add(beacon);
+      const binWheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.15, 10);
+      const binWheelMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      [-0.65, 0.65].forEach((wx) => {
+        const bw = new THREE.Mesh(binWheelGeo, binWheelMat);
+        bw.rotation.z = Math.PI / 2;
+        bw.position.set(wx, 0.3, -0.55);
+        wheelieBinGroup.add(bw);
+      });
 
-          // Light Column
-          const colMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.08, 6.0, 8),
-            new THREE.MeshBasicMaterial({ 
-              color: new THREE.Color(featureInfo.color).getHex(), 
-              transparent: true, 
-              opacity: 0.6 
-            })
-          );
-          colMesh.position.y = 5.6;
-          wheelieBinGroup.add(colMesh);
+      const beaconGeo = new THREE.RingGeometry(0.8, 1.4, 24);
+      const beaconMat = new THREE.MeshBasicMaterial({ 
+        color: new THREE.Color(featureInfo.color).getHex(), 
+        side: THREE.DoubleSide, 
+        transparent: true, 
+        opacity: 0.85 
+      });
+      const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+      beacon.rotation.x = -Math.PI / 2;
+      beacon.position.y = 3.6;
+      wheelieBinGroup.add(beacon);
 
-          wheelieBinGroup.position.set(binX, 0, binZ);
-          cityGroup.add(wheelieBinGroup);
+      const colMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 6.0, 8),
+        new THREE.MeshBasicMaterial({ 
+          color: new THREE.Color(featureInfo.color).getHex(), 
+          transparent: true, 
+          opacity: 0.6 
+        })
+      );
+      colMesh.position.y = 5.6;
+      wheelieBinGroup.add(colMesh);
 
-          smartBins.push({
-            id: binId,
-            group: wheelieBinGroup,
-            body: binBody,
-            beacon: beacon,
-            column: colMesh,
-            x: binX,
-            z: binZ,
-            category: featureInfo.category,
-            feature: featureInfo,
-            colorHex: new THREE.Color(featureInfo.color).getHex(),
-            collected: false
-          });
-        }
+      wheelieBinGroup.position.set(spot.x, 0, spot.z);
+      cityGroup.add(wheelieBinGroup);
+
+      smartBins.push({
+        id: binId,
+        group: wheelieBinGroup,
+        body: binBody,
+        beacon: beacon,
+        column: colMesh,
+        x: spot.x,
+        z: spot.z,
+        category: featureInfo.category,
+        feature: featureInfo,
+        colorHex: new THREE.Color(featureInfo.color).getHex(),
+        collected: false
       });
     });
 
@@ -1587,123 +2234,1030 @@ export default function LivingCity3D({ onExit }) {
     scene.add(crashGroup);
 
     // ─────────────────────────────────────────────────────────────
-    // 8. HEAVY 3-AXLE GARBAGE COMPACTOR TRUCK
+    // 8. MODULAR PLAYABLE GARBAGE TRUCKS (Overdrive, Deflector & Standard)
     // ─────────────────────────────────────────────────────────────
     const truckGroup = new THREE.Group();
+    const truckMeshContainer = new THREE.Group();
+    truckGroup.add(truckMeshContainer);
 
-    // Driver Cab
-    const cab = new THREE.Mesh(
-      new THREE.BoxGeometry(2.7, 2.4, 2.4),
-      new THREE.MeshLambertMaterial({ color: 0xf8fafc })
-    );
-    cab.position.set(0, 1.6, 2.1);
-    cab.castShadow = true;
-    truckGroup.add(cab);
+    const vectorFieldContainer = new THREE.Group();
+    vectorFieldContainer.position.y = 0.04;
+    truckGroup.add(vectorFieldContainer);
 
-    // Windshield
-    const windshield = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 1.15, 0.2),
-      new THREE.MeshLambertMaterial({ color: 0x0284c7 })
-    );
-    windshield.position.set(0, 2.05, 3.32);
-    truckGroup.add(windshield);
-
-    // Side Mirrors
-    const mirrorGeo = new THREE.BoxGeometry(0.2, 0.6, 0.3);
-    const mirrorMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
-    [-1.5, 1.5].forEach((mx) => {
-      const m = new THREE.Mesh(mirrorGeo, mirrorMat);
-      m.position.set(mx, 2.0, 2.3);
-      truckGroup.add(m);
-    });
-
-    // Grille & Bumper
-    const grille = new THREE.Mesh(
-      new THREE.BoxGeometry(2.2, 0.8, 0.2),
-      new THREE.MeshLambertMaterial({ color: 0x1e293b })
-    );
-    grille.position.set(0, 1.1, 3.32);
-    truckGroup.add(grille);
-
-    const bumper = new THREE.Mesh(
-      new THREE.BoxGeometry(2.8, 0.45, 0.4),
-      new THREE.MeshLambertMaterial({ color: 0x475569 })
-    );
-    bumper.position.set(0, 0.65, 3.4);
-    truckGroup.add(bumper);
-
-    // Flashing Strobe Bar
-    const strobeBar = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 0.25, 0.35),
-      new THREE.MeshBasicMaterial({ color: 0xf59e0b })
-    );
-    strobeBar.position.set(0, 2.92, 2.1);
-    truckGroup.add(strobeBar);
-
-    // Air Horns
-    const hornGeo = new THREE.CylinderGeometry(0.08, 0.15, 0.8, 8);
-    const hornMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
-    [-0.5, 0.5].forEach((hx) => {
-      const hn = new THREE.Mesh(hornGeo, hornMat);
-      hn.rotation.x = Math.PI / 2;
-      hn.position.set(hx, 2.95, 2.6);
-      truckGroup.add(hn);
-    });
-
-    // Compactor Body
-    const compactor = new THREE.Mesh(
-      new THREE.BoxGeometry(2.85, 2.7, 5.0),
-      new THREE.MeshLambertMaterial({ color: 0x105a39 })
-    );
-    compactor.position.set(0, 1.85, -1.8);
-    compactor.castShadow = true;
-    truckGroup.add(compactor);
-
-    // Hazard Caution Strip
-    const hazardStrip = new THREE.Mesh(
-      new THREE.BoxGeometry(2.9, 0.2, 4.8),
-      new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
-    );
-    hazardStrip.position.set(0, 2.9, -1.8);
-    truckGroup.add(hazardStrip);
-
-    // Tailgate
-    const tailgate = new THREE.Mesh(
-      new THREE.BoxGeometry(2.8, 1.6, 0.6),
-      new THREE.MeshLambertMaterial({ color: 0x064e3b })
-    );
-    tailgate.position.set(0, 1.3, -4.4);
-    truckGroup.add(tailgate);
-
-    // Headlights
-    const hlLeft = new THREE.SpotLight(0xffedd5, 4.0, 35, Math.PI / 6, 0.4);
-    hlLeft.position.set(-0.9, 1.5, 3.4);
-    hlLeft.target.position.set(-0.9, 0, 25);
-    truckGroup.add(hlLeft);
-    truckGroup.add(hlLeft.target);
-
-    const hlRight = new THREE.SpotLight(0xffedd5, 4.0, 35, Math.PI / 6, 0.4);
-    hlRight.position.set(0.9, 1.5, 3.4);
-    hlRight.target.position.set(0.9, 0, 25);
-    truckGroup.add(hlRight);
-    truckGroup.add(hlRight.target);
-
-    // 6 Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.55, 16);
-    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
     const wheels = [];
-    [
-      { x: -1.5, y: 0.7, z: 2.1 }, { x: 1.5, y: 0.7, z: 2.1 },
-      { x: -1.5, y: 0.7, z: -1.3 }, { x: 1.5, y: 0.7, z: -1.3 },
-      { x: -1.5, y: 0.7, z: -3.1 }, { x: 1.5, y: 0.7, z: -3.1 }
-    ].forEach((wp) => {
-      const w = new THREE.Mesh(wheelGeo, wheelMat);
-      w.rotation.z = Math.PI / 2;
-      w.position.set(wp.x, wp.y, wp.z);
-      w.castShadow = true;
-      truckGroup.add(w);
-      wheels.push(w);
-    });
+    const vectorOutwardArrows = [];
+    const vectorDeflectionArcs = [];
+    const deflectorCoils = [];
+    let strobeBar = null;
+
+    const setupTruckVisuals = (modelId) => {
+      // Clear existing meshes
+      while (truckMeshContainer.children.length > 0) {
+        truckMeshContainer.remove(truckMeshContainer.children[0]);
+      }
+      while (vectorFieldContainer.children.length > 0) {
+        vectorFieldContainer.remove(vectorFieldContainer.children[0]);
+      }
+      wheels.length = 0;
+      vectorOutwardArrows.length = 0;
+      vectorDeflectionArcs.length = 0;
+      deflectorCoils.length = 0;
+      strobeBar = null;
+
+      if (modelId === 'overdrive') {
+        // ─────────────────────────────────────────────────────────
+        // OVERDRIVE: AMERICAN CAB-OVER HEAVY-DUTY GARBAGE TRUCK (Reference Matching)
+        // Authentic Sea-Green/Teal Body, Chrome Visor & Bumper, Split Windshield,
+        // Arch Compactor with ♻ Recycling Symbol, Tandem Dual Axles & Underglow
+        // ─────────────────────────────────────────────────────────
+        const tealMat = new THREE.MeshLambertMaterial({ color: 0x009e8a });
+        const tealDarkMat = new THREE.MeshLambertMaterial({ color: 0x007869 });
+        const silverChromeMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.28, metalness: 0.82 });
+        const darkMetalMat = new THREE.MeshLambertMaterial({ color: 0x181e24 });
+        const amberGlassMat = new THREE.MeshLambertMaterial({ color: 0xcaa05b, transparent: true, opacity: 0.88 });
+        const glowingCyanMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+        const headlightWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const indicatorAmber = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+        const taillightRed = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+
+        // 1. Dynamic ♻ Universal Recycling Logo Decal
+        let recycleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        try {
+          const recCanvas = document.createElement('canvas');
+          recCanvas.width = 256;
+          recCanvas.height = 256;
+          const rCtx = recCanvas.getContext('2d');
+          rCtx.clearRect(0, 0, 256, 256);
+          rCtx.fillStyle = '#ffffff';
+          rCtx.font = 'bold 190px "Segoe UI Symbol", sans-serif';
+          rCtx.textAlign = 'center';
+          rCtx.textBaseline = 'middle';
+          rCtx.fillText('♻', 128, 138);
+          const recTex = new THREE.CanvasTexture(recCanvas);
+          recycleMat = new THREE.MeshBasicMaterial({ map: recTex, transparent: true, side: THREE.DoubleSide });
+        } catch {
+          // Fallback if canvas is unavailable
+        }
+
+        // 2. Dynamic Red & White Safety Reflective Tape Decal
+        let stripeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        try {
+          const sCanvas = document.createElement('canvas');
+          sCanvas.width = 256;
+          sCanvas.height = 32;
+          const sCtx = sCanvas.getContext('2d');
+          for (let sx = 0; sx < 256; sx += 32) {
+            sCtx.fillStyle = (sx % 64 === 0) ? '#dc2626' : '#ffffff';
+            sCtx.fillRect(sx, 0, 32, 32);
+          }
+          const sTex = new THREE.CanvasTexture(sCanvas);
+          sTex.wrapS = THREE.RepeatWrapping;
+          sTex.repeat.set(2, 1);
+          stripeMat = new THREE.MeshBasicMaterial({ map: sTex, side: THREE.DoubleSide });
+        } catch {}
+
+        // ─────────────────────────────────────────────────────────
+        // A. CHASSIS FRAME & HEAVY UNDERBODY
+        // ─────────────────────────────────────────────────────────
+        const mainChassis = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 7.8), darkMetalMat);
+        mainChassis.position.set(0, 0.72, -0.4);
+        mainChassis.castShadow = true;
+        truckMeshContainer.add(mainChassis);
+
+        // Electric Cyan Underside Kinetic Surge Glow
+        const neonUnderglow = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.05, 6.4),
+          new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.85 })
+        );
+        neonUnderglow.position.set(0, 0.16, -0.4);
+        truckMeshContainer.add(neonUnderglow);
+
+        // Heavy Front Steer Axle & Rear Tandem Axles Support Bars
+        [2.3, -1.2, -2.7].forEach((axZ) => {
+          const axleBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.7, 8), darkMetalMat);
+          axleBeam.rotation.z = Math.PI / 2;
+          axleBeam.position.set(0, 0.65, axZ);
+          truckMeshContainer.add(axleBeam);
+        });
+
+        // ─────────────────────────────────────────────────────────
+        // B. CAB-OVER-ENGINE (COE) FORWARD CABIN
+        // ─────────────────────────────────────────────────────────
+        const cabGroup = new THREE.Group();
+        cabGroup.position.set(0, 0, 2.3);
+
+        // Main Teal Cab Block
+        const cabMain = new THREE.Mesh(new THREE.BoxGeometry(2.7, 2.1, 2.3), tealMat);
+        cabMain.position.set(0, 1.95, 0);
+        cabMain.castShadow = true;
+        cabGroup.add(cabMain);
+
+        // Lower Cab Skirt & Wheel Arch Wells
+        const cabLowerSkirt = new THREE.Mesh(new THREE.BoxGeometry(2.74, 0.45, 2.32), tealDarkMat);
+        cabLowerSkirt.position.set(0, 1.05, 0);
+        cabGroup.add(cabLowerSkirt);
+
+        // Front Fascia Plate
+        const frontFascia = new THREE.Mesh(new THREE.BoxGeometry(2.62, 1.6, 0.08), tealMat);
+        frontFascia.position.set(0, 1.85, 1.18);
+        cabGroup.add(frontFascia);
+
+        // Split Front Windshield (Two Tall Glass Panes separated by central post)
+        [-0.62, 0.62].forEach((wx) => {
+          // Glass Pane
+          const wGlass = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.95, 0.06), amberGlassMat);
+          wGlass.position.set(wx, 2.22, 1.22);
+          cabGroup.add(wGlass);
+
+          // Black Rubber Window Gasket Frame
+          const wFrame = new THREE.Mesh(new THREE.BoxGeometry(1.12, 1.02, 0.04), darkMetalMat);
+          wFrame.position.set(wx, 2.22, 1.2);
+          cabGroup.add(wFrame);
+        });
+
+        // Central Windshield Post Divider (Teal)
+        const centerPost = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.02, 0.08), tealMat);
+        centerPost.position.set(0, 2.22, 1.23);
+        cabGroup.add(centerPost);
+
+        // Overhead Chrome/Silver Sun Visor Brow (Protruding forward at top of windshield)
+        const sunVisor = new THREE.Mesh(new THREE.BoxGeometry(2.75, 0.15, 0.52), silverChromeMat);
+        sunVisor.rotation.x = 0.22;
+        sunVisor.position.set(0, 2.82, 1.34);
+        cabGroup.add(sunVisor);
+
+        // Bold Central Radiator Grille (Vertical Slats / Black Mesh with Chrome Border)
+        const grilleFrame = new THREE.Mesh(new THREE.BoxGeometry(1.18, 1.05, 0.08), silverChromeMat);
+        grilleFrame.position.set(0, 1.48, 1.23);
+        cabGroup.add(grilleFrame);
+
+        const grilleMesh = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.92, 0.09), darkMetalMat);
+        grilleMesh.position.set(0, 1.48, 1.24);
+        cabGroup.add(grilleMesh);
+
+        // Heavy Wrap-Around Metallic Chrome Front Bumper
+        const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(2.86, 0.48, 0.45), silverChromeMat);
+        frontBumper.position.set(0, 0.66, 1.36);
+        frontBumper.castShadow = true;
+        cabGroup.add(frontBumper);
+
+        // Recessed Center Step / Plate Cutout on Bumper
+        const bumperCutout = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.06), darkMetalMat);
+        bumperCutout.position.set(0, 0.66, 1.6);
+        cabGroup.add(bumperCutout);
+
+        // Dual Square Headlights & Amber Turn Signal Clusters
+        [-1.02, 1.02].forEach((lx) => {
+          // Chrome Bezel Housing
+          const lightHousing = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.44, 0.12), silverChromeMat);
+          lightHousing.position.set(lx, 1.45, 1.24);
+          cabGroup.add(lightHousing);
+
+          // Square White Low/High Beam Headlight
+          const mainHeadlight = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.04), headlightWhite);
+          mainHeadlight.position.set(lx, 1.38, 1.31);
+          cabGroup.add(mainHeadlight);
+
+          // Amber Indicator Lamp above headlight
+          const turnIndicator = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.12, 0.04), indicatorAmber);
+          turnIndicator.position.set(lx, 1.56, 1.31);
+          cabGroup.add(turnIndicator);
+
+          // Real Functional Night Spotlights
+          const spot = new THREE.SpotLight(0x67e8f9, 5.0, 45, Math.PI / 5, 0.35);
+          spot.position.set(lx, 1.38, 1.4);
+          spot.target.position.set(lx, 0, 25);
+          cabGroup.add(spot);
+          cabGroup.add(spot.target);
+        });
+
+        // Side Cab Windows (Driver & Passenger)
+        [-1.37, 1.37].forEach((sx) => {
+          const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.85, 0.95), amberGlassMat);
+          sideGlass.position.set(sx, 2.18, 0.25);
+          cabGroup.add(sideGlass);
+
+          // Black Window Trim Frame
+          const sideFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.92, 1.02), darkMetalMat);
+          sideFrame.position.set(sx, 2.18, 0.25);
+          cabGroup.add(sideFrame);
+
+          // Tall Chrome Dual Rear-View Side Mirrors with Outrigger Bracket Arms
+          const mirrorHousing = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.25), silverChromeMat);
+          mirrorHousing.position.set(sx > 0 ? sx + 0.38 : sx - 0.38, 2.2, 1.15);
+          cabGroup.add(mirrorHousing);
+
+          // Dual Horizontal Mirror Bracket Tubes
+          [0.18, -0.18].forEach((by) => {
+            const bracketArm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 6), silverChromeMat);
+            bracketArm.rotation.z = Math.PI / 2;
+            bracketArm.position.set(sx > 0 ? sx + 0.18 : sx - 0.18, 2.2 + by, 1.15);
+            cabGroup.add(bracketArm);
+          });
+
+          // Vertical Grab Handle on Cab Side
+          const grabRail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.75, 6), silverChromeMat);
+          grabRail.position.set(sx > 0 ? sx + 0.04 : sx - 0.04, 1.65, -0.45);
+          cabGroup.add(grabRail);
+
+          // Cab Access Footstep
+          const cabStep = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.5), silverChromeMat);
+          cabStep.position.set(sx > 0 ? sx + 0.06 : sx - 0.06, 0.55, 0.2);
+          cabGroup.add(cabStep);
+        });
+
+        // Cab Roof Circular Mushroom Air Cleaner Dome
+        const airMushroom = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.16, 16), tealDarkMat);
+        airMushroom.position.set(0, 3.08, 0.3);
+        cabGroup.add(airMushroom);
+
+        const airCap = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.06, 16), silverChromeMat);
+        airCap.position.set(0, 3.18, 0.3);
+        cabGroup.add(airCap);
+
+        // 4 Amber Clearance Marker Lights on Front Cab Roof
+        [-0.9, -0.3, 0.3, 0.9].forEach((rx) => {
+          const marker = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.1), indicatorAmber);
+          marker.position.set(rx, 3.04, 1.02);
+          cabGroup.add(marker);
+        });
+
+        // Driver Side Vertical Air Cleaner Snorkel Stack behind Cab
+        const snorkelPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 2.2, 12), tealDarkMat);
+        snorkelPipe.position.set(-1.25, 2.05, -0.95);
+        cabGroup.add(snorkelPipe);
+
+        const snorkelIntake = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.45, 12), silverChromeMat);
+        snorkelIntake.position.set(-1.25, 3.25, -0.95);
+        cabGroup.add(snorkelIntake);
+
+        // Cyan Strobe Bar on Cab Roof
+        const sBar = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 0.24), glowingCyanMat);
+        sBar.position.set(0, 3.12, 0.85);
+        cabGroup.add(sBar);
+        strobeBar = sBar;
+
+        truckMeshContainer.add(cabGroup);
+
+        // ─────────────────────────────────────────────────────────
+        // C. CURVED COMPACTOR BODY (ARCH ROOF & ♻ RECYCLING EMBLEM)
+        // ─────────────────────────────────────────────────────────
+        const bodyGroup = new THREE.Group();
+        bodyGroup.position.set(0, 0, -1.35);
+
+        // Main Rectangular Lower Container Section
+        const compactorLower = new THREE.Mesh(new THREE.BoxGeometry(2.82, 1.95, 4.8), tealMat);
+        compactorLower.position.set(0, 1.72, 0);
+        compactorLower.castShadow = true;
+        bodyGroup.add(compactorLower);
+
+        // Curved Arch Top Roof (Semi-Cylindrical Arch matching reference photo!)
+        const archTopGeo = new THREE.CylinderGeometry(1.41, 1.41, 4.8, 24, 1, false, 0, Math.PI);
+        const archRoof = new THREE.Mesh(archTopGeo, tealMat);
+        archRoof.rotation.z = Math.PI / 2;
+        archRoof.rotation.y = Math.PI / 2;
+        archRoof.position.set(0, 2.68, 0);
+        archRoof.castShadow = true;
+        bodyGroup.add(archRoof);
+
+        // Front Bulkhead Collar Arch Frame (Protruding rib bordering front of compactor)
+        const collarRib = new THREE.Mesh(new THREE.BoxGeometry(2.94, 2.3, 0.28), tealDarkMat);
+        collarRib.position.set(0, 1.9, 2.32);
+        bodyGroup.add(collarRib);
+
+        // Prominent White ♻ Recycling Symbol Decals on Both Sides
+        [-1.42, 1.42].forEach((rx) => {
+          const recPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.7), recycleMat);
+          recPlane.rotation.y = rx > 0 ? Math.PI / 2 : -Math.PI / 2;
+          recPlane.position.set(rx, 2.15, 0.4);
+          bodyGroup.add(recPlane);
+        });
+
+        // Red & White Safety Reflective Striping along Lower Body Skirt
+        [-1.42, 1.42].forEach((sx) => {
+          const stripeBarMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.7, 0.16), stripeMat);
+          stripeBarMesh.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+          stripeBarMesh.position.set(sx, 0.88, 0);
+          bodyGroup.add(stripeBarMesh);
+        });
+
+        // Side Skirt Structural Frame & Hydraulic Reservoir Tank (Driver Side)
+        const hydraulicTank = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.3, 16), silverChromeMat);
+        hydraulicTank.rotation.z = Math.PI / 2;
+        hydraulicTank.position.set(-1.18, 0.65, 1.4);
+        bodyGroup.add(hydraulicTank);
+
+        // Tool / Battery Compartment Box (Passenger Side)
+        const toolBox = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.45, 1.4), darkMetalMat);
+        toolBox.position.set(1.18, 0.65, 1.4);
+        bodyGroup.add(toolBox);
+
+        // ─────────────────────────────────────────────────────────
+        // D. SLANTED REAR COMPACTOR TAILGATE & HYDRAULIC HOPPER
+        // ─────────────────────────────────────────────────────────
+        const tailgateGroup = new THREE.Group();
+        tailgateGroup.position.set(0, 0, -2.4);
+
+        // Sloping Tailgate Housing
+        const tailgateMain = new THREE.Mesh(new THREE.BoxGeometry(2.82, 2.3, 1.1), tealMat);
+        tailgateMain.position.set(0, 1.8, -0.55);
+        tailgateMain.rotation.x = -0.12; // Realistic backward slope
+        tailgateMain.castShadow = true;
+        tailgateGroup.add(tailgateMain);
+
+        // Rear Compactor Loading Hopper Trough
+        const rearHopperTrough = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.85, 0.65), darkMetalMat);
+        rearHopperTrough.position.set(0, 0.75, -1.05);
+        tailgateGroup.add(rearHopperTrough);
+
+        // Heavy Hydraulic Lift Cylinders on Tailgate Sides
+        [-1.38, 1.38].forEach((px) => {
+          const cylBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 8), silverChromeMat);
+          cylBarrel.rotation.x = -0.28;
+          cylBarrel.position.set(px, 1.9, -0.65);
+          tailgateGroup.add(cylBarrel);
+
+          const cylRod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), glowingCyanMat);
+          cylRod.rotation.x = -0.28;
+          cylRod.position.set(px, 1.3, -0.85);
+          tailgateGroup.add(cylRod);
+        });
+
+        // Rear Heavy Bumper & Taillight Clusters
+        const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(2.84, 0.32, 0.35), darkMetalMat);
+        rearBumper.position.set(0, 0.48, -1.25);
+        tailgateGroup.add(rearBumper);
+
+        [-1.05, 1.05].forEach((tx) => {
+          // Red Stop/Tail Lights
+          const rLight = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.05), taillightRed);
+          rLight.position.set(tx, 0.52, -1.43);
+          tailgateGroup.add(rLight);
+
+          // Amber Indicator
+          const aLight = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.05), indicatorAmber);
+          aLight.position.set(tx > 0 ? tx + 0.22 : tx - 0.22, 0.52, -1.43);
+          tailgateGroup.add(aLight);
+        });
+
+        bodyGroup.add(tailgateGroup);
+        truckMeshContainer.add(bodyGroup);
+
+        // ─────────────────────────────────────────────────────────
+        // E. 3-AXLE HEAVY-DUTY WHEELS (1 FRONT STEER + TANDEM DUAL REAR)
+        // ─────────────────────────────────────────────────────────
+        // Front Steer Axle: z = 2.4 (Single Tires)
+        // Tandem Rear Axles: z = -1.3, z = -2.8 (Dual Wheels)
+        const tireGeo = new THREE.CylinderGeometry(0.72, 0.72, 0.44, 20);
+        const rimGeo = new THREE.CylinderGeometry(0.48, 0.48, 0.46, 16);
+        const hubCapGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.49, 10);
+        const cyanLugNutGeo = new THREE.TorusGeometry(0.36, 0.035, 6, 16);
+
+        const createDetailedWheel = (isRearDual, isRightSide) => {
+          const wGroup = new THREE.Group();
+
+          // Outer Tire
+          const tireMesh = new THREE.Mesh(tireGeo, darkMetalMat);
+          tireMesh.rotation.z = Math.PI / 2;
+          tireMesh.castShadow = true;
+          wGroup.add(tireMesh);
+
+          // Silver/Chrome Multi-Lug Rim
+          const rimMesh = new THREE.Mesh(rimGeo, silverChromeMat);
+          rimMesh.rotation.z = Math.PI / 2;
+          wGroup.add(rimMesh);
+
+          // Central Axle Hub Cap
+          const hubCap = new THREE.Mesh(hubCapGeo, darkMetalMat);
+          hubCap.rotation.z = Math.PI / 2;
+          wGroup.add(hubCap);
+
+          // Subtle Glowing Cyan Kinetic Ring on Hub
+          const cyanNut = new THREE.Mesh(cyanLugNutGeo, glowingCyanMat);
+          cyanNut.rotation.y = Math.PI / 2;
+          cyanNut.position.x = isRightSide ? 0.24 : -0.24;
+          wGroup.add(cyanNut);
+
+          // If Rear Axle: Add Inner Dual Tire (Authentic Heavy Truck Tandem Dual Setup!)
+          if (isRearDual) {
+            const innerOffset = isRightSide ? -0.42 : 0.42;
+            const innerTire = new THREE.Mesh(tireGeo, darkMetalMat);
+            innerTire.rotation.z = Math.PI / 2;
+            innerTire.position.x = innerOffset;
+            innerTire.castShadow = true;
+            wGroup.add(innerTire);
+
+            const innerRim = new THREE.Mesh(rimGeo, silverChromeMat);
+            innerRim.rotation.z = Math.PI / 2;
+            innerRim.position.x = innerOffset;
+            wGroup.add(innerRim);
+          }
+
+          return wGroup;
+        };
+
+        // Front Steer Axle (x = ±1.42, z = 2.4)
+        [
+          { x: -1.42, z: 2.35, isRear: false, isRight: false },
+          { x: 1.42, z: 2.35, isRear: false, isRight: true },
+          // Tandem Rear Drive Axle 1 (z = -1.25)
+          { x: -1.35, z: -1.25, isRear: true, isRight: false },
+          { x: 1.35, z: -1.25, isRear: true, isRight: true },
+          // Tandem Rear Drive Axle 2 (z = -2.75)
+          { x: -1.35, z: -2.75, isRear: true, isRight: false },
+          { x: 1.35, z: -2.75, isRear: true, isRight: true },
+        ].forEach((wp) => {
+          const wheelAssembly = createDetailedWheel(wp.isRear, wp.isRight);
+          wheelAssembly.position.set(wp.x, 0.72, wp.z);
+          truckMeshContainer.add(wheelAssembly);
+          wheels.push(wheelAssembly);
+        });
+
+        // Curved Tandem Fenders over Rear Dual Axles
+        [-1.48, 1.48].forEach((fx) => {
+          const rearFender = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 2.7), darkMetalMat);
+          rearFender.position.set(fx, 1.48, -2.0);
+          truckMeshContainer.add(rearFender);
+        });
+
+        // ── VECTOR FIELD VISUALS (OVERDRIVE: Cyan Rings & Outward Flowing Arrows) ──
+        const inRing = new THREE.Mesh(
+          new THREE.RingGeometry(11.5, 12.3, 48),
+          new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+        );
+        inRing.rotation.x = -Math.PI / 2;
+        vectorFieldContainer.add(inRing);
+
+        const outRing = new THREE.Mesh(
+          new THREE.RingGeometry(26.2, 27.2, 64),
+          new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+        );
+        outRing.rotation.x = -Math.PI / 2;
+        vectorFieldContainer.add(outRing);
+
+        // 8 Outward-Flowing Radial Directional Arrows
+        for (let i = 0; i < 8; i++) {
+          const angle = (i * Math.PI) / 4;
+          const arrowGroup = new THREE.Group();
+          arrowGroup.rotation.y = -angle;
+
+          // Radial beam line
+          const lineMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.25, 0.02, 10.0),
+            new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.75 })
+          );
+          lineMesh.position.set(0, 0, 18.0);
+          arrowGroup.add(lineMesh);
+
+          // Outward Cone Arrowhead
+          const headMesh = new THREE.Mesh(
+            new THREE.ConeGeometry(0.9, 2.2, 8),
+            new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.9 })
+          );
+          headMesh.rotation.x = Math.PI / 2;
+          headMesh.position.set(0, 0, 24.0);
+          arrowGroup.add(headMesh);
+
+          vectorFieldContainer.add(arrowGroup);
+          vectorOutwardArrows.push(arrowGroup);
+        }
+
+      } else if (modelId === 'deflector') {
+        // ─────────────────────────────────────────────────────────
+        // DEFLECTOR: CHUNKY CYBERPUNK 8X8 COMPACTOR (John Fowler Reference Match)
+        // Bright Aqua/Turquoise Body, Diagonal Yellow Hazard Chevrons, Orange Beacons,
+        // Japanese "赤 05" Markings, Cobalt Visor & Bumper, Coral 8-Wheel Multi-Drive
+        // ─────────────────────────────────────────────────────────
+        const aquaMat = new THREE.MeshLambertMaterial({ color: 0x00c9c8 });
+        const aquaDarkMat = new THREE.MeshLambertMaterial({ color: 0x009695 });
+        const cobaltMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+        const darkBlueBumperMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+        const orangeBeaconMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+        const coralWheelMat = new THREE.MeshLambertMaterial({ color: 0xdf5334 });
+        const visorGlassMat = new THREE.MeshLambertMaterial({ color: 0x091428, transparent: true, opacity: 0.92 });
+        const whiteHeadlight = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const yellowPixelMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+        const glowingPurpleMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });
+        const conduitMagentaMat = new THREE.MeshLambertMaterial({ color: 0xd946ef });
+        const conduitOrangeMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+        const conduitCyanMat = new THREE.MeshLambertMaterial({ color: 0x06b6d4 });
+
+        // 1. Dynamic Japanese Cyber Decal Canvas ("赤 05" with yellow pixels)
+        let kanjiMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        try {
+          const kCanvas = document.createElement('canvas');
+          kCanvas.width = 256; kCanvas.height = 256;
+          const kCtx = kCanvas.getContext('2d');
+          kCtx.clearRect(0, 0, 256, 256);
+          // White Kanji "赤"
+          kCtx.fillStyle = '#ffffff';
+          kCtx.font = '900 130px "Segoe UI", sans-serif';
+          kCtx.fillText('赤', 24, 150);
+          // Number "05"
+          kCtx.font = 'bold 74px monospace';
+          kCtx.fillText('05', 155, 105);
+          // Yellow pixel blocks
+          kCtx.fillStyle = '#facc15';
+          kCtx.fillRect(158, 122, 28, 28);
+          kCtx.fillRect(196, 122, 28, 28);
+          kCtx.fillRect(158, 160, 28, 28);
+          const kTex = new THREE.CanvasTexture(kCanvas);
+          kanjiMat = new THREE.MeshBasicMaterial({ map: kTex, transparent: true, side: THREE.DoubleSide });
+        } catch {}
+
+        // 2. Dynamic Diagonal Yellow & Aqua Hazard Chevron Warning Stripes
+        let hazardMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+        try {
+          const hCanvas = document.createElement('canvas');
+          hCanvas.width = 256; hCanvas.height = 128;
+          const hCtx = hCanvas.getContext('2d');
+          hCtx.fillStyle = '#00c9c8';
+          hCtx.fillRect(0, 0, 256, 128);
+          hCtx.fillStyle = '#facc15';
+          for (let i = -128; i < 384; i += 48) {
+            hCtx.beginPath();
+            hCtx.moveTo(i, 0);
+            hCtx.lineTo(i + 24, 0);
+            hCtx.lineTo(i + 24 - 128, 128);
+            hCtx.lineTo(i - 128, 128);
+            hCtx.fill();
+          }
+          const hTex = new THREE.CanvasTexture(hCanvas);
+          hTex.wrapS = THREE.RepeatWrapping;
+          hTex.wrapT = THREE.RepeatWrapping;
+          hTex.repeat.set(2, 1);
+          hazardMat = new THREE.MeshBasicMaterial({ map: hTex, side: THREE.DoubleSide });
+        } catch {}
+
+        // 3. Dynamic Japanese Front License Plate Canvas ("をほ 55 13-9")
+        let plateMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        try {
+          const pCanvas = document.createElement('canvas');
+          pCanvas.width = 128; pCanvas.height = 64;
+          const pCtx = pCanvas.getContext('2d');
+          pCtx.fillStyle = '#ffffff';
+          pCtx.fillRect(0, 0, 128, 64);
+          pCtx.fillStyle = '#0f172a';
+          pCtx.font = 'bold 16px sans-serif';
+          pCtx.fillText('をほ 55', 28, 22);
+          pCtx.font = 'bold 28px sans-serif';
+          pCtx.fillText('13-9', 32, 54);
+          const pTex = new THREE.CanvasTexture(pCanvas);
+          plateMat = new THREE.MeshBasicMaterial({ map: pTex });
+        } catch {}
+
+        // ─────────────────────────────────────────────────────────
+        // A. CHUNKY LOWER CHASSIS & HEAVY ARMORED SUB-FRAME
+        // ─────────────────────────────────────────────────────────
+        const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.7, 7.6), darkBlueBumperMat);
+        chassis.position.set(0, 0.72, -0.4);
+        chassis.castShadow = true;
+        truckMeshContainer.add(chassis);
+
+        // Purple Gravitational Vector Field Core Underglow
+        const purpleUnderglow = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, 0.05, 6.4),
+          new THREE.MeshBasicMaterial({ color: 0x9333ea, transparent: true, opacity: 0.85 })
+        );
+        purpleUnderglow.position.set(0, 0.16, -0.4);
+        truckMeshContainer.add(purpleUnderglow);
+
+        // ─────────────────────────────────────────────────────────
+        // B. FORWARD SCI-FI CHUNKY CABIN
+        // ─────────────────────────────────────────────────────────
+        const cabGroup = new THREE.Group();
+        cabGroup.position.set(0, 0, 2.2);
+
+        // Main Aqua Cab Block
+        const cabMain = new THREE.Mesh(new THREE.BoxGeometry(2.9, 2.2, 2.3), aquaMat);
+        cabMain.position.set(0, 1.95, 0);
+        cabMain.castShadow = true;
+        cabGroup.add(cabMain);
+
+        // Chamfered Cab Roof Collar
+        const cabTopCollar = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.28, 2.1), aquaDarkMat);
+        cabTopCollar.position.set(0, 3.1, 0);
+        cabGroup.add(cabTopCollar);
+
+        // Wide Panoramic Visor Windshield (Dark Sci-Fi Glass)
+        const frontVisor = new THREE.Mesh(new THREE.BoxGeometry(2.68, 0.92, 0.08), visorGlassMat);
+        frontVisor.position.set(0, 2.25, 1.18);
+        cabGroup.add(frontVisor);
+
+        // Cobalt Blue Overhead Sun Visor Brow (Angled forward above glass)
+        const cobaltBrow = new THREE.Mesh(new THREE.BoxGeometry(2.82, 0.22, 0.52), cobaltMat);
+        cobaltBrow.rotation.x = 0.24;
+        cobaltBrow.position.set(0, 2.82, 1.32);
+        cabGroup.add(cobaltBrow);
+
+        // Protruding Front Fascia & Chin Plate with Yellow Pixel Badges
+        const frontChin = new THREE.Mesh(new THREE.BoxGeometry(2.82, 0.95, 0.22), aquaDarkMat);
+        frontChin.position.set(0, 1.35, 1.18);
+        cabGroup.add(frontChin);
+
+        [-0.4, 0.4].forEach((px) => {
+          const pixelDecal = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.04), yellowPixelMat);
+          pixelDecal.position.set(px, 1.5, 1.3);
+          cabGroup.add(pixelDecal);
+        });
+
+        // Heavy Cobalt Blue Front Bumper Lip
+        const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(3.05, 0.52, 0.5), darkBlueBumperMat);
+        frontBumper.position.set(0, 0.64, 1.32);
+        cabGroup.add(frontBumper);
+
+        // Hanging Japanese License Plate ("をほ 55 13-9")
+        const licensePlate = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.35), plateMat);
+        licensePlate.position.set(0, 0.55, 1.58);
+        cabGroup.add(licensePlate);
+
+        // Orange Bumper Corner Beacon Pods & White Projector Lights
+        [-1.25, 1.25].forEach((bx) => {
+          // Orange Cylindrical Corner Pod
+          const bPod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.42, 16), orangeBeaconMat);
+          bPod.rotation.z = Math.PI / 2;
+          bPod.position.set(bx, 1.1, 1.35);
+          cabGroup.add(bPod);
+
+          // White Projector Light Lens
+          const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.08, 16), whiteHeadlight);
+          hl.rotation.x = Math.PI / 2;
+          hl.position.set(bx > 0 ? bx - 0.45 : bx + 0.45, 0.85, 1.58);
+          cabGroup.add(hl);
+
+          // Real Functional Light Source
+          const spot = new THREE.SpotLight(0xa855f7, 5.0, 45, Math.PI / 5, 0.35);
+          spot.position.set(bx, 1.1, 1.5);
+          spot.target.position.set(bx, 0, 25);
+          cabGroup.add(spot);
+          cabGroup.add(spot.target);
+        });
+
+        // Two Orange Cylindrical Beacons on Cab Roof Corners
+        [-1.05, 1.05].forEach((rx) => {
+          const roofBeacon = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.32, 16), orangeBeaconMat);
+          roofBeacon.position.set(rx, 3.28, 0.7);
+          cabGroup.add(roofBeacon);
+        });
+
+        // Angled Roof Communication Antenna
+        const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 1.1, 6), darkBlueBumperMat);
+        antenna.rotation.z = -0.15;
+        antenna.position.set(-0.85, 3.7, 0.2);
+        cabGroup.add(antenna);
+
+        // Chunky Sci-Fi Wing Mirrors (Boxy with Yellow/Green highlight tabs)
+        [-1.55, 1.55].forEach((mx) => {
+          const mirrorBox = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.55, 0.42), aquaDarkMat);
+          mirrorBox.position.set(mx, 2.2, 0.85);
+          cabGroup.add(mirrorBox);
+
+          const mirrorTab = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.15, 0.18), yellowPixelMat);
+          mirrorTab.position.set(mx, 2.4, 0.85);
+          cabGroup.add(mirrorTab);
+        });
+
+        // Blue Battery / Hydrolink Canister on Cab Side (Driver Side)
+        const sideCanister = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.95, 16), cobaltMat);
+        sideCanister.position.set(-1.48, 1.25, -0.4);
+        cabGroup.add(sideCanister);
+
+        const canisterCap = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.18, 12), orangeBeaconMat);
+        canisterCap.position.set(-1.48, 1.78, -0.4);
+        cabGroup.add(canisterCap);
+
+        // Purple Strobe Bar on Roof
+        const sBar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.16, 0.24), glowingPurpleMat);
+        sBar.position.set(0, 3.24, 0.2);
+        cabGroup.add(sBar);
+        strobeBar = sBar;
+
+        truckMeshContainer.add(cabGroup);
+
+        // ─────────────────────────────────────────────────────────
+        // C. CURVED SCI-FI COMPACTOR HOPPER WITH TUBULAR SPINE RAILS
+        // ─────────────────────────────────────────────────────────
+        const bodyGroup = new THREE.Group();
+        bodyGroup.position.set(0, 0, -1.35);
+
+        // Main Aqua Hopper Body with Rounded Edges
+        const hopperMain = new THREE.Mesh(new THREE.BoxGeometry(2.96, 2.25, 4.8), aquaMat);
+        hopperMain.position.set(0, 1.88, 0);
+        hopperMain.castShadow = true;
+        bodyGroup.add(hopperMain);
+
+        // Rounded Upper Roof Arch
+        const archTop = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.48, 1.48, 4.8, 20, 1, false, 0, Math.PI),
+          aquaMat
+        );
+        archTop.rotation.z = Math.PI / 2;
+        archTop.rotation.y = Math.PI / 2;
+        archTop.position.set(0, 3.0, 0);
+        archTop.castShadow = true;
+        bodyGroup.add(archTop);
+
+        // Twin Longitudinal Guide Rails / Spine Pipes on Roof
+        [-0.72, 0.72].forEach((gx) => {
+          const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 4.8, 12), aquaDarkMat);
+          rail.rotation.x = Math.PI / 2;
+          rail.position.set(gx, 3.42, 0);
+          bodyGroup.add(rail);
+        });
+
+        // Flexible Conduit Hoses Crossing from Cab to Compactor (Magenta, Orange, Cyan)
+        const hoseDefs = [
+          { mat: conduitMagentaMat, x: -0.32, y: 3.38 },
+          { mat: conduitOrangeMat,  x:  0.0,  y: 3.44 },
+          { mat: conduitCyanMat,    x:  0.32, y: 3.38 }
+        ];
+        hoseDefs.forEach((hd) => {
+          const hoseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 10), hd.mat);
+          hoseMesh.rotation.x = 0.55;
+          hoseMesh.position.set(hd.x, hd.y, 2.45);
+          bodyGroup.add(hoseMesh);
+        });
+
+        // Visible Gravitational Deflector Field Emitters (Shoulder Coils)
+        [-1.38, 1.38].forEach((ex) => {
+          const emitterPod = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.7, 12), darkBlueBumperMat);
+          emitterPod.position.set(ex, 3.25, 1.2);
+          bodyGroup.add(emitterPod);
+
+          [0.15, 0.0, -0.15].forEach((ry) => {
+            const coil = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.07, 8, 16), glowingPurpleMat);
+            coil.rotation.x = Math.PI / 2;
+            coil.position.set(ex, 3.25 + ry, 1.2);
+            bodyGroup.add(coil);
+            deflectorCoils.push(coil);
+          });
+        });
+
+        // Japanese Cyber Decal ("赤 05") on Compactor Sides
+        [-1.49, 1.49].forEach((kx) => {
+          const decalMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), kanjiMat);
+          decalMesh.rotation.y = kx > 0 ? Math.PI / 2 : -Math.PI / 2;
+          decalMesh.position.set(kx, 2.2, 0.4);
+          bodyGroup.add(decalMesh);
+        });
+
+        // ─────────────────────────────────────────────────────────
+        // D. REAR ANGLED COMPACTOR TAILGATE WITH YELLOW HAZARD CHEVRONS
+        // ─────────────────────────────────────────────────────────
+        const tailgateGroup = new THREE.Group();
+        tailgateGroup.position.set(0, 0, -2.4);
+
+        // Angled Rear Tailgate Body
+        const rearTailgate = new THREE.Mesh(new THREE.BoxGeometry(2.96, 2.4, 1.2), aquaMat);
+        rearTailgate.rotation.x = -0.14; // Backward sloping rear
+        rearTailgate.position.set(0, 1.9, -0.6);
+        tailgateGroup.add(rearTailgate);
+
+        // Diagonal Yellow Hazard Chevron Plates on Angled Rear Quarter Sides!
+        [-1.5, 1.5].forEach((hx) => {
+          const chevronPlate = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 2.1), hazardMat);
+          chevronPlate.rotation.y = hx > 0 ? Math.PI / 2 : -Math.PI / 2;
+          chevronPlate.rotation.z = -0.14;
+          chevronPlate.position.set(hx, 1.9, -0.6);
+          tailgateGroup.add(chevronPlate);
+        });
+
+        // Rear Loading Hopper Opening & Compactor Blade Housing
+        const rearHopperTrough = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.85, 0.6), darkBlueBumperMat);
+        rearHopperTrough.position.set(0, 0.78, -1.1);
+        tailgateGroup.add(rearHopperTrough);
+
+        // Rear Tailgate Warning Beacons
+        [-1.3, 1.3].forEach((tx) => {
+          const rearBeacon = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.25, 12), orangeBeaconMat);
+          rearBeacon.position.set(tx, 2.85, -1.05);
+          tailgateGroup.add(rearBeacon);
+        });
+
+        bodyGroup.add(tailgateGroup);
+
+        // ─────────────────────────────────────────────────────────
+        // E. STREAMLINED LOWER GROUND SKIRT WITH HAZARD STRIPES
+        // ─────────────────────────────────────────────────────────
+        [-1.49, 1.49].forEach((sx) => {
+          const skirtMesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.85, 4.6), aquaMat);
+          skirtMesh.position.set(sx, 0.95, -0.2);
+          bodyGroup.add(skirtMesh);
+
+          // Diagonal Yellow Hazard Stripe Decal along Skirt Bottom
+          const skirtStripe = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 0.55), hazardMat);
+          skirtStripe.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+          skirtStripe.position.set(sx > 0 ? sx + 0.07 : sx - 0.07, 0.95, -0.2);
+          bodyGroup.add(skirtStripe);
+        });
+
+        truckMeshContainer.add(bodyGroup);
+
+        // ─────────────────────────────────────────────────────────
+        // F. CORAL/ORANGE 8-WHEEL MULTI-DRIVE (4 AXLES PER SIDE)
+        // ─────────────────────────────────────────────────────────
+        const coralTireGeo = new THREE.CylinderGeometry(0.68, 0.68, 0.44, 20);
+        const aquaHubGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.48, 16);
+        const centerPinGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.52, 10);
+
+        const createChunkyCoralWheel = (isRightSide) => {
+          const wGroup = new THREE.Group();
+
+          // Vivid Coral/Orange Tire Body
+          const tire = new THREE.Mesh(coralTireGeo, coralWheelMat);
+          tire.rotation.z = Math.PI / 2;
+          tire.castShadow = true;
+          wGroup.add(tire);
+
+          // Aqua/Teal Center Hub Cap
+          const hub = new THREE.Mesh(aquaHubGeo, aquaMat);
+          hub.rotation.z = Math.PI / 2;
+          wGroup.add(hub);
+
+          // Dark Pin Center
+          const pin = new THREE.Mesh(centerPinGeo, darkBlueBumperMat);
+          pin.rotation.z = Math.PI / 2;
+          wGroup.add(pin);
+
+          return wGroup;
+        };
+
+        // 8 Multi-Wheels (4 Axles along the chassis: z = 2.2, z = 0.4, z = -1.4, z = -2.8)
+        [
+          { x: -1.42, z:  2.2, isRight: false },
+          { x:  1.42, z:  2.2, isRight: true  },
+          { x: -1.42, z:  0.4, isRight: false },
+          { x:  1.42, z:  0.4, isRight: true  },
+          { x: -1.42, z: -1.4, isRight: false },
+          { x:  1.42, z: -1.4, isRight: true  },
+          { x: -1.42, z: -2.8, isRight: false },
+          { x:  1.42, z: -2.8, isRight: true  }
+        ].forEach((wp) => {
+          const wheelAssembly = createChunkyCoralWheel(wp.isRight);
+          wheelAssembly.position.set(wp.x, 0.68, wp.z);
+          truckMeshContainer.add(wheelAssembly);
+          wheels.push(wheelAssembly);
+        });
+
+        // ── VECTOR FIELD VISUALS (DEFLECTOR: Purple Energy Rings & Curved Deflection Vectors) ──
+        const inRing = new THREE.Mesh(
+          new THREE.RingGeometry(12.5, 13.5, 48),
+          new THREE.MeshBasicMaterial({ color: 0x7e22ce, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+        );
+        inRing.rotation.x = -Math.PI / 2;
+        vectorFieldContainer.add(inRing);
+
+        const outRing = new THREE.Mesh(
+          new THREE.RingGeometry(26.2, 27.2, 64),
+          new THREE.MeshBasicMaterial({ color: 0xa855f7, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+        );
+        outRing.rotation.x = -Math.PI / 2;
+        vectorFieldContainer.add(outRing);
+
+        // 6 Curved Vector Lines / Chevrons around perimeter
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          const arcGroup = new THREE.Group();
+          arcGroup.rotation.y = -angle;
+
+          // Curved tangential arc on road surface
+          const curveMesh = new THREE.Mesh(
+            new THREE.TorusGeometry(20.0, 0.22, 4, 16, Math.PI / 6),
+            new THREE.MeshBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.85 })
+          );
+          curveMesh.rotation.x = Math.PI / 2;
+          arcGroup.add(curveMesh);
+
+          // Deflection Arrowhead
+          const deflHead = new THREE.Mesh(
+            new THREE.ConeGeometry(0.9, 2.0, 6),
+            new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.9 })
+          );
+          deflHead.rotation.x = Math.PI / 2;
+          deflHead.rotation.z = -0.4;
+          deflHead.position.set(5.2, 0, 19.5);
+          arcGroup.add(deflHead);
+
+          vectorFieldContainer.add(arcGroup);
+          vectorDeflectionArcs.push(arcGroup);
+        }
+
+      } else {
+        // ─────────────────────────────────────────────────────────
+        // SWACHH BHARAT STANDARD: ORIGINAL MUNICIPAL COMPACTOR TRUCK
+        // ─────────────────────────────────────────────────────────
+        const cab = new THREE.Mesh(
+          new THREE.BoxGeometry(2.7, 2.4, 2.4),
+          new THREE.MeshLambertMaterial({ color: 0xf8fafc })
+        );
+        cab.position.set(0, 1.6, 2.1);
+        cab.castShadow = true;
+        truckMeshContainer.add(cab);
+
+        const windshield = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, 1.15, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0x0284c7 })
+        );
+        windshield.position.set(0, 2.05, 3.32);
+        truckMeshContainer.add(windshield);
+
+        const mirrorGeo = new THREE.BoxGeometry(0.2, 0.6, 0.3);
+        const mirrorMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+        [-1.5, 1.5].forEach((mx) => {
+          const m = new THREE.Mesh(mirrorGeo, mirrorMat);
+          m.position.set(mx, 2.0, 2.3);
+          truckMeshContainer.add(m);
+        });
+
+        const grille = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.8, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0x1e293b })
+        );
+        grille.position.set(0, 1.1, 3.32);
+        truckMeshContainer.add(grille);
+
+        const bumper = new THREE.Mesh(
+          new THREE.BoxGeometry(2.8, 0.45, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x475569 })
+        );
+        bumper.position.set(0, 0.65, 3.4);
+        truckMeshContainer.add(bumper);
+
+        const sBar = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6, 0.25, 0.35),
+          new THREE.MeshBasicMaterial({ color: 0xf59e0b })
+        );
+        sBar.position.set(0, 2.92, 2.1);
+        truckMeshContainer.add(sBar);
+        strobeBar = sBar;
+
+        const hornGeo = new THREE.CylinderGeometry(0.08, 0.15, 0.8, 8);
+        const hornMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
+        [-0.5, 0.5].forEach((hx) => {
+          const hn = new THREE.Mesh(hornGeo, hornMat);
+          hn.rotation.x = Math.PI / 2;
+          hn.position.set(hx, 2.95, 2.6);
+          truckMeshContainer.add(hn);
+        });
+
+        const compactor = new THREE.Mesh(
+          new THREE.BoxGeometry(2.85, 2.7, 5.0),
+          new THREE.MeshLambertMaterial({ color: 0x105a39 })
+        );
+        compactor.position.set(0, 1.85, -1.8);
+        compactor.castShadow = true;
+        truckMeshContainer.add(compactor);
+
+        const hazardStrip = new THREE.Mesh(
+          new THREE.BoxGeometry(2.9, 0.2, 4.8),
+          new THREE.MeshBasicMaterial({ color: 0xe2fd00 })
+        );
+        hazardStrip.position.set(0, 2.9, -1.8);
+        truckMeshContainer.add(hazardStrip);
+
+        const tailgate = new THREE.Mesh(
+          new THREE.BoxGeometry(2.8, 1.6, 0.6),
+          new THREE.MeshLambertMaterial({ color: 0x064e3b })
+        );
+        tailgate.position.set(0, 1.3, -4.4);
+        truckMeshContainer.add(tailgate);
+
+        [-0.9, 0.9].forEach((hx) => {
+          const hl = new THREE.SpotLight(0xffedd5, 4.0, 35, Math.PI / 6, 0.4);
+          hl.position.set(hx, 1.5, 3.4);
+          hl.target.position.set(hx, 0, 25);
+          truckMeshContainer.add(hl);
+          truckMeshContainer.add(hl.target);
+        });
+
+        const wheelGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.55, 16);
+        const wheelMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+        [
+          { x: -1.5, y: 0.7, z: 2.1 }, { x: 1.5, y: 0.7, z: 2.1 },
+          { x: -1.5, y: 0.7, z: -1.3 }, { x: 1.5, y: 0.7, z: -1.3 },
+          { x: -1.5, y: 0.7, z: -3.1 }, { x: 1.5, y: 0.7, z: -3.1 }
+        ].forEach((wp) => {
+          const w = new THREE.Mesh(wheelGeo, wheelMat);
+          w.rotation.z = Math.PI / 2;
+          w.position.set(wp.x, wp.y, wp.z);
+          w.castShadow = true;
+          truckMeshContainer.add(w);
+          wheels.push(w);
+        });
+
+        // Standard Sky Blue Vector Field Ring
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(13.5, 14.2, 48),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.35 })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        vectorFieldContainer.add(ring);
+      }
+    };
+
+    // Register visual applicator ref & construct initial truck
+    applyTruckModelVisualsRef.current = setupTruckVisuals;
+    setupTruckVisuals(selectedTruckModelRef.current);
 
     truckGroup.position.set(0, 0, 0);
     scene.add(truckGroup);
@@ -1828,30 +3382,55 @@ export default function LivingCity3D({ onExit }) {
       return { car, taillight: tl };
     };
 
-    // Holographic Vector Field Ring under truck
-    const vectorFieldGeo = new THREE.RingGeometry(13.5, 14.2, 48);
-    const vectorFieldMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.35
-    });
-    const vectorFieldRing = new THREE.Mesh(vectorFieldGeo, vectorFieldMat);
-    vectorFieldRing.rotation.x = -Math.PI / 2;
-    vectorFieldRing.position.y = 0.04;
-    truckGroup.add(vectorFieldRing);
-
-    // Calm city speeds
+    // High-Density Urban Traffic (2x Truck Speed: ~0.60 base speed)
     const trafficData = [
-      { avenue: 'h', line: -46, dir: 1, speed: 0.14, x: -70, z: -46 + 3.2 },
-      { avenue: 'h', line: 46, dir: -1, speed: 0.13, x: 70, z: 46 - 3.2 },
-      { avenue: 'v', line: -46, dir: 1, speed: 0.15, x: -46 + 3.2, z: -80 },
-      { avenue: 'v', line: 46, dir: -1, speed: 0.14, x: 46 - 3.2, z: 80 },
-      { avenue: 'h', line: 0, dir: 1, speed: 0.15, x: -90, z: 3.2 },
-      { avenue: 'v', line: 0, dir: -1, speed: 0.13, x: -3.2, z: 90 }
+      // Avenue H: Line -92 (North Perimeter)
+      { avenue: 'h', line: -92, dir: 1, speed: 0.60, x: -80, z: -92 + 3.2 },
+      { avenue: 'h', line: -92, dir: -1, speed: 0.58, x: 60, z: -92 - 3.2 },
+      { avenue: 'h', line: -92, dir: 1, speed: 0.62, x: 10, z: -92 + 3.2 },
+
+      // Avenue H: Line -46 (North Inner)
+      { avenue: 'h', line: -46, dir: 1, speed: 0.60, x: -70, z: -46 + 3.2 },
+      { avenue: 'h', line: -46, dir: 1, speed: 0.61, x: 20, z: -46 + 3.2 },
+      { avenue: 'h', line: -46, dir: -1, speed: 0.59, x: 70, z: -46 - 3.2 },
+      { avenue: 'h', line: -46, dir: -1, speed: 0.60, x: -30, z: -46 - 3.2 },
+
+      // Avenue H: Line 0 (Center Crossway)
+      { avenue: 'h', line: 0, dir: 1, speed: 0.60, x: -90, z: 3.2 },
+      { avenue: 'h', line: 0, dir: 1, speed: 0.62, x: -10, z: 3.2 },
+      { avenue: 'h', line: 0, dir: -1, speed: 0.59, x: 80, z: -3.2 },
+      { avenue: 'h', line: 0, dir: -1, speed: 0.61, x: 15, z: -3.2 },
+
+      // Avenue H: Line 46 (South Inner)
+      { avenue: 'h', line: 46, dir: 1, speed: 0.60, x: -60, z: 46 + 3.2 },
+      { avenue: 'h', line: 46, dir: -1, speed: 0.58, x: 70, z: 46 - 3.2 },
+      { avenue: 'h', line: 46, dir: -1, speed: 0.60, x: -15, z: 46 - 3.2 },
+
+      // Avenue H: Line 92 (South Perimeter)
+      { avenue: 'h', line: 92, dir: 1, speed: 0.60, x: -75, z: 92 + 3.2 },
+      { avenue: 'h', line: 92, dir: -1, speed: 0.59, x: 65, z: 92 - 3.2 },
+
+      // Avenue V: Line -46 (West Inner)
+      { avenue: 'v', line: -46, dir: 1, speed: 0.60, x: -46 + 3.2, z: -80 },
+      { avenue: 'v', line: -46, dir: 1, speed: 0.62, x: -46 + 3.2, z: 10 },
+      { avenue: 'v', line: -46, dir: -1, speed: 0.59, x: -46 - 3.2, z: 75 },
+      { avenue: 'v', line: -46, dir: -1, speed: 0.61, x: -46 - 3.2, z: -25 },
+
+      // Avenue V: Line 0 (Central North-South Boulevard)
+      { avenue: 'v', line: 0, dir: 1, speed: 0.60, x: 3.2, z: -70 },
+      { avenue: 'v', line: 0, dir: -1, speed: 0.59, x: -3.2, z: 90 },
+      { avenue: 'v', line: 0, dir: -1, speed: 0.61, x: -3.2, z: 5 },
+
+      // Avenue V: Line 46 (East Inner)
+      { avenue: 'v', line: 46, dir: 1, speed: 0.61, x: 46 + 3.2, z: -60 },
+      { avenue: 'v', line: 46, dir: -1, speed: 0.60, x: 46 - 3.2, z: 80 },
+      { avenue: 'v', line: 46, dir: -1, speed: 0.58, x: 46 - 3.2, z: -20 },
     ];
 
-    trafficData.forEach((td, idx) => {
+    const activeDiffConfig = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
+    const activeTrafficSubset = trafficData.slice(0, activeDiffConfig.trafficCount || trafficData.length);
+
+    activeTrafficSubset.forEach((td, idx) => {
       const carObj = createCarModel(carColors[idx % carColors.length]);
       carObj.car.position.set(td.x, 0, td.z);
       carObj.car.rotation.y = td.avenue === 'h' ? (td.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (td.dir > 0 ? 0 : Math.PI);
@@ -1865,7 +3444,10 @@ export default function LivingCity3D({ onExit }) {
         baseSpeed: td.speed,
         currentSpeed: td.speed,
         x: td.x,
-        z: td.z
+        z: td.z,
+        baseX: td.x,
+        baseZ: td.z,
+        deflectOffset: 0
       });
     });
 
@@ -1876,12 +3458,56 @@ export default function LivingCity3D({ onExit }) {
     const isPointOnRoad = (px, pz) => {
       const onH = roadLines.some((rz) => Math.abs(pz - rz) <= halfRoad);
       const onV = roadLines.some((rx) => Math.abs(px - rx) <= halfRoad);
-      const onDumpYard = (Math.abs(px - dumpyardPos.x) <= 20 && Math.abs(pz - dumpyardPos.z) <= 16);
-      return onH || onV || onDumpYard;
+      const onDumpYard = (Math.abs(px - dumpyardPos.x) <= 22 && Math.abs(pz - dumpyardPos.z) <= 18);
+      const onGarage = (Math.abs(px - workshopPos.x) <= 22 && Math.abs(pz - workshopPos.z) <= 18);
+      const onGarageDriveway = (Math.abs(px) <= 8 && pz >= 88 && pz <= 126);
+      return onH || onV || onDumpYard || onGarage || onGarageDriveway;
     };
 
     const keys = { forward: false, backward: false, left: false, right: false, nitro: false };
     const onKeyDown = (e) => {
+      // If player is on garage screen, Left/Right arrow keys navigate trucks
+      if (gameScreenRef.current === 'garage') {
+        const truckKeys = Object.keys(TRUCK_MODELS_DATA);
+        if (e.key === 'ArrowLeft') {
+          const prevIdx = (previewTruckIndexRef.current - 1 + truckKeys.length) % truckKeys.length;
+          setPreviewTruckIndex(prevIdx);
+          previewTruckIndexRef.current = prevIdx;
+          const nextModelId = truckKeys[prevIdx];
+          setupTruckVisuals(nextModelId);
+          playSound('horn');
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          const nextIdx = (previewTruckIndexRef.current + 1) % truckKeys.length;
+          setPreviewTruckIndex(nextIdx);
+          previewTruckIndexRef.current = nextIdx;
+          const nextModelId = truckKeys[nextIdx];
+          setupTruckVisuals(nextModelId);
+          playSound('horn');
+          return;
+        }
+        if (e.key === 'Escape') {
+          setGameScreen('menu');
+          gameScreenRef.current = 'menu';
+          return;
+        }
+      }
+
+      // In city screen: Esc toggles Pause Menu
+      if (e.key === 'Escape') {
+        if (gameScreenRef.current === 'city') {
+          setIsPaused((p) => {
+            const nextP = !p;
+            isPausedRef.current = nextP;
+            return nextP;
+          });
+          return;
+        }
+      }
+
+      if (isPausedRef.current || gameScreenRef.current !== 'city') return;
+
       const k = e.key.toLowerCase();
       if (k === 'w' || k === 'arrowup') keys.forward = true;
       if (k === 's' || k === 'arrowdown') keys.backward = true;
@@ -1895,6 +3521,16 @@ export default function LivingCity3D({ onExit }) {
         }
       }
       if (k === 'h') playSound('horn');
+      if (k === 'g' || (k === 'e' && isNearWorkshopRef.current)) {
+        setGameScreen('garage');
+        gameScreenRef.current = 'garage';
+        playSound('horn');
+        return;
+      }
+      if (k === 'q' && isNearWorkshopRef.current) {
+        setShowGarageShop(true);
+        return;
+      }
       if (k === 'e' || k === ' ') {
         isHoldingCollectRef.current = true;
         setIsHoldingCollect(true);
@@ -1918,24 +3554,64 @@ export default function LivingCity3D({ onExit }) {
       }
     };
 
-    // Mouse Left-Click Hold Handlers
+    // Pointer / Mouse Handlers: Turntable 360 Drag (Garage) & Bin Collect (City)
     const onMouseDown = (e) => {
+      if (gameScreenRef.current === 'garage' || gameScreenRef.current === 'menu') {
+        isShowroomDraggingRef.current = true;
+        showroomDragStartXRef.current = e.clientX;
+        showroomDragStartAngleRef.current = showroomAngleRef.current;
+        return;
+      }
       if (e.button === 0) {
         isHoldingCollectRef.current = true;
         setIsHoldingCollect(true);
       }
     };
+
+    const onMouseMove = (e) => {
+      if (isShowroomDraggingRef.current) {
+        const deltaX = e.clientX - showroomDragStartXRef.current;
+        showroomAngleRef.current = showroomDragStartAngleRef.current - deltaX * 0.012;
+      }
+    };
+
     const onMouseUp = (e) => {
+      if (isShowroomDraggingRef.current) {
+        isShowroomDraggingRef.current = false;
+      }
       if (e.button === 0) {
         isHoldingCollectRef.current = false;
         setIsHoldingCollect(false);
       }
     };
 
+    const onTouchStart = (e) => {
+      if ((gameScreenRef.current === 'garage' || gameScreenRef.current === 'menu') && e.touches.length > 0) {
+        isShowroomDraggingRef.current = true;
+        showroomDragStartXRef.current = e.touches[0].clientX;
+        showroomDragStartAngleRef.current = showroomAngleRef.current;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (isShowroomDraggingRef.current && e.touches.length > 0) {
+        const deltaX = e.touches[0].clientX - showroomDragStartXRef.current;
+        showroomAngleRef.current = showroomDragStartAngleRef.current - deltaX * 0.012;
+      }
+    };
+
+    const onTouchEnd = () => {
+      isShowroomDraggingRef.current = false;
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
 
     // Tuned Driving Physics (Strict 0-30 KM/H Finite Cap, Heavy Realistic Steering)
     let truckSpeed = 0;
@@ -1991,20 +3667,53 @@ export default function LivingCity3D({ onExit }) {
         cp.life = 1.0;
       });
 
+      // Prevent same continuous collision from damaging every rendered frame (2s contact cooldown)
+      const now = performance.now();
+      if (now - lastCollisionTimeRef.current < 1800) return;
+      lastCollisionTimeRef.current = now;
+
+      // Track collision count
+      setCollisionCount((c) => {
+        const nextC = c + 1;
+        collisionCountRef.current = nextC;
+        return nextC;
+      });
+
+      // Difficulty & Severity damage calculation
+      const activeDiff = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
+      const speedRatio = Math.min(1.0, Math.abs(truckSpeed) / 0.30);
+      let baseDamagePct = 8;
+      if (speedRatio < 0.4) baseDamagePct = 4; // minor
+      else if (speedRatio > 0.8) baseDamagePct = 16; // severe
+
+      const damageAmount = Math.max(2, Math.round(baseDamagePct * (activeDiff.damageMultiplier || 1.0)));
+
+      setTruckCondition((prevCond) => {
+        const nextCond = Math.max(0, prevCond - damageAmount);
+        truckConditionRef.current = nextCond;
+        localStorage.setItem('smartbin_truck_condition', nextCond.toString());
+        return nextCond;
+      });
+
       setLives((prev) => {
         const rem = Math.max(0, prev - 1);
         livesRef.current = rem;
+        if (rem === 0) {
+          setShowRespawnCoinModal(true);
+        }
         return rem;
       });
 
-      setCrashState({
-        message: `COLLIDED WITH ${obstacleName.toUpperCase()}!`,
-        countdown: 2
-      });
+      if (livesRef.current > 0) {
+        setCrashState({
+          message: `COLLIDED WITH ${obstacleName.toUpperCase()}! (-${damageAmount}% Chassis Condition)`,
+          countdown: 2
+        });
 
-      setTimeout(() => {
-        resetTruck(`Vehicle Repaired after Collision with ${obstacleName}`);
-      }, 2000);
+        setTimeout(() => {
+          resetTruck(`Repositioned after Collision with ${obstacleName}`);
+        }, 2000);
+      }
     };
 
     // ─────────────────────────────────────────────────────────────
@@ -2018,6 +3727,35 @@ export default function LivingCity3D({ onExit }) {
       animId = requestAnimationFrame(animate);
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
+
+      // Active truck model & configuration for the current frame
+      const activeModelId = (gameScreenRef.current === 'garage')
+        ? (truckKeysList[previewTruckIndexRef.current] || selectedTruckModelRef.current)
+        : selectedTruckModelRef.current;
+      const activeTruckConfig = TRUCK_MODELS_DATA[activeModelId] || TRUCK_MODELS_DATA.swachh_bharat_standard;
+
+      if (isPausedRef.current) {
+        // Paused: Render frozen scene with camera
+        renderer.render(scene, camera);
+        return;
+      }
+
+      // Update Active Shift Timer in City Driving Mode
+      if (gameScreenRef.current === 'city' && !isCrashedRef.current) {
+        shiftTimeRef.current += delta;
+        // Sync to React state once per second
+        const currentSec = Math.floor(shiftTimeRef.current);
+        setShiftTime((prevSec) => (prevSec !== currentSec ? currentSec : prevSec));
+      }
+
+      if (gameScreenRef.current !== 'city') {
+        // In Garage Showroom or Main Menu: Truck rests on showroom turntable
+        truckSpeed = 0;
+        keys.forward = false;
+        keys.backward = false;
+        keys.left = false;
+        keys.right = false;
+      }
 
       if (isCrashedRef.current) {
         truckSpeed = 0;
@@ -2104,12 +3842,20 @@ export default function LivingCity3D({ onExit }) {
         const isRgt = keys.right || mobileKeysRef.current.right;
         const isNitro = (keys.nitro || mobileKeysRef.current.nitro) && (citizenLevelRef.current >= 3);
 
-        const currentMaxSpeed = isNitro ? 0.28 : maxSpeed;
+        // Condition Penalties (Reduced accel and top speed when damaged, as specified in STEP 5)
+        const condPct = truckConditionRef.current;
+        let conditionPenaltyFactor = 1.0;
+        if (condPct < 40) conditionPenaltyFactor = 0.72; // severe damage penalty
+        else if (condPct < 70) conditionPenaltyFactor = 0.88; // moderate damage penalty
+
+        const currentMaxSpeed = (isNitro ? (activeTruckConfig.maxSpeedVal * 1.35) : activeTruckConfig.maxSpeedVal) * conditionPenaltyFactor;
+        const currentAccel = activeTruckConfig.accelVal * conditionPenaltyFactor;
+        const currentTurnSpeed = activeTruckConfig.turnSpeedVal * (condPct < 30 ? 0.85 : 1.0);
 
         if (isFwd) {
-          truckSpeed = Math.min(currentMaxSpeed, truckSpeed + acceleration);
+          truckSpeed = Math.min(currentMaxSpeed, truckSpeed + currentAccel);
         } else if (isBwd) {
-          truckSpeed = Math.max(-currentMaxSpeed * 0.5, truckSpeed - acceleration);
+          truckSpeed = Math.max(-currentMaxSpeed * 0.5, truckSpeed - currentAccel);
         } else {
           if (truckSpeed > 0) truckSpeed = Math.max(0, truckSpeed - deceleration);
           else if (truckSpeed < 0) truckSpeed = Math.min(0, truckSpeed + deceleration);
@@ -2117,8 +3863,8 @@ export default function LivingCity3D({ onExit }) {
 
         if (Math.abs(truckSpeed) > 0.005) {
           const dir = truckSpeed > 0 ? 1 : -1;
-          if (isLft) truckAngle += turnSpeed * dir;
-          if (isRgt) truckAngle -= turnSpeed * dir;
+          if (isLft) truckAngle += currentTurnSpeed * dir;
+          if (isRgt) truckAngle -= currentTurnSpeed * dir;
         }
 
         const nextX = truckGroup.position.x + Math.sin(truckAngle) * truckSpeed;
@@ -2161,20 +3907,53 @@ export default function LivingCity3D({ onExit }) {
           truckGroup.position.y = 0;
         }
 
-        // Strict 0 - 30 KM/H Speedometer (or up to 42 KM/H with Nitro)
-        const speedKmh = Math.min(isNitro ? 42 : 30, Math.round((Math.abs(truckSpeed) / maxSpeed) * 30));
+        // Strict Finite Speedometer matching truck specs (30 KM/H, 38 KM/H Overdrive, 32 KM/H Deflector)
+        const baseKmh = activeTruckConfig.speedKmh;
+        const speedKmh = Math.min(
+          isNitro ? Math.round(baseKmh * 1.35) : baseKmh,
+          Math.round((Math.abs(truckSpeed) / activeTruckConfig.maxSpeedVal) * baseKmh)
+        );
         setCurrentSpeed(speedKmh);
       }
 
-      // Flash Roof Strobe & Pulse Vector Field Ring (Golden strobe for Level >= 5)
-      const strobeColor = (citizenLevelRef.current >= 5) 
-        ? ((Math.sin(time * 20) > 0) ? 0xfbbf24 : 0xe2fd00)
-        : ((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
-      strobeBar.material.color.setHex(strobeColor);
+      // Flash Roof Strobe matching truck theme
+      if (strobeBar && strobeBar.material) {
+        if (activeModelId === 'overdrive') {
+          strobeBar.material.color.setHex((Math.sin(time * 24) > 0) ? 0x22d3ee : 0x06b6d4);
+        } else if (activeModelId === 'deflector') {
+          strobeBar.material.color.setHex((Math.sin(time * 18) > 0) ? 0xc084fc : 0x7e22ce);
+        } else {
+          const strobeColor = (citizenLevelRef.current >= 5) 
+            ? ((Math.sin(time * 20) > 0) ? 0xfbbf24 : 0xe2fd00)
+            : ((Math.sin(time * 16) > 0) ? 0xf59e0b : 0xffffff);
+          strobeBar.material.color.setHex(strobeColor);
+        }
+      }
 
-      if (vectorFieldRing) {
-        vectorFieldRing.material.opacity = (citizenLevelRef.current >= 4) ? 0.45 : 0.22 + Math.sin(time * 3.5) * 0.12;
-        vectorFieldRing.rotation.z += 0.005;
+      // Animate Active Truck's Vector Field Visualization
+      if (vectorFieldContainer) {
+        if (activeModelId === 'overdrive') {
+          vectorFieldContainer.rotation.y += 0.008;
+          // Outward directional arrows pulse with speed / ability intensity
+          const arrowPulse = 1.0 + Math.sin(time * 7.0) * 0.15;
+          vectorOutwardArrows.forEach((arr) => {
+            arr.scale.set(1.0, 1.0, arrowPulse);
+          });
+        } else if (activeModelId === 'deflector') {
+          vectorFieldContainer.rotation.y -= 0.006;
+          // Curved purple deflection arcs pulse with active magnetic field
+          const arcPulse = 1.0 + Math.sin(time * 4.5) * 0.12;
+          vectorDeflectionArcs.forEach((arc) => {
+            arc.scale.set(arcPulse, 1.0, arcPulse);
+          });
+          // Emitter coils pulse
+          const coilGlow = 0.6 + Math.sin(time * 8.0) * 0.35;
+          deflectorCoils.forEach((coil) => {
+            if (coil.material) coil.material.opacity = coilGlow;
+          });
+        } else {
+          vectorFieldContainer.rotation.y += 0.004;
+        }
       }
 
       // Gently sway grapple claw over dumpyard scrap heap
@@ -2183,25 +3962,64 @@ export default function LivingCity3D({ onExit }) {
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 13. TRAFFIC SIMULATION & SMART VECTOR FIELD PROXIMITY BRAKING
+      // 13. TRAFFIC SIMULATION & SMART VECTOR FIELD PROXIMITY BEHAVIORS
       // ─────────────────────────────────────────────────────────────
       const VECTOR_FIELD_RADIUS = 28.0;
-      const FULL_STOP_DISTANCE = 8.5;
+      const FULL_STOP_DISTANCE = 5.5;
 
       trafficCars.forEach((tc) => {
         const distToTruck = Math.hypot(truckGroup.position.x - tc.x, truckGroup.position.z - tc.z);
         let targetCarSpeed = tc.baseSpeed;
 
-        if (distToTruck < FULL_STOP_DISTANCE) {
-          targetCarSpeed = 0;
-          if (tc.taillight) tc.taillight.material.color.setHex(0xff0000);
-        } else if (distToTruck < VECTOR_FIELD_RADIUS) {
-          const ratio = (distToTruck - FULL_STOP_DISTANCE) / (VECTOR_FIELD_RADIUS - FULL_STOP_DISTANCE);
-          targetCarSpeed = tc.baseSpeed * Math.max(0.04, ratio * ratio);
-          if (tc.taillight) tc.taillight.material.color.setHex(0xef4444);
+        if (activeModelId === 'overdrive') {
+          // ── OVERDRIVE VECTOR FIELD: CARS DO NOT STOP! THEY SMOOTHLY SPEED UP (1.6x) ──
+          if (distToTruck < VECTOR_FIELD_RADIUS) {
+            targetCarSpeed = tc.baseSpeed * 1.6;
+            if (tc.taillight) tc.taillight.material.color.setHex(0x06b6d4); // Cyan speed surge
+          } else {
+            targetCarSpeed = tc.baseSpeed;
+            if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
+          }
+          tc.deflectOffset += (0 - tc.deflectOffset) * 0.08;
+
+        } else if (activeModelId === 'deflector') {
+          // ── DEFLECTOR VECTOR FIELD: CARS DO NOT STOP! THEY SMOOTHLY BEND/DEFLECT AWAY ──
+          if (distToTruck < VECTOR_FIELD_RADIUS) {
+            targetCarSpeed = tc.baseSpeed;
+            if (tc.taillight) tc.taillight.material.color.setHex(0xa855f7); // Purple deflection aura
+
+            // Smoothly push / bend cars sideways away from the truck path
+            const intensity = Math.max(0, 1 - distToTruck / VECTOR_FIELD_RADIUS);
+            if (tc.avenue === 'h') {
+              const diffZ = tc.z - truckGroup.position.z;
+              const pushDir = Math.sign(diffZ) || 1;
+              const targetOffset = pushDir * Math.min(4.2, intensity * 4.8);
+              tc.deflectOffset += (targetOffset - tc.deflectOffset) * 0.09;
+            } else {
+              const diffX = tc.x - truckGroup.position.x;
+              const pushDir = Math.sign(diffX) || 1;
+              const targetOffset = pushDir * Math.min(4.2, intensity * 4.8);
+              tc.deflectOffset += (targetOffset - tc.deflectOffset) * 0.09;
+            }
+          } else {
+            // Outside field: smoothly return to normal lane alignment
+            targetCarSpeed = tc.baseSpeed;
+            tc.deflectOffset += (0 - tc.deflectOffset) * 0.08;
+            if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
+          }
+
         } else {
-          targetCarSpeed = tc.baseSpeed;
-          if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
+          // ── SWACHH BHARAT STANDARD: CARS DO NOT STOP! THEY SMOOTHLY DECELERATE FROM 2x TO 1x ──
+          if (distToTruck < VECTOR_FIELD_RADIUS) {
+            // Smoothly drop from 2x (tc.baseSpeed) down to 1x (tc.baseSpeed * 0.5) near the truck
+            const factor = Math.min(1.0, Math.max(0.5, distToTruck / VECTOR_FIELD_RADIUS));
+            targetCarSpeed = tc.baseSpeed * factor;
+            if (tc.taillight) tc.taillight.material.color.setHex(0xf59e0b); // Amber caution lights
+          } else {
+            targetCarSpeed = tc.baseSpeed;
+            if (tc.taillight) tc.taillight.material.color.setHex(0x7f1d1d);
+          }
+          tc.deflectOffset += (0 - tc.deflectOffset) * 0.08;
         }
 
         tc.currentSpeed += (targetCarSpeed - tc.currentSpeed) * 0.16;
@@ -2211,17 +4029,41 @@ export default function LivingCity3D({ onExit }) {
           if (tc.x > fenceLimit - 6) tc.x = -fenceLimit + 6;
           if (tc.x < -fenceLimit + 6) tc.x = fenceLimit - 6;
           tc.group.position.x = tc.x;
+          tc.group.position.z = tc.baseZ + tc.deflectOffset;
+          // Realistic slight steering angle while deflecting
+          if (Math.abs(tc.deflectOffset) > 0.05) {
+            tc.group.rotation.y = (tc.dir > 0 ? Math.PI / 2 : -Math.PI / 2) - Math.min(0.25, Math.max(-0.25, tc.deflectOffset * 0.08)) * tc.dir;
+          } else {
+            tc.group.rotation.y = tc.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+          }
         } else {
           tc.z += tc.dir * tc.currentSpeed;
           if (tc.z > fenceLimit - 6) tc.z = -fenceLimit + 6;
           if (tc.z < -fenceLimit + 6) tc.z = fenceLimit - 6;
           tc.group.position.z = tc.z;
+          tc.group.position.x = tc.baseX + tc.deflectOffset;
+          if (Math.abs(tc.deflectOffset) > 0.05) {
+            tc.group.rotation.y = (tc.dir > 0 ? 0 : Math.PI) + Math.min(0.25, Math.max(-0.25, tc.deflectOffset * 0.08)) * tc.dir;
+          } else {
+            tc.group.rotation.y = tc.dir > 0 ? 0 : Math.PI;
+          }
         }
 
-        // Only player ramming causes crash
+        // ── TWO-WAY COLLISION SYSTEM (COLLISION FROM BOTH SIDES) ──
+        // Trigger crash if player rams car OR if fast-moving traffic car rams into truck!
         if (!isCrashedRef.current) {
-          if (Math.abs(truckSpeed) > 0.14 && distToTruck < 3.2) {
-            triggerCrash("Traffic Vehicle");
+          // Check collision distance threshold between truck bounding box and traffic car
+          if (distToTruck < 3.4) {
+            const playerMoving = Math.abs(truckSpeed) > 0.08;
+            const carMoving = (tc.currentSpeed || tc.baseSpeed) > 0.18;
+
+            if (playerMoving) {
+              // Player rammed traffic vehicle
+              triggerCrash("Traffic Vehicle (Direct Impact)");
+            } else if (carMoving) {
+              // Traffic vehicle rammed player's truck from front, rear, or side!
+              triggerCrash("Traffic Vehicle (Rear/Side Ramming)");
+            }
           }
         }
       });
@@ -2273,8 +4115,9 @@ export default function LivingCity3D({ onExit }) {
             leftArm.rotation.x = -1.2;
             rightArm.rotation.x = -1.2;
 
-            // Superpower: Level 2 Turbo Suction cuts emptying time to 1.4s
-            const currentDuration = (citizenLevelRef.current >= 2) ? 1.4 : COLLECTION_DURATION;
+            // Waste collection duration tied strictly to truck model:
+            // Swachh Bharat Standard: 3.0s | Overdrive: 1.5s | Deflector: 2.0s
+            const currentDuration = TRUCK_MODELS_DATA[selectedTruckModelRef.current]?.collectionDuration || 3.0;
             collectionTimer += delta;
             const progressPct = Math.min(100, Math.round((collectionTimer / currentDuration) * 100));
             setCollectProgress(progressPct);
@@ -2314,16 +4157,18 @@ export default function LivingCity3D({ onExit }) {
                 });
               }
 
-              // Superpower: Level 5 grants 2x Multiplier (+200 pts)
-              const earnedPts = (citizenLevelRef.current >= 5) ? 200 : 100;
+              // Separate Currencies Earned:
+              // Game Coins (in-game upgrades) + Eco-Points (citizen voucher redemption)
+              const earnedCoins = 100;
+              const earnedEcoPts = 50;
 
               setWasteCollected((prev) => {
                 const nextVal = prev + 1;
                 wasteCollectedRef.current = nextVal;
                 if (nextVal >= smartBins.length) {
-                  setNotification("🚀 ALL 6 BINS COLLECTED! Proceed to northern Municipal Dumpyard to finish!");
+                  setNotification("🚀 ALL 6 BINS COLLECTED! Deliver cargo to Northern Dumpyard to Level Up & earn +2 Coins!");
                 } else {
-                  setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+25kg waste, +${earnedPts} Eco-Points)`);
+                  setNotification(`✅ Emptied Spot #${stoppedNearBin.id}! (+${earnedCoins} Coins, +${earnedEcoPts} Eco-Points)`);
                 }
                 return nextVal;
               });
@@ -2334,14 +4179,21 @@ export default function LivingCity3D({ onExit }) {
                 return nextLoad;
               });
 
+              setGameCoins((prev) => {
+                const next = prev + earnedCoins;
+                gameCoinsRef.current = next;
+                localStorage.setItem('smartbin_game_coins', next.toString());
+                return next;
+              });
+
               setEcoPoints((prev) => {
-                const nextPts = prev + earnedPts;
+                const nextPts = prev + earnedEcoPts;
                 ecoPointsRef.current = nextPts;
                 return nextPts;
               });
 
               // Save to Database (No data loss)
-              saveCitizenPoints(earnedPts);
+              saveCitizenPoints(earnedEcoPts);
 
               workerPhase = 'walking_back';
             }
@@ -2386,22 +4238,156 @@ export default function LivingCity3D({ onExit }) {
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 15. DUMPYARD UNLOADING & VICTORY SHIFT TRIGGER
+      // 15. DUMPYARD UNLOADING & MISSION COMPLETION EVALUATION
       // ─────────────────────────────────────────────────────────────
       const distToDumpyard = Math.hypot(truckGroup.position.x - dumpyardPos.x, truckGroup.position.z - dumpyardPos.z);
-      if (distToDumpyard < 14.0 && currentLoadRef.current > 0 && Math.abs(truckSpeed) < 0.05 && !isCrashedRef.current) {
+      if (distToDumpyard < 14.0 && currentLoadRef.current > 0 && Math.abs(truckSpeed) < 0.05 && !isCrashedRef.current && !missionResultData) {
         playSound('dump');
         setCurrentLoad(0);
         currentLoadRef.current = 0;
-        const bonusPts = (citizenLevelRef.current >= 5) ? 1000 : 500;
+
+        const activeDiff = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
+        const timeLimitSec = activeDiff.timeLimit || 240;
+        const elapsedSec = Math.floor(shiftTimeRef.current);
+        const withinDeadline = elapsedSec <= timeLimitSec;
+        const timeRemaining = Math.max(0, timeLimitSec - elapsedSec);
+
+        const binsEmptied = wasteCollectedRef.current;
+        const reqBins = activeDiff.requiredBins || 4;
+        const mandatoryCompleted = binsEmptied >= reqBins;
+        const allBinsDone = binsEmptied >= smartBins.length;
+        const noCollisions = collisionCountRef.current === 0;
+
+        // Reward Formula (as specified in Step 2 / Progression Spec):
+        // Net Coins = Base Reward + Collection Bonus + Time Bonus + Optional Objective Bonuses - Mission Penalties
+        const baseCoins = mandatoryCompleted ? Math.round(activeDiff.baseReward * activeDiff.rewardMultiplier) : Math.round(activeDiff.baseReward * 0.4);
+        const fullCollectBonus = allBinsDone ? activeDiff.fullCollectionBonus : 0;
+        const timeBonus = withinDeadline ? activeDiff.timeBonus : 0;
+        const zeroCrashBonus = noCollisions ? activeDiff.optionalObjectiveBonus : 0;
+        const collisionPenalties = collisionCountRef.current * 15;
+
+        const netCoins = Math.max(25, baseCoins + fullCollectBonus + timeBonus + zeroCrashBonus - collisionPenalties);
+
+        // XP Reward Calculation:
+        // Complete mission: 100 XP, Target bins: 25 XP, Deadline: 30 XP, No collision: 20 XP, All bins: 40 XP
+        let earnedXp = 0;
+        if (mandatoryCompleted) {
+          earnedXp += activeDiff.xpComplete; // 100+
+          earnedXp += 25; // Target bins
+          if (withinDeadline) earnedXp += 30; // Deadline
+          if (noCollisions) earnedXp += 20; // Zero collisions
+          if (allBinsDone) earnedXp += 40; // Optional all bins
+        } else {
+          earnedXp = Math.min(20, binsEmptied * 5); // Partial failed progress
+        }
+
+        // Apply XP progression
+        addDriverExperience(earnedXp);
+
+        // Credit Net Coins
+        setGameCoins((prev) => {
+          const next = prev + netCoins;
+          gameCoinsRef.current = next;
+          localStorage.setItem('smartbin_game_coins', next.toString());
+          return next;
+        });
+
+        // Credit Eco-Points for civic app
+        const bonusEcoPts = mandatoryCompleted ? 150 : 40;
         setEcoPoints((prev) => {
-          const next = prev + bonusPts;
+          const next = prev + bonusEcoPts;
           ecoPointsRef.current = next;
           return next;
         });
-        saveCitizenPoints(bonusPts);
+
+        setMissionResultData({
+          success: mandatoryCompleted,
+          tierName: activeDiff.name,
+          binsEmptied,
+          reqBins,
+          allBinsDone,
+          elapsedSec,
+          timeLimitSec,
+          withinDeadline,
+          timeRemaining,
+          collisions: collisionCountRef.current,
+          baseCoins,
+          fullCollectBonus,
+          timeBonus,
+          zeroCrashBonus,
+          collisionPenalties,
+          netCoins,
+          earnedXp,
+          earnedEcoPts: bonusEcoPts,
+          conditionRemaining: truckConditionRef.current
+        });
+
+        playSound('level_up');
         setMissionComplete(true);
-        setNotification(`🏆 SHIFT COMPLETE: All waste processed at Municipal Facility! (+${bonusPts} Bonus Points)`);
+        setNotification(`🏆 Mission Evaluated: +${netCoins} Coins, +${earnedXp} XP, +${bonusEcoPts} Eco-Points!`);
+      }
+
+      // ── TIME LIMIT EXPIRATION (Deadline Failure Trigger) ──
+      const activeDiff = DIFFICULTY_TIERS[difficultyTierRef.current] || DIFFICULTY_TIERS.rookie;
+      if (!missionResultData && !missionComplete && shiftTimeRef.current > (activeDiff.timeLimit + 10)) {
+        // Trigger mission expiration if time passed beyond deadline
+        const binsEmptied = wasteCollectedRef.current;
+        const reqBins = activeDiff.requiredBins || 4;
+        const mandatoryCompleted = binsEmptied >= reqBins;
+        const earnedXp = Math.min(20, binsEmptied * 5);
+        const netCoins = 40; // minimal compensation
+
+        addDriverExperience(earnedXp);
+        setGameCoins((prev) => {
+          const next = prev + netCoins;
+          gameCoinsRef.current = next;
+          localStorage.setItem('smartbin_game_coins', next.toString());
+          return next;
+        });
+
+        setMissionResultData({
+          success: false,
+          failureReason: "Shift Deadline Exceeded!",
+          tierName: activeDiff.name,
+          binsEmptied,
+          reqBins,
+          allBinsDone: false,
+          elapsedSec: Math.floor(shiftTimeRef.current),
+          timeLimitSec: activeDiff.timeLimit,
+          withinDeadline: false,
+          timeRemaining: 0,
+          collisions: collisionCountRef.current,
+          baseCoins: 40,
+          fullCollectBonus: 0,
+          timeBonus: 0,
+          zeroCrashBonus: 0,
+          collisionPenalties: collisionCountRef.current * 10,
+          netCoins,
+          earnedXp,
+          earnedEcoPts: 20,
+          conditionRemaining: truckConditionRef.current
+        });
+        setMissionComplete(true);
+      }
+
+      // Animate Workshop holographic wrench & pedestals
+      if (wrenchHolo) {
+        wrenchHolo.rotation.y += 0.02;
+        wrenchHolo.rotation.x += 0.01;
+      }
+      if (dumpyardBadgeMesh) dumpyardBadgeMesh.rotation.y += 0.02;
+      if (garageBadgeMesh) garageBadgeMesh.rotation.y += 0.02;
+      if (turboTurbine) turboTurbine.rotation.x += 0.08;
+      if (magCoil) magCoil.rotation.z += 0.04;
+
+      // Check Workshop Proximity (At South x: 0, z: 115)
+      const distToWorkshop = Math.hypot(truckGroup.position.x - workshopPos.x, truckGroup.position.z - workshopPos.z);
+      if (distToWorkshop < 14.0) {
+        setIsNearWorkshop(true);
+        isNearWorkshopRef.current = true;
+      } else {
+        setIsNearWorkshop(false);
+        isNearWorkshopRef.current = false;
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -2430,6 +4416,7 @@ export default function LivingCity3D({ onExit }) {
           playerAngle: truckAngle,
           bins: smartBins.map((b) => ({ id: b.id, x: b.x, z: b.z, collected: b.collected, color: b.colorHex })),
           dumpyard: dumpyardPos,
+          workshop: workshopPos,
           traffic: trafficCars.map((tc) => ({ x: tc.x, z: tc.z })),
           target: { x: tgtX, z: tgtZ, label: tgtLabel }
         });
@@ -2485,33 +4472,57 @@ export default function LivingCity3D({ onExit }) {
       }
 
       // ─────────────────────────────────────────────────────────────
-      // 17. CAMERA VIEWS WITH CRASH SCREEN-SHAKE
+      // 17. CAMERA VIEWS (SHOWROOM TURNTABLE VS CITY CHASE / TOPDOWN)
       // ─────────────────────────────────────────────────────────────
-      const tPos = truckGroup.position;
-      let shakeX = 0;
-      let shakeY = 0;
-      if (cameraShakeRef.current > 0) {
-        shakeX = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
-        shakeY = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
-        cameraShakeRef.current = Math.max(0, cameraShakeRef.current - delta * 1.8);
-      }
+      const isShowroom = (gameScreenRef.current === 'garage' || gameScreenRef.current === 'menu');
 
-      if (viewModeRef.current === 'chase') {
-        const camDist = 18;
-        const camHeight = 9.2;
-        const targetCamX = tPos.x - Math.sin(truckAngle) * camDist;
-        const targetCamZ = tPos.z - Math.cos(truckAngle) * camDist;
+      if (isShowroom) {
+        // Slow automatic idle rotation if not dragging
+        if (!isShowroomDraggingRef.current) {
+          showroomAngleRef.current += delta * 0.45;
+        }
 
-        camera.position.x += (targetCamX - camera.position.x) * 0.1 + shakeX;
-        camera.position.y += (tPos.y + camHeight - camera.position.y) * 0.1 + shakeY;
-        camera.position.z += (targetCamZ - camera.position.z) * 0.1;
-        camera.lookAt(tPos.x, tPos.y + 2, tPos.z);
-      } else if (viewModeRef.current === 'isometric') {
-        camera.position.set(tPos.x + 36 + shakeX, 44 + shakeY, tPos.z + 36);
-        camera.lookAt(tPos.x, tPos.y, tPos.z);
+        // Dr. Driving Garage Showroom Turntable
+        const angle = showroomAngleRef.current;
+        const camDistance = 8.8;
+        const camElevation = 2.8;
+
+        // Position camera around the truck centered at origin
+        camera.position.x = Math.sin(angle) * camDistance;
+        camera.position.y = camElevation;
+        camera.position.z = Math.cos(angle) * camDistance;
+        camera.lookAt(0, 1.3, 0);
+
+        // Keep truck group centered on the turntable in garage view
+        truckGroup.position.set(0, 0, 0);
+        truckGroup.rotation.y = 0;
       } else {
-        camera.position.set(tPos.x + shakeX, 85 + shakeY, tPos.z + 0.1);
-        camera.lookAt(tPos.x, tPos.y, tPos.z);
+        const tPos = truckGroup.position;
+        let shakeX = 0;
+        let shakeY = 0;
+        if (cameraShakeRef.current > 0) {
+          shakeX = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
+          shakeY = (Math.random() - 0.5) * cameraShakeRef.current * 2.5;
+          cameraShakeRef.current = Math.max(0, cameraShakeRef.current - delta * 1.8);
+        }
+
+        if (viewModeRef.current === 'chase') {
+          const camDist = 18;
+          const camHeight = 9.2;
+          const targetCamX = tPos.x - Math.sin(truckAngle) * camDist;
+          const targetCamZ = tPos.z - Math.cos(truckAngle) * camDist;
+
+          camera.position.x += (targetCamX - camera.position.x) * 0.1 + shakeX;
+          camera.position.y += (tPos.y + camHeight - camera.position.y) * 0.1 + shakeY;
+          camera.position.z += (targetCamZ - camera.position.z) * 0.1;
+          camera.lookAt(tPos.x, tPos.y + 2, tPos.z);
+        } else if (viewModeRef.current === 'isometric') {
+          camera.position.set(tPos.x + 36 + shakeX, 44 + shakeY, tPos.z + 36);
+          camera.lookAt(tPos.x, tPos.y, tPos.z);
+        } else {
+          camera.position.set(tPos.x + shakeX, 85 + shakeY, tPos.z + 0.1);
+          camera.lookAt(tPos.x, tPos.y, tPos.z);
+        }
       }
 
       renderer.render(scene, camera);
@@ -2550,159 +4561,148 @@ export default function LivingCity3D({ onExit }) {
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
       {/* ─────────────────────────────────────────────────────────────
-          TOP STATUS BAR & DRIVER CONTROLS
+      {/* ─────────────────────────────────────────────────────────────
+          TOP STATUS BAR & DRIVER CONTROLS (Rendered in City Mode)
+          User instruction: "upar m bahut sare bars ho gaye unko hata k sirf player nam aur points dikha"
           ───────────────────────────────────────────────────────────── */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-20">
-        
-        {/* Left: Brand Badge & Mode Switcher */}
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-white/10 flex items-center gap-3 text-white">
-            <div className="w-8 h-8 rounded-xl bg-emerald-700 flex items-center justify-center font-black">
-              <Truck size={18} className="text-white" />
+      {gameScreen === 'city' && (
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-20">
+          
+          {/* Left: Player Profile & Dual Currency Badge */}
+          <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3 text-white">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600/30 border border-emerald-500/50 flex items-center justify-center font-black text-emerald-400">
+              <User size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-white text-xs sm:text-sm">SmartBin Fleet</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">
-                  0-30 KM/H
+                <span className="font-extrabold text-sm text-white">{getCitizenUser()?.name || 'Citizen Driver'}</span>
+                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                  Lvl {citizenLevel}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9px] text-slate-400 font-bold uppercase">
-                  {gameMode === 'game' ? 'Buildings Audited:' : 'Features Found:'}
+              <div className="flex items-center gap-3 text-xs mt-0.5">
+                <span className="text-amber-400 font-black flex items-center gap-1" title="Game Coins for Truck Upgrades & Workshop">
+                  <span>🪙</span>
+                  <span>{gameCoins}</span>
+                  <span className="text-[9px] text-amber-500/90 font-bold uppercase">Coins</span>
                 </span>
-                <span className="text-[10px] font-extrabold text-[#e2fd00]">
-                  {gameMode === 'game' ? `${surveyedBuildings.length} / ${CITY_BUILDINGS_DATA.length}` : `${discoveredFeatures.length} / 6`}
+                <span className="text-slate-600">|</span>
+                <span className="text-[#e2fd00] font-black flex items-center gap-1" title="Eco-Points for Citizen Voucher Redemption">
+                  <span>🌱</span>
+                  <span>{ecoPoints}</span>
+                  <span className="text-[9px] text-emerald-400/90 font-bold uppercase">Eco-Pts</span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Mode Switch: Normal Mode vs Game Mode */}
-          <div className="bg-slate-900/95 backdrop-blur-md p-1 rounded-2xl shadow-xl border border-white/10 flex items-center gap-1">
-            <button
-              onClick={() => handleToggleGameMode('normal')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                gameMode === 'normal'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Truck size={13} />
-              <span>Normal Mode</span>
-            </button>
-
-            <button
-              onClick={() => handleToggleGameMode('game')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                gameMode === 'game'
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                  : 'text-slate-400 hover:text-amber-400'
-              }`}
-            >
-              <Gamepad2 size={13} />
-              <span>Game Mode</span>
-              {gameMode === 'game' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping ml-0.5" />
-              )}
-            </button>
-          </div>
-
-          {/* Citizen Status Pill (When logged in) */}
-          {(() => {
-            const citizen = getCitizenUser();
-            if (!citizen) return null;
-            return (
-              <div className="hidden lg:flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-[11px] text-white">
-                <User size={13} className="text-emerald-400" />
-                <span className="font-bold text-slate-300">{citizen.name || 'Citizen'}</span>
-                <span className="text-[#e2fd00] font-black">+{ecoPoints} Pts</span>
+          {/* Center: Live Active Shift Timer, XP Progression & Truck Condition */}
+          <div className="pointer-events-auto flex items-center gap-3">
+            {/* Shift Timer & Difficulty */}
+            <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-2.5 text-white">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <Timer size={16} />
               </div>
-            );
-          })()}
-        </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded" style={{ backgroundColor: `${DIFFICULTY_TIERS[difficultyTier]?.color || '#22c55e'}30`, color: DIFFICULTY_TIERS[difficultyTier]?.color || '#22c55e' }}>
+                    {DIFFICULTY_TIERS[difficultyTier]?.name || 'Rookie'}
+                  </span>
+                </div>
+                <span className="font-black text-sm text-amber-400 tracking-wider">
+                  {String(Math.floor(shiftTime / 60)).padStart(2, '0')}:{String(shiftTime % 60).padStart(2, '0')}
+                  <span className="text-[10px] text-slate-400 font-semibold ml-1">/ {Math.floor((DIFFICULTY_TIERS[difficultyTier]?.timeLimit || 300) / 60)}m</span>
+                </span>
+              </div>
+            </div>
 
-        {/* Center: Real-time Notification Banner */}
-        <div className="hidden md:flex items-center gap-2.5 bg-slate-900/90 text-white px-5 py-2.5 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md text-xs pointer-events-auto max-w-lg truncate">
-          <Sparkles size={14} className="text-[#e2fd00] shrink-0 animate-spin" />
-          <span className="font-bold text-slate-200">{notification}</span>
-        </div>
+            {/* Driver Level XP Progress Bar */}
+            <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-2xl border border-white/10 text-white min-w-[140px] hidden md:block">
+              <div className="flex items-center justify-between text-[10px] mb-1">
+                <span className="font-bold text-slate-400">Level {citizenLevel} XP</span>
+                <span className="font-black text-cyan-400">{levelXP} / {getRequiredXp(citizenLevel)}</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-cyan-500 to-blue-400 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (levelXP / getRequiredXp(citizenLevel)) * 100)}%` }}
+                />
+              </div>
+            </div>
 
-        {/* Right Controls */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-lg flex gap-1">
-            <button
-              onClick={() => setViewMode('chase')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'chase' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Chase
-            </button>
-            <button
-              onClick={() => setViewMode('isometric')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'isometric' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Isometric
-            </button>
-            <button
-              onClick={() => setViewMode('topdown')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'topdown' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Satellite
-            </button>
+            {/* Truck Chassis Condition Meter */}
+            <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-2xl border border-white/10 text-white min-w-[130px] hidden sm:block">
+              <div className="flex items-center justify-between text-[10px] mb-1">
+                <span className="font-bold text-slate-400 flex items-center gap-1">
+                  <span>🛡️</span>
+                  <span>Chassis</span>
+                </span>
+                <span className={`font-black ${truckCondition > 70 ? 'text-emerald-400' : truckCondition > 35 ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {truckCondition}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${truckCondition > 70 ? 'bg-emerald-400' : truckCondition > 35 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                  style={{ width: `${truckCondition}%` }}
+                />
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="w-10 h-10 rounded-2xl bg-slate-900/90 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 transition shadow-lg cursor-pointer"
-            title="Toggle Audio"
-          >
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} className="text-rose-400" />}
-          </button>
+          {/* Right: Garage Quick-Switch, Pause, Audio & Exit */}
+          <div className="pointer-events-auto flex items-center gap-2">
+            <button
+              onClick={() => {
+                const curIdx = truckKeysList.indexOf(selectedTruckModel);
+                setPreviewTruckIndex(curIdx >= 0 ? curIdx : 0);
+                previewTruckIndexRef.current = curIdx >= 0 ? curIdx : 0;
+                applyTruckModelVisualsRef.current?.(selectedTruckModel);
+                setGameScreen('garage');
+                gameScreenRef.current = 'garage';
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/80 border border-white/10 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+              title="Open 3D Truck Garage"
+            >
+              <Truck size={14} />
+              <span className="hidden sm:inline">Garage</span>
+            </button>
 
-          {/* Truck Garage Shop Button */}
-          <button
-            onClick={() => setShowGarageShop(true)}
-            className="px-3.5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg transition active:scale-95 cursor-pointer"
-            title="Truck Shop: Buy new trucks with Eco-Points!"
-          >
-            <ShoppingBag size={15} />
-            <span className="hidden sm:inline">Truck Shop</span>
-          </button>
+            <button
+              onClick={() => {
+                setIsPaused((p) => {
+                  const nextP = !p;
+                  isPausedRef.current = nextP;
+                  return nextP;
+                });
+              }}
+              className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+              title="Pause Game [Esc]"
+            >
+              <span>⏸</span>
+              <span className="hidden sm:inline">Pause</span>
+            </button>
 
-          <button
-            onClick={() => setShowHelp(true)}
-            className="w-10 h-10 rounded-2xl bg-slate-900/90 border border-white/10 text-white flex items-center justify-center hover:bg-slate-800 transition shadow-lg cursor-pointer"
-            title="Controls & Mission Guide"
-          >
-            <HelpCircle size={16} />
-          </button>
-
-          {/* If Game Mode: Immediate Sign Out Button */}
-          {gameMode === 'game' ? (
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="w-9 h-9 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer shadow-lg"
+              title="Toggle Audio"
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} className="text-rose-400" />}
+            </button>
+            
             <button
               onClick={handleSignOutImmediate}
-              className="px-4 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs uppercase shadow-lg transition hover:scale-105 cursor-pointer flex items-center gap-1.5"
-              title="Sign Out from Game Mode session immediately"
+              className="px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-rose-950/80 border border-white/10 hover:border-rose-500/50 text-slate-300 hover:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+              title="Exit / Sign Out"
             >
               <LogOut size={14} />
-              <span>Sign Out</span>
+              <span className="hidden sm:inline">Exit</span>
             </button>
-          ) : (
-            <button
-              onClick={onExit}
-              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs uppercase shadow-lg transition hover:scale-105 cursor-pointer"
-            >
-              Exit Sim
-            </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           HOLD LEFT-CLICK INTERACTIVE PROMPT (When worker reaches bin)
@@ -2850,90 +4850,63 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          GAME MODE: GTA-STYLE BUILDING & COMPONENT INSPECTION HUD
+          BUILDING INSPECTION NOTIFICATION TOAST
+          User instruction: "ye aaise upar mat khol notification type kar"
           ───────────────────────────────────────────────────────────── */}
-      {gameMode === 'game' && activeBuildingInfo && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 max-w-xl w-[92%] sm:w-auto bg-slate-950/95 text-white p-4 sm:p-5 rounded-3xl border-2 border-[#e2fd00] shadow-[0_0_30px_rgba(226,253,0,0.3)] backdrop-blur-xl z-30 animate-in slide-in-from-top-4 pointer-events-auto">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-md"
-                style={{
-                  backgroundColor:
-                    activeBuildingInfo.category === 'garden' ? '#15803d' :
-                    activeBuildingInfo.category === 'cafe' ? '#b45309' :
-                    activeBuildingInfo.category === 'residential' ? '#059669' :
-                    activeBuildingInfo.category === 'landfill' ? '#0f766e' : '#0284c7'
-                }}
-              >
-                {activeBuildingInfo.category === 'garden' && <Trees size={22} />}
-                {activeBuildingInfo.category === 'cafe' && <Coffee size={22} />}
-                {activeBuildingInfo.category === 'residential' && <Home size={22} />}
-                {activeBuildingInfo.category === 'landfill' && <Flame size={22} />}
-                {activeBuildingInfo.category === 'corporate' && <Building2 size={22} />}
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-[#e2fd00] text-slate-950 tracking-wider">
-                    {activeBuildingInfo.tag}
-                  </span>
-                  <span className="text-[11px] font-bold text-emerald-400">
-                    +{activeBuildingInfo.points} Eco-Points
-                  </span>
-                </div>
-                <h4 className="font-black text-base sm:text-lg text-white leading-tight mt-0.5">
-                  {activeBuildingInfo.name}
-                </h4>
-              </div>
+      {gameMode === 'game' && activeBuildingInfo && !showBuildingPieceModal && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto animate-in slide-in-from-bottom-2">
+          <div className="bg-slate-950/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border-2 border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.4)] flex items-center gap-3 text-white">
+            <span className="text-base">🏢</span>
+            <div className="text-left">
+              <span className="text-[9px] text-amber-400 font-extrabold uppercase tracking-wider block">
+                NEARBY ZONE AUDIT (+{activeBuildingInfo.points} PTS)
+              </span>
+              <span className="text-xs font-black text-white">
+                {activeBuildingInfo.name}
+              </span>
             </div>
-
+            <button
+              onClick={() => setShowBuildingPieceModal(activeBuildingInfo)}
+              className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase shadow transition cursor-pointer flex items-center gap-1"
+            >
+              <span>Inspect</span>
+              <span className="hidden sm:inline bg-slate-900/30 px-1 rounded text-[10px]">[E]</span>
+            </button>
             <button
               onClick={() => setActiveBuildingInfo(null)}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+              className="p-1 text-slate-400 hover:text-white cursor-pointer"
             >
-              <X size={16} />
+              ✕
             </button>
           </div>
+        </div>
+      )}
 
-          <div className="mt-3 space-y-2 text-xs text-slate-300">
-            <p className="leading-relaxed">
-              {activeBuildingInfo.desc}
-            </p>
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3 py-2 rounded-xl border border-white/5 text-[11px]">
-              <span className="text-slate-400">
-                Segregation: <strong className="text-white">{activeBuildingInfo.segregation}</strong>
-              </span>
-              <span className="text-[#e2fd00] font-black">
-                Audited: {surveyedBuildings.length} / {CITY_BUILDINGS_DATA.length} City Zones
-              </span>
-            </div>
+      {/* ─────────────────────────────────────────────────────────────
+          WORKSHOP BAY INTERACTIVE PROMPT (At South x: 0, z: 115)
+          User instruction: "shop game m bana de eak jagah waha p disply m truck k parts dikha"
+          ───────────────────────────────────────────────────────────── */}
+      {isNearWorkshop && !showGarageShop && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto animate-in zoom-in-95 flex items-center gap-3">
+          <button
+            onClick={() => {
+              setGameScreen('garage');
+              gameScreenRef.current = 'garage';
+              playSound('horn');
+            }}
+            className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.6)] flex items-center gap-2.5 active:scale-95 transition cursor-pointer uppercase"
+          >
+            <span className="text-base">🚗</span>
+            <span>[ PRESS E / CLICK ] ENTER 3D GARAGE</span>
+          </button>
 
-            {/* Click to open interactive piece button */}
-            <div className="pt-2 flex items-center justify-between gap-3">
-              <button
-                onClick={() => setShowBuildingPieceModal(activeBuildingInfo)}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition active:scale-95 cursor-pointer"
-              >
-                <Sparkles size={14} />
-                <span>
-                  {activeBuildingInfo.category === 'cafe' ? 'Open Cafe Composting & Voucher Hub' :
-                   activeBuildingInfo.category === 'residential' ? 'Open Housing Society Waste Tracker' :
-                   activeBuildingInfo.category === 'garden' ? 'Open Park Irrigation & Fountain Telemetry' :
-                   activeBuildingInfo.category === 'landfill' ? 'Open Landfill Salvage & Scrap Station' :
-                   activeBuildingInfo.id === 'block-16' ? 'Open Citizen Rewards Redemption' :
-                   'Open Municipal Fleet GIS Module'}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setActiveBuildingInfo(null)}
-                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
-              >
-                Keep Driving
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => setShowGarageShop(true)}
+            className="bg-slate-950/95 border-2 border-[#e2fd00] text-white px-4 py-2.5 rounded-2xl shadow-[0_0_20px_rgba(226,253,0,0.4)] flex items-center gap-2 active:scale-95 transition cursor-pointer font-black text-xs"
+          >
+            <span>🛠️</span>
+            <span>[ Q ] PARTS WORKSHOP</span>
+          </button>
         </div>
       )}
 
@@ -2988,7 +4961,7 @@ export default function LivingCity3D({ onExit }) {
                     email: "citizen@smartbin.cg.gov.in",
                     role: "citizen",
                     city: "Durg-Bhilai",
-                    eco_points: 250
+                    eco_points: 0
                   };
                   localStorage.setItem('smartbin_user', JSON.stringify(demoCitizen));
                   setShowLoginModal(false);
@@ -3023,49 +4996,164 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MISSION COMPLETE / SHIFT VICTORY MODAL
+          MISSION RESULTS & DRIVER EVALUATION SCREEN (STEP 9 SPEC)
           ───────────────────────────────────────────────────────────── */}
       {missionComplete && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-emerald-500 rounded-3xl p-8 max-w-lg w-full shadow-2xl text-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-[#e2fd00] flex items-center justify-center mx-auto">
-              <Award size={44} className="animate-bounce" />
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl text-center space-y-5 text-white max-h-[92vh] overflow-y-auto">
+            
+            {/* Status Icon & Title */}
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${missionResultData?.success !== false ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'}`}>
+              {missionResultData?.success !== false ? <Award size={36} className="animate-bounce" /> : <AlertTriangle size={36} />}
             </div>
+
             <div>
-              <h2 className="text-2xl font-black text-white">🏆 MUNICIPAL SHIFT COMPLETED!</h2>
-              <p className="text-slate-400 text-xs mt-1">
-                All SmartBins emptied, platform features audited, and waste delivered to Central Landfill & Salvage Yard.
+              <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ backgroundColor: `${DIFFICULTY_TIERS[difficultyTier]?.color || '#22c55e'}25`, color: DIFFICULTY_TIERS[difficultyTier]?.color || '#22c55e' }}>
+                {missionResultData?.tierName || DIFFICULTY_TIERS[difficultyTier]?.name} MISSION
+              </div>
+              <h2 className="text-2xl font-black text-white">
+                {missionResultData?.success !== false ? '🎉 MISSION COMPLETED!' : '⚠️ MISSION INCOMPLETE'}
+              </h2>
+              <p className="text-slate-300 text-xs mt-1">
+                {missionResultData?.failureReason || 'Municipal waste collection evaluated against operational deadlines and safety protocols.'}
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-3 bg-slate-800/80 p-4 rounded-2xl text-white">
+
+            {/* Performance Overview Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-950/80 p-3.5 rounded-2xl border border-white/10 text-center">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-bold block">Bins Cleaned</span>
-                <span className="text-xl font-black text-emerald-400">{wasteCollected} / {totalBins}</span>
+                <span className="text-base font-black text-emerald-400">
+                  {missionResultData?.binsEmptied || wasteCollected} / {missionResultData?.reqBins || 4}
+                </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Points Earned</span>
-                <span className="text-xl font-black text-[#e2fd00]">+{ecoPoints}</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Time Taken</span>
+                <span className={`text-base font-black ${missionResultData?.withinDeadline ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {missionResultData?.elapsedSec || shiftTime}s
+                </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">City Rating</span>
-                <span className="text-xl font-black text-amber-400">⭐⭐⭐⭐⭐</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Collisions</span>
+                <span className={`text-base font-black ${(missionResultData?.collisions || 0) === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {missionResultData?.collisions || 0}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Chassis Cond.</span>
+                <span className={`text-base font-black ${truckCondition > 70 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {truckCondition}%
+                </span>
               </div>
             </div>
-            <div className="flex gap-3">
+
+            {/* Economy & XP Reward Breakdown Formula (Net Coins Formula) */}
+            <div className="bg-slate-950/90 p-4 rounded-2xl border border-white/10 space-y-2 text-left text-xs">
+              <div className="flex items-center justify-between text-slate-400 font-bold border-b border-slate-800 pb-1.5">
+                <span>REWARDS & PENALTIES BREAKDOWN</span>
+                <span className="text-amber-400 font-black">FORMULA</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Base Mission Reward:</span>
+                <span className="font-bold text-white">+{missionResultData?.baseCoins || 200} Coins</span>
+              </div>
+              {(missionResultData?.fullCollectBonus || 0) > 0 && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>Full Collection Target Bonus:</span>
+                  <span className="font-bold">+{missionResultData?.fullCollectBonus} Coins</span>
+                </div>
+              )}
+              {(missionResultData?.timeBonus || 0) > 0 && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>Deadline Completion Bonus:</span>
+                  <span className="font-bold">+{missionResultData?.timeBonus} Coins</span>
+                </div>
+              )}
+              {(missionResultData?.zeroCrashBonus || 0) > 0 && (
+                <div className="flex justify-between text-purple-400">
+                  <span>Zero Collision Clean Bonus:</span>
+                  <span className="font-bold">+{missionResultData?.zeroCrashBonus} Coins</span>
+                </div>
+              )}
+              {(missionResultData?.collisionPenalties || 0) > 0 && (
+                <div className="flex justify-between text-rose-400">
+                  <span>Collision Damage Penalties:</span>
+                  <span className="font-bold">-{missionResultData?.collisionPenalties} Coins</span>
+                </div>
+              )}
+              <div className="border-t border-slate-800 pt-2 flex justify-between items-center text-sm font-black">
+                <span className="text-white">NET REWARD:</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-cyan-400">+{missionResultData?.earnedXp || 0} XP</span>
+                  <span className="text-amber-400">🪙 +{missionResultData?.netCoins || 100} Coins</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Driver Progression Status Bar */}
+            <div className="bg-slate-950/80 p-3 rounded-2xl border border-white/10 text-left">
+              <div className="flex justify-between text-xs font-bold mb-1">
+                <span className="text-white">Driver Level {citizenLevel} Progress:</span>
+                <span className="text-cyan-400">{levelXP} / {getRequiredXp(citizenLevel)} XP</span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (levelXP / getRequiredXp(citizenLevel)) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Repair Truck Prompt if Damaged */}
+            {truckCondition < 100 && (
+              <div className="bg-amber-950/40 border border-amber-500/30 p-3 rounded-2xl flex items-center justify-between text-left text-xs">
+                <div>
+                  <span className="text-amber-400 font-bold block">Chassis Damaged ({truckCondition}%)</span>
+                  <span className="text-slate-400 text-[11px]">Restore condition to remove performance penalties</span>
+                </div>
+                <button
+                  onClick={repairTruckInGarage}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer"
+                >
+                  Repair (-{(100 - truckCondition) * (DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1)} Coins)
+                </button>
+              </div>
+            )}
+
+            {/* Action Buttons: Retry / Garage / Dashboard */}
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
               <button
                 onClick={() => {
                   setMissionComplete(false);
+                  setMissionResultData(null);
+                  setWasteCollected(0);
+                  wasteCollectedRef.current = 0;
+                  setShiftTime(0);
+                  shiftTimeRef.current = 0;
+                  setCollisionCount(0);
+                  collisionCountRef.current = 0;
                   handleManualRespawn();
                 }}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase rounded-xl shadow-md cursor-pointer transition active:scale-95"
               >
                 Start New Shift
               </button>
               <button
-                onClick={onExit}
-                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
+                onClick={() => {
+                  setMissionComplete(false);
+                  setMissionResultData(null);
+                  setGameScreen('garage');
+                  gameScreenRef.current = 'garage';
+                }}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs uppercase rounded-xl shadow-md cursor-pointer transition active:scale-95"
               >
-                Return to Dashboard
+                Go to Garage
+              </button>
+              <button
+                onClick={onExit}
+                className="sm:w-32 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white font-black text-xs uppercase rounded-xl border border-white/10 cursor-pointer transition"
+              >
+                App Dashboard
               </button>
             </div>
           </div>
@@ -3075,8 +5163,9 @@ export default function LivingCity3D({ onExit }) {
       {/* ─────────────────────────────────────────────────────────────
           GTA-STYLE CIRCULAR MINI-MAP RADAR HUD (Bottom-Left)
           Fixed Arrow in Center (Always Points Up), Map Rotates Underneath!
+          (Rendered only in City driving mode)
           ───────────────────────────────────────────────────────────── */}
-      {(() => {
+      {gameScreen === 'city' && (() => {
         const mapRotationDeg = 180 + (radarData.playerAngle * 180 / Math.PI);
         const northAngleDeg = (180 + (radarData.playerAngle * 180 / Math.PI)) % 360;
 
@@ -3150,9 +5239,21 @@ export default function LivingCity3D({ onExit }) {
                     <circle cx="-23" cy="-23" r="4" fill="#38bdf8" />
                     <circle cx="23" cy="23" r="4" fill="#38bdf8" />
 
-                    {/* Dumpyard Salvage Landfill */}
-                    <rect x="-24" y="-132" width="48" height="28" fill="#0f766e" rx="4" stroke="#14b8a6" strokeWidth="1" />
-                    <circle cx={radarData.dumpyard.x} cy={radarData.dumpyard.z} r="5" fill="#10b981" />
+                    {/* Dumpyard Salvage Landfill Ground Pad */}
+                    <rect x="-24" y="-132" width="48" height="28" fill="#064e3b" rx="4" stroke="#10b981" strokeWidth="1.2" />
+                    {/* GTA-STYLE BLIP: DUMPYARD 'D' (Always counter-rotates so letter D stays upright!) */}
+                    <g transform={`translate(${radarData.dumpyard.x}, ${radarData.dumpyard.z}) rotate(${-mapRotationDeg})`}>
+                      <circle cx="0" cy="0" r="7.8" fill="#10b981" stroke="#ffffff" strokeWidth="1.6" />
+                      <text cx="0" cy="0.5" textAnchor="middle" dominantBaseline="central" fill="#ffffff" fontSize="9.5" fontWeight="900" fontFamily="system-ui, sans-serif">D</text>
+                    </g>
+
+                    {/* Garage Showroom Apron Pad */}
+                    <rect x="-22" y="103" width="44" height="26" fill="#1e1b4b" rx="4" stroke="#f59e0b" strokeWidth="1.2" />
+                    {/* GTA-STYLE BLIP: GARAGE 'G' (Always counter-rotates so letter G stays upright!) */}
+                    <g transform={`translate(${radarData.workshop?.x || 0}, ${radarData.workshop?.z || 115}) rotate(${-mapRotationDeg})`}>
+                      <circle cx="0" cy="0" r="7.8" fill="#f59e0b" stroke="#000000" strokeWidth="1.6" />
+                      <text cx="0" cy="0.5" textAnchor="middle" dominantBaseline="central" fill="#000000" fontSize="9.5" fontWeight="900" fontFamily="system-ui, sans-serif">G</text>
+                    </g>
 
                     {/* AI Traffic Cars */}
                     {radarData.traffic.map((tc, idx) => (
@@ -3229,49 +5330,51 @@ export default function LivingCity3D({ onExit }) {
       })()}
 
       {/* ─────────────────────────────────────────────────────────────
-          BOTTOM STATUS & SPEEDOMETER
+          BOTTOM STATUS & SPEEDOMETER (Rendered in City Mode)
           ───────────────────────────────────────────────────────────── */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-4 pointer-events-none z-20">
-        
-        {/* Speedometer (Strictly 0 - 30 KM/H) */}
-        <div className="bg-slate-900/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-white/10 flex items-center gap-4 pointer-events-auto text-white">
-          <div className="text-center">
-            <span className="text-3xl font-black text-white tracking-tight">{currentSpeed}</span>
-            <span className="text-[10px] text-slate-400 font-bold block uppercase">KM / H (MAX 30)</span>
-          </div>
-          <div className="h-8 w-[1px] bg-slate-800" />
-          <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Governor Speed Cap</p>
-            <p className="font-extrabold text-xs text-emerald-400">Finite 30 KM/H Limit</p>
-          </div>
-        </div>
-
-        {/* Waste Load & Eco Points */}
-        <div className="bg-slate-900/95 backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-xl border border-white/10 flex items-center gap-6 pointer-events-auto text-white">
-          <div>
-            <div className="flex items-center justify-between mb-1 text-xs">
-              <span className="font-bold text-slate-300">Truck Load: {currentLoad} / {truckCapacity} kg</span>
-              <span className="font-extrabold text-emerald-400 ml-4">{wasteCollected} / {totalBins} Bins</span>
+      {gameScreen === 'city' && (
+        <div className="absolute bottom-6 right-6 flex items-center gap-4 pointer-events-none z-20">
+          
+          {/* Speedometer */}
+          <div className="bg-slate-900/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-white/10 flex items-center gap-4 pointer-events-auto text-white">
+            <div className="text-center">
+              <span className="text-3xl font-black text-white tracking-tight">{currentSpeed}</span>
+              <span className="text-[10px] text-slate-400 font-bold block uppercase">KM / H (MAX {activeTruckConfig.speedKmh})</span>
             </div>
-            <div className="w-40 sm:w-56 h-2.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 transition-all duration-300 rounded-full"
-                style={{ width: `${(currentLoad / truckCapacity) * 100}%` }}
-              />
-            </div>
-          </div>
-          <div className="h-8 w-[1px] bg-slate-800" />
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
-              <Award size={20} />
-            </div>
+            <div className="h-8 w-[1px] bg-slate-800" />
             <div>
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">Eco-Points</span>
-              <span className="text-lg font-black text-white">{ecoPoints}</span>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">{activeTruckConfig.name}</p>
+              <p className="font-extrabold text-xs text-emerald-400">Cap: {activeTruckConfig.speedKmh} KM/H</p>
+            </div>
+          </div>
+
+          {/* Waste Load & Eco Points */}
+          <div className="bg-slate-900/95 backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-xl border border-white/10 flex items-center gap-6 pointer-events-auto text-white">
+            <div>
+              <div className="flex items-center justify-between mb-1 text-xs">
+                <span className="font-bold text-slate-300">Truck Load: {currentLoad} / {truckCapacity} kg</span>
+                <span className="font-extrabold text-emerald-400 ml-4">{wasteCollected} / {totalBins} Bins</span>
+              </div>
+              <div className="w-40 sm:w-56 h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300 rounded-full"
+                  style={{ width: `${(currentLoad / truckCapacity) * 100}%` }}
+                />
+              </div>
+            </div>
+            <div className="h-8 w-[1px] bg-slate-800" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
+                <Award size={20} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">Eco-Points</span>
+                <span className="text-lg font-black text-white">{ecoPoints}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           BUILDING PIECE INTERACTIVE MODAL (When clicking building in Game Mode)
@@ -3337,42 +5440,181 @@ export default function LivingCity3D({ onExit }) {
 
               {/* Piece 2: Role-Specific Action Module */}
               {showBuildingPieceModal.id === 'block-16' ? (
-                <div className="bg-gradient-to-r from-amber-950/60 to-slate-800 p-4 rounded-2xl border border-amber-500/30 space-y-3">
+                <div className="bg-slate-950/80 p-4 rounded-2xl border border-amber-500/30 space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-black text-amber-400 text-xs flex items-center gap-1.5">
-                      <Gift size={14} /> Citizen Rewards Bureau
-                    </span>
-                    <span className="text-[#e2fd00] font-black">{ecoPoints} Points Available</span>
+                    <div>
+                      <span className="font-black text-amber-400 text-sm flex items-center gap-1.5">
+                        <Gift size={16} /> CITIZEN REWARDS VOUCHERS CATALOG
+                      </span>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Redeem civic discounts earned through source segregation and street audits.
+                      </p>
+                    </div>
+                    <div className="bg-emerald-950/80 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-right shrink-0 ml-2">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block">Voucher Wallet</span>
+                      <span className="text-[#e2fd00] font-black text-xs">🌱 {ecoPoints} Eco-Pts</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-tight">
-                    Redeem local discounts for D-Mart grocery vouchers, PVR movie tickets, or free Bilaspur City Bus transit passes!
-                  </p>
-                  <a
-                    href="/dashboard/rewards"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow transition"
-                  >
-                    <span>Open Rewards Voucher Catalog</span>
-                    <ExternalLink size={12} />
-                  </a>
+
+                  {/* Vouchers Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                    {MUNICIPAL_VOUCHERS.map((v) => {
+                      const redeemed = redeemedVouchers.find((r) => r.id === v.id);
+                      const canAfford = ecoPoints >= v.cost;
+
+                      return (
+                        <div
+                          key={v.id}
+                          className={`p-3 rounded-xl border flex flex-col justify-between transition ${
+                            redeemed
+                              ? 'bg-emerald-950/40 border-emerald-500/40'
+                              : 'bg-slate-900 border-white/10'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-black text-xs text-white">{v.brand}</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{v.category}</span>
+                            </div>
+                            <h5 className="font-extrabold text-[11px] text-amber-300">{v.title}</h5>
+                            <p className="text-[10px] text-slate-300 mt-1 leading-tight">{v.desc}</p>
+                          </div>
+
+                          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
+                            {redeemed ? (
+                              <div className="w-full flex items-center justify-between gap-1">
+                                <span className="text-[10px] bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Check size={10} /> REDEEMED
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard?.writeText(redeemed.code);
+                                    setCopiedVoucherCode(redeemed.code);
+                                    setTimeout(() => setCopiedVoucherCode(null), 2000);
+                                  }}
+                                  className="text-[10px] font-mono font-bold bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-emerald-400 flex items-center gap-1 cursor-pointer"
+                                  title="Click to copy voucher promo code"
+                                >
+                                  <Copy size={10} />
+                                  <span>{copiedVoucherCode === redeemed.code ? 'COPIED!' : redeemed.code}</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-[11px] font-black text-[#e2fd00]">🌱 {v.cost} Pts</span>
+                                <button
+                                  disabled={!canAfford}
+                                  onClick={() => {
+                                    if (canAfford) {
+                                      const nextPts = ecoPoints - v.cost;
+                                      setEcoPoints(nextPts);
+                                      ecoPointsRef.current = nextPts;
+                                      saveCitizenPoints(-v.cost);
+                                      const generatedCode = `${v.codePrefix}${Math.floor(1000 + Math.random() * 9000)}`;
+                                      const updated = [...redeemedVouchers, { id: v.id, code: generatedCode, date: new Date().toLocaleDateString(), brand: v.brand, title: v.title }];
+                                      setRedeemedVouchers(updated);
+                                      localStorage.setItem('smartbin_redeemed_vouchers', JSON.stringify(updated));
+                                      playSound('collect');
+                                      setNotification(`🎉 Claimed ${v.title}! Promo Code: ${generatedCode}`);
+                                    }
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase transition cursor-pointer ${
+                                    canAfford
+                                      ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow'
+                                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {canAfford ? 'Redeem Voucher' : `Need ${v.cost - ecoPoints} Pts`}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* More Rewards Coming Soon Banner (User requested) */}
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-dashed border-amber-500/40 text-center space-y-1">
+                    <div className="flex items-center justify-center gap-1.5 text-amber-400 font-black text-xs uppercase tracking-wider">
+                      <Sparkles size={13} />
+                      <span>More Rewards Coming Soon...</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      Upcoming partnerships with Reliance Smart Superstore, Indian Oil Clean Fuel, and IRCTC Rail Credits!
+                    </p>
+                  </div>
+                </div>
+              ) : showBuildingPieceModal.id === 'block-10' ? (
+                /* Block 10: SmartBin GIS Fleet Command HQ */
+                <div className="bg-slate-950/80 p-4 rounded-2xl border border-sky-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-sky-400 text-xs flex items-center gap-1.5">
+                      <Cpu size={14} /> C++ VRP Fleet Routing & IoT LoRa Telemetry
+                    </span>
+                    <span className="text-emerald-400 font-extrabold text-[11px]">GIS Mesh Online</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-white/5">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold block">Fuel Saved</span>
+                      <strong className="text-emerald-400 text-sm">3.4 Litres</strong>
+                    </div>
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-white/5">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold block">CO2 Diverted</span>
+                      <strong className="text-sky-400 text-sm">24.2 kg</strong>
+                    </div>
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-white/5">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold block">VRP Runtime</span>
+                      <strong className="text-amber-400 text-sm">1.8 ms (C++)</strong>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-slate-400 font-bold text-[10px] uppercase">Live City Bin Fill Status (LoRa Sensors):</span>
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      {['Spot #1: 78%', 'Spot #2: 92%', 'Spot #3: 45%', 'Spot #4: 64%', 'Spot #5: 88%', 'Spot #6: 55%'].map((st, i) => (
+                        <div key={i} className="bg-slate-900/90 px-2 py-1 rounded text-slate-300 font-bold border border-white/5 flex items-center justify-between">
+                          <span>{st.split(':')[0]}</span>
+                          <span className="text-emerald-400">{st.split(':')[1]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : showBuildingPieceModal.category === 'cafe' ? (
                 <div className="bg-gradient-to-r from-emerald-950/60 to-slate-800 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-black text-emerald-400 text-xs flex items-center gap-1.5">
-                      <Coffee size={14} /> Commercial Food Waste Composter
+                      <Coffee size={14} /> Commercial Food Waste Composter & Biogas
                     </span>
                     <span className="text-emerald-300 font-bold text-[11px]">32 kg Daily Scrap</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-slate-900/80 p-2 rounded-xl">
+                    <div className="bg-slate-900/80 p-2.5 rounded-xl border border-white/5">
                       <span className="text-slate-400 block text-[9px] uppercase font-bold">Biogas Diverted</span>
-                      <strong className="text-white">100% Organic</strong>
+                      <strong className="text-white">100% Organic (18.4 m³)</strong>
                     </div>
-                    <div className="bg-slate-900/80 p-2 rounded-xl">
+                    <div className="bg-slate-900/80 p-2.5 rounded-xl border border-white/5">
                       <span className="text-slate-400 block text-[9px] uppercase font-bold">Customer Discount</span>
-                      <strong className="text-[#e2fd00]">10% Off with QR</strong>
+                      <strong className="text-[#e2fd00]">10% Off with QR Stamp</strong>
+                    </div>
+                  </div>
+                </div>
+              ) : showBuildingPieceModal.category === 'residential' ? (
+                <div className="bg-slate-900/80 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-emerald-400 text-xs flex items-center gap-1.5">
+                      <Home size={14} /> Decentralized Housing Society Waste Tracker
+                    </span>
+                    <span className="text-emerald-300 font-bold text-[11px]">94% Source Segregated</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-slate-950/80 p-2.5 rounded-xl border border-white/5">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Rotary Composter</span>
+                      <strong className="text-white">Active Aerobic Drum (54°C)</strong>
+                    </div>
+                    <div className="bg-slate-950/80 p-2.5 rounded-xl border border-white/5">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Civic Rebate</span>
+                      <strong className="text-[#e2fd00]">5% Municipal Tax Credit</strong>
                     </div>
                   </div>
                 </div>
@@ -3380,10 +5622,10 @@ export default function LivingCity3D({ onExit }) {
                 <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-white/5 space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-slate-400 font-bold">IoT Ultrasonic Telemetry:</span>
-                    <span className="text-[#e2fd00] font-black">Connected (LoRa Grid)</span>
+                    <span className="text-[#e2fd00] font-black">Connected (LoRaWAN Grid)</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400 font-bold">Earned Exploration XP:</span>
+                    <span className="text-slate-400 font-bold">Earned Exploration Credit:</span>
                     <span className="text-emerald-400 font-black">+{showBuildingPieceModal.points} Eco-Points Credited</span>
                   </div>
                 </div>
@@ -3403,172 +5645,681 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          TRUCK FLEET SHOP & VECTOR AURA GARAGE MODAL
-          Buy new trucks with Eco-Points, unlock higher capacity & unique vector field powers!
+          GAME MAIN MENU OVERLAY (gameScreen === 'menu')
+          Standalone 3D Game experience entry hub
+          ───────────────────────────────────────────────────────────── */}
+      {gameScreen === 'menu' && (
+        <div className="absolute inset-0 z-40 flex flex-col justify-between p-6 sm:p-10 pointer-events-none bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/70 backdrop-blur-[2px]">
+          {/* Menu Top Bar */}
+          <div className="flex items-center justify-between pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 border border-emerald-500/50 flex items-center justify-center font-black text-emerald-400 shadow-xl">
+                <Truck size={26} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-wider flex items-center gap-2">
+                  <span>SMARTBIN: 3D CITY RUN</span>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950">GAME</span>
+                </h1>
+                <p className="text-xs text-slate-300">Clean the living city • Master vector forces • Unlock heavy haulers</p>
+              </div>
+            </div>
+
+            {/* Profile & Wallet */}
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3 text-xs">
+                <span className="text-amber-400 font-black flex items-center gap-1">
+                  <span>🪙</span>
+                  <span>{gameCoins}</span>
+                  <span className="text-[9px] uppercase font-bold text-amber-500">Coins</span>
+                </span>
+                <span className="text-slate-600">|</span>
+                <span className="text-[#e2fd00] font-black flex items-center gap-1">
+                  <span>🌱</span>
+                  <span>{ecoPoints}</span>
+                  <span className="text-[9px] uppercase font-bold text-emerald-400">Eco-Pts</span>
+                </span>
+              </div>
+              <button
+                onClick={onExit}
+                className="px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-rose-950/80 border border-white/10 hover:border-rose-500/50 text-slate-300 hover:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+                title="Return to SmartBin Municipal App"
+              >
+                <LogOut size={14} />
+                <span className="hidden sm:inline">Exit to App</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Menu Center Deck: Difficulty Tiers & Driver Progression */}
+          <div className="max-w-2xl mx-auto w-full pointer-events-auto my-auto space-y-4">
+            {/* Driver Profile & XP Progress Card */}
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 text-white shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-black text-xl shadow-lg shrink-0">
+                  {citizenLevel}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-base text-white">Driver Level {citizenLevel}</span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400">
+                      {levelXP} / {getRequiredXp(citizenLevel)} XP
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {getRequiredXp(citizenLevel) - levelXP} XP to Level {citizenLevel + 1} • Earn XP by finishing shifts & safe driving
+                  </p>
+                </div>
+              </div>
+
+              {/* Chassis Condition */}
+              <div className="bg-slate-950/80 px-4 py-2 rounded-2xl border border-white/10 flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="text-right">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block">Truck Condition</span>
+                  <span className={`font-black text-sm ${truckCondition > 70 ? 'text-emerald-400' : truckCondition > 35 ? 'text-amber-400' : 'text-rose-400'}`}>
+                    {truckCondition}% Chassis
+                  </span>
+                </div>
+                {truckCondition < 100 && (
+                  <button
+                    onClick={repairTruckInGarage}
+                    className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition cursor-pointer"
+                  >
+                    Repair
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mission Difficulty Tier Selector (Step 2 Matrix) */}
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 text-white shadow-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400">Select Mission Difficulty Tier</span>
+                <span className="text-[11px] font-bold text-emerald-400">
+                  {DIFFICULTY_TIERS[difficultyTier]?.name} ({DIFFICULTY_TIERS[difficultyTier]?.trafficCount} Cars • {DIFFICULTY_TIERS[difficultyTier]?.timeLimit}s)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {Object.values(DIFFICULTY_TIERS).map((diff) => {
+                  const isSelected = difficultyTier === diff.id;
+                  return (
+                    <button
+                      key={diff.id}
+                      onClick={() => {
+                        setDifficultyTier(diff.id);
+                        difficultyTierRef.current = diff.id;
+                        localStorage.setItem('smartbin_difficulty_tier', diff.id);
+                        playSound('horn');
+                      }}
+                      className={`p-3 rounded-2xl border text-left transition cursor-pointer active:scale-95 ${
+                        isSelected
+                          ? 'bg-slate-800 border-2 shadow-lg'
+                          : 'bg-slate-950/60 border-white/5 hover:bg-slate-800/60'
+                      }`}
+                      style={{ borderColor: isSelected ? diff.color : undefined }}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-wider block" style={{ color: diff.color }}>
+                        {diff.badge}
+                      </span>
+                      <strong className="text-xs font-extrabold text-white block mt-0.5 truncate">{diff.name}</strong>
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        ⏱️ {diff.timeLimit}s • {diff.requiredBins} Bins
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Bottom Action Deck */}
+          <div className="max-w-xl mx-auto w-full pointer-events-auto flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={() => {
+                applyTruckModelVisualsRef.current?.(selectedTruckModel);
+                setGameScreen('city');
+                gameScreenRef.current = 'city';
+                setIsPaused(false);
+                isPausedRef.current = false;
+                setShiftTime(0);
+                shiftTimeRef.current = 0;
+                setCollisionCount(0);
+                collisionCountRef.current = 0;
+                setMissionResultData(null);
+                playSound('horn');
+                setNotification(`🚀 Shift started! [${DIFFICULTY_TIERS[difficultyTier]?.name}] Deliver bins to Northern Dumpyard within ${DIFFICULTY_TIERS[difficultyTier]?.timeLimit}s!`);
+              }}
+              className="w-full sm:flex-1 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-base uppercase tracking-wider shadow-[0_0_35px_rgba(16,185,129,0.4)] active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Gamepad2 size={20} />
+              <span>START {DIFFICULTY_TIERS[difficultyTier]?.name?.toUpperCase()} SHIFT</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const curIdx = truckKeysList.indexOf(selectedTruckModel);
+                setPreviewTruckIndex(curIdx >= 0 ? curIdx : 0);
+                previewTruckIndexRef.current = curIdx >= 0 ? curIdx : 0;
+                applyTruckModelVisualsRef.current?.(selectedTruckModel);
+                setGameScreen('garage');
+                gameScreenRef.current = 'garage';
+                playSound('horn');
+              }}
+              className="w-full sm:flex-1 py-4 rounded-2xl bg-slate-900/95 hover:bg-slate-800 border-2 border-emerald-500/60 text-white font-black text-sm uppercase tracking-wider shadow-2xl active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Wrench size={18} className="text-emerald-400" />
+              <span>TRUCK SHOP / GARAGE</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          DR. DRIVING INSPIRED 3D TRUCK GARAGE & SHOWROOM (gameScreen === 'garage')
+          - Vehicle showcased on 3D turntable center stage with slow rotation and drag inspection
+          - Prominent Left (<) and Right (>) navigation arrows on screen edges
+          - Keyboard arrow navigation (Left/Right)
+          - Live vehicle stats (Speed, Accel, Handling, Capacity, Pickup, Vector Ability, Trade-Off)
+          - Buy Truck, Equip, Direct Launch "Play With This Truck", Upgrades drawer
+          ───────────────────────────────────────────────────────────── */}
+      {gameScreen === 'garage' && (() => {
+        const currentPreviewId = truckKeysList[previewTruckIndex] || 'swachh_bharat_standard';
+        const truck = TRUCK_MODELS_DATA[currentPreviewId] || TRUCK_MODELS_DATA.swachh_bharat_standard;
+        const isOwned = ownedTrucks.includes(truck.id);
+        const isSelected = selectedTruckModel === truck.id;
+        const canAfford = gameCoins >= truck.cost;
+
+        const handleNavigateGarage = (dir) => {
+          const nextIdx = dir === 'next'
+            ? (previewTruckIndex + 1) % truckKeysList.length
+            : (previewTruckIndex - 1 + truckKeysList.length) % truckKeysList.length;
+          setPreviewTruckIndex(nextIdx);
+          previewTruckIndexRef.current = nextIdx;
+          const nextModelId = truckKeysList[nextIdx];
+          applyTruckModelVisualsRef.current?.(nextModelId);
+          playSound('horn');
+        };
+
+        return (
+          <div className="absolute inset-0 z-40 flex flex-col justify-between p-4 sm:p-8 pointer-events-none select-none bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/75">
+            
+            {/* Top Garage Bar: Header, Coins, Back */}
+            <div className="flex items-center justify-between pointer-events-auto">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    applyTruckModelVisualsRef.current?.(selectedTruckModel);
+                    setGameScreen('menu');
+                    gameScreenRef.current = 'menu';
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/10 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+                >
+                  <span>←</span>
+                  <span>Back to Menu</span>
+                </button>
+                <div className="hidden sm:block">
+                  <h2 className="text-lg font-black text-white flex items-center gap-2">
+                    <span>MUNICIPAL 3D GARAGE</span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-950">DR. DRIVING SHOWROOM</span>
+                  </h2>
+                </div>
+              </div>
+
+              {/* Wallet & Vehicle Indicator */}
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 text-right">
+                  <span className="text-[9px] text-slate-400 block font-bold uppercase">Garage Bank</span>
+                  <span className="text-amber-400 font-black text-sm">🪙 {gameCoins} Coins</span>
+                </div>
+                <div className="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-white/10 text-xs font-black text-slate-300">
+                  {previewTruckIndex + 1} / {truckKeysList.length}
+                </div>
+              </div>
+            </div>
+
+            {/* Dr. Driving Signature Big Floating Navigation Arrows on Left and Right Edges */}
+            <div className="absolute inset-y-0 left-3 sm:left-6 flex items-center pointer-events-auto z-50">
+              <button
+                onClick={() => handleNavigateGarage('prev')}
+                className="w-14 h-24 sm:w-16 sm:h-28 rounded-2xl bg-slate-900/85 hover:bg-emerald-600/90 active:scale-95 border-2 border-white/20 hover:border-emerald-400 text-white font-black text-3xl flex items-center justify-center transition shadow-2xl cursor-pointer backdrop-blur-md group"
+                title="Previous Truck [Left Arrow]"
+              >
+                <span className="group-hover:-translate-x-1 transition-transform">❮</span>
+              </button>
+            </div>
+
+            <div className="absolute inset-y-0 right-3 sm:right-6 flex items-center pointer-events-auto z-50">
+              <button
+                onClick={() => handleNavigateGarage('next')}
+                className="w-14 h-24 sm:w-16 sm:h-28 rounded-2xl bg-slate-900/85 hover:bg-emerald-600/90 active:scale-95 border-2 border-white/20 hover:border-emerald-400 text-white font-black text-3xl flex items-center justify-center transition shadow-2xl cursor-pointer backdrop-blur-md group"
+                title="Next Truck [Right Arrow]"
+              >
+                <span className="group-hover:translate-x-1 transition-transform">❯</span>
+              </button>
+            </div>
+
+            {/* Middle: 3D Turntable Drag Hint & Vehicle Name Banner */}
+            <div className="pointer-events-none text-center my-auto flex flex-col items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 py-1 rounded-full bg-slate-900/60 border border-white/10 backdrop-blur-sm">
+                360° TURNTABLE • DRAG TO ROTATE
+              </span>
+              <h3 className="text-2xl sm:text-4xl font-black text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] mt-2">
+                {truck.name}
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-slate-300 drop-shadow">
+                {truck.tagline}
+              </p>
+            </div>
+
+            {/* Bottom Card: Dr. Driving Vehicle Stats, Ability, Buy / Equip & Direct Play */}
+            <div className="pointer-events-auto max-w-4xl mx-auto w-full bg-slate-900/95 backdrop-blur-xl border-2 border-white/15 rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_rgba(0,0,0,0.8)] text-white space-y-4">
+              
+              {/* Stats Bar Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                {/* Speed */}
+                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Top Speed</span>
+                    <strong className="text-emerald-400 font-black">{truck.speedKmh} KM/H</strong>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-emerald-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(truck.speedKmh / 45) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Capacity */}
+                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Capacity</span>
+                    <strong className="text-white font-black">{truck.capacity} kg</strong>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-cyan-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(truck.capacity / 500) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Pickup Speed */}
+                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Bin Pickup</span>
+                    <strong className="text-amber-300 font-black">{truck.collectionDuration}s</strong>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-amber-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${((3 - truck.collectionDuration) / 3) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Vector Aura */}
+                <div className="bg-slate-950/80 p-2.5 rounded-2xl border border-white/5">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Vector Field</span>
+                    <strong className="text-purple-300 font-black">{truck.fieldRadius}m Radius</strong>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-purple-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: '80%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Vector Field & Trade-off Descriptions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-950/70 p-3 rounded-2xl border border-white/5 flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: `${truck.accentColor}30`, color: truck.accentColor }}>
+                    <Sparkles size={14} />
+                  </div>
+                  <div>
+                    <span className="font-extrabold block text-xs" style={{ color: truck.accentColor }}>{truck.fieldName}</span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed mt-0.5">{truck.fieldDesc}</p>
+                  </div>
+                </div>
+
+                <div className="bg-amber-950/30 p-3 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">
+                    ⚠️
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-amber-400 block text-xs">Chassis Trade-Off</span>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed mt-0.5">{truck.tradeoff}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons: Buy / Equip + Direct Play in City */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                {isSelected ? (
+                  <div className="w-full sm:flex-1 py-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-center font-black text-xs uppercase flex items-center justify-center gap-2">
+                    <Check size={16} /> CURRENTLY EQUIPPED
+                  </div>
+                ) : isOwned ? (
+                  <button
+                    onClick={() => {
+                      setSelectedTruckModel(truck.id);
+                      selectedTruckModelRef.current = truck.id;
+                      localStorage.setItem('smartbin_active_truck', truck.id);
+                      playSound('collect');
+                      setNotification(`🚛 Equipped ${truck.name}! (${truck.fieldName})`);
+                    }}
+                    className="w-full sm:flex-1 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition cursor-pointer"
+                  >
+                    EQUIP TRUCK
+                  </button>
+                ) : (
+                  <button
+                    disabled={!canAfford}
+                    onClick={() => {
+                      if (canAfford) {
+                        const nextCoins = gameCoins - truck.cost;
+                        setGameCoins(nextCoins);
+                        gameCoinsRef.current = nextCoins;
+                        localStorage.setItem('smartbin_game_coins', nextCoins.toString());
+                        const updated = [...ownedTrucks, truck.id];
+                        setOwnedTrucks(updated);
+                        localStorage.setItem('smartbin_owned_trucks', JSON.stringify(updated));
+                        setSelectedTruckModel(truck.id);
+                        selectedTruckModelRef.current = truck.id;
+                        localStorage.setItem('smartbin_active_truck', truck.id);
+                        playSound('collect');
+                        setNotification(`🎉 Purchased & equipped ${truck.name} for ${truck.cost} Coins!`);
+                      }
+                    }}
+                    className={`w-full sm:flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition active:scale-95 cursor-pointer shadow-lg ${
+                      canAfford
+                        ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-amber-500/25'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {canAfford ? `BUY TRUCK FOR 🪙 ${truck.cost} COINS` : `LOCKED (NEED ${truck.cost - gameCoins} MORE COINS)`}
+                  </button>
+                )}
+
+                {/* Direct Launch Play With This Truck */}
+                <button
+                  disabled={!isOwned && !isSelected}
+                  onClick={() => {
+                    if (isOwned || isSelected) {
+                      setSelectedTruckModel(truck.id);
+                      selectedTruckModelRef.current = truck.id;
+                      localStorage.setItem('smartbin_active_truck', truck.id);
+                      applyTruckModelVisualsRef.current?.(truck.id);
+                      setGameScreen('city');
+                      gameScreenRef.current = 'city';
+                      setIsPaused(false);
+                      isPausedRef.current = false;
+                      playSound('horn');
+                      setNotification(`🚀 Launched in city with ${truck.name}! Happy driving!`);
+                    }
+                  }}
+                  className={`w-full sm:flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition active:scale-95 flex items-center justify-center gap-2 ${
+                    isOwned || isSelected
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-[0_0_25px_rgba(16,185,129,0.35)] cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  <Gamepad2 size={16} />
+                  <span>PLAY WITH THIS TRUCK</span>
+                </button>
+
+                {/* Parts Upgrade Dialog Toggle */}
+                <button
+                  onClick={() => setShowGarageShop(true)}
+                  className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-extrabold text-xs uppercase transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Wrench size={15} />
+                  <span>UPGRADES</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ─────────────────────────────────────────────────────────────
+          IN-GAME PAUSE MENU (isPaused === true in City Mode)
+          Resume, Visit Garage / Switch Truck, Restart Shift, Return to Menu / App
+          ───────────────────────────────────────────────────────────── */}
+      {isPaused && (
+        <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto animate-in fade-in zoom-in-95">
+          <div className="max-w-md w-full bg-slate-900 border-2 border-emerald-500/80 rounded-3xl p-6 sm:p-8 shadow-2xl text-white space-y-5 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl font-black">
+              ⏸️
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-white">GAME PAUSED</h3>
+              <p className="text-xs text-slate-400 mt-1">Municipal truck engine idling • Progress preserved</p>
+            </div>
+
+            {/* Quick Shift Summary */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-2xl border border-white/5 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Bins</span>
+                <strong className="text-emerald-400">{wasteCollected} / {totalBins}</strong>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Cargo</span>
+                <strong className="text-amber-400">{currentLoad} kg</strong>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Coins</span>
+                <strong className="text-[#e2fd00]">🪙 {gameCoins}</strong>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2.5 pt-2">
+              <button
+                onClick={() => {
+                  setIsPaused(false);
+                  isPausedRef.current = false;
+                }}
+                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-95 cursor-pointer"
+              >
+                RESUME DRIVING [ESC]
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsPaused(false);
+                  isPausedRef.current = false;
+                  setGameScreen('garage');
+                  gameScreenRef.current = 'garage';
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Truck size={15} />
+                <span>VISIT GARAGE / SWITCH TRUCK</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsPaused(false);
+                  isPausedRef.current = false;
+                  resetTruckTriggerRef.current?.("Restarted Shift");
+                  setWasteCollected(0);
+                  wasteCollectedRef.current = 0;
+                  setCurrentLoad(0);
+                  currentLoadRef.current = 0;
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                <RotateCcw size={15} />
+                <span>RESTART SHIFT</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsPaused(false);
+                  isPausedRef.current = false;
+                  setGameScreen('menu');
+                  gameScreenRef.current = 'menu';
+                }}
+                className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer"
+              >
+                MAIN MENU
+              </button>
+
+              <button
+                onClick={onExit}
+                className="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-rose-950/80 hover:text-rose-400 text-slate-500 font-bold text-xs transition cursor-pointer"
+              >
+                EXIT TO SMARTBIN MUNICIPAL APP
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          PARTS UPGRADES DRAWER (Can be opened from Garage or South Workshop Bay)
           ───────────────────────────────────────────────────────────── */}
       {showGarageShop && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 pointer-events-auto">
-          <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-white space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-white space-y-5 max-h-[90vh] overflow-y-auto">
+            
+            {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
-                  <ShoppingBag size={24} />
+                  <Wrench size={24} />
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <span>MUNICIPAL ECO-TRUCK GARAGE</span>
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-950">SHOP</span>
+                    <span>MUNICIPAL PERFORMANCE PARTS WORKSHOP</span>
                   </h3>
-                  <p className="text-xs text-slate-400">Buy high-capacity compactor trucks & upgrade vector aura abilities</p>
+                  <p className="text-xs text-slate-400">Upgrade engine, hopper, tipper & vector coils using Game Coins</p>
                 </div>
               </div>
+
               <div className="flex items-center gap-3">
-                <div className="bg-slate-800 px-3 py-1.5 rounded-xl border border-white/10 text-right">
-                  <span className="text-[10px] text-slate-400 block font-bold uppercase">Balance</span>
-                  <span className="text-[#e2fd00] font-black text-sm">{ecoPoints} Pts</span>
+                <div className="bg-slate-800/90 px-3.5 py-1.5 rounded-xl border border-white/10 text-right">
+                  <span className="text-[9px] text-slate-400 block font-bold uppercase">Balance</span>
+                  <span className="text-amber-400 font-black text-sm">🪙 {gameCoins} Coins</span>
                 </div>
                 <button
                   onClick={() => setShowGarageShop(false)}
-                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* Truck Models Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {[
-                {
-                  id: 'swachh_bharat_standard',
-                  name: 'Swachh Bharat Standard',
-                  cost: 0,
-                  capacity: 150,
-                  speed: '30 KM/H',
-                  color: '#105a39',
-                  auraColor: '#38bdf8',
-                  auraPower: 'Standard Vector Field Proximity Deceleration (28m)'
-                },
-                {
-                  id: 'bilaspur_heavy_hauler',
-                  name: 'Bilaspur Heavy 4-Axle Hauler',
-                  cost: 400,
-                  capacity: 250,
-                  speed: '32 KM/H',
-                  color: '#1e3a8a',
-                  auraColor: '#3b82f6',
-                  auraPower: 'Hydraulic Compaction (Faster Bin Emptying Rate)'
-                },
-                {
-                  id: 'chhattisgarh_green_ev',
-                  name: 'C.G. Clean Electric EV Compactor',
-                  cost: 750,
-                  capacity: 320,
-                  speed: '35 KM/H',
-                  color: '#059669',
-                  auraColor: '#10b981',
-                  auraPower: 'Magnetic Induction Suction (Auto-empties bins within 8m)'
-                },
-                {
-                  id: 'mahanadi_titan_flagship',
-                  name: 'Mahanadi Titan Apex Rig',
-                  cost: 1200,
-                  capacity: 500,
-                  speed: '40 KM/H',
-                  color: '#d97706',
-                  auraColor: '#f59e0b',
-                  auraPower: '2x Eco-Points Multiplier & Autonomous Route Drone'
-                }
-              ].map((truck) => {
-                const isOwned = ownedTrucks.includes(truck.id);
-                const isSelected = selectedTruckModel === truck.id;
+            {/* TRUCK CHASSIS CONDITION & REPAIR BAY (STEP 5 SPEC) */}
+            <div className="bg-slate-950/80 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-xl shrink-0 ${truckCondition > 70 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : truckCondition > 35 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'}`}>
+                  🛡️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm text-white">Chassis Structural Condition:</span>
+                    <span className={`font-black text-sm ${truckCondition > 70 ? 'text-emerald-400' : truckCondition > 35 ? 'text-amber-400' : 'text-rose-400'}`}>
+                      {truckCondition}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {truckCondition === 100 
+                      ? "Chassis in showroom condition. Full acceleration and top speed active." 
+                      : `Repair cost: ${(100 - truckCondition) * (DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1)} Coins (${DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1} Coin/%)`}
+                  </p>
+                </div>
+              </div>
+
+              {truckCondition < 100 && (
+                <button
+                  onClick={repairTruckInGarage}
+                  disabled={gameCoins < (100 - truckCondition) * (DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1)}
+                  className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shrink-0 cursor-pointer ${
+                    gameCoins >= (100 - truckCondition) * (DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1)
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-amber-500/20'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  Repair Truck (-{(100 - truckCondition) * (DIFFICULTY_TIERS[difficultyTier]?.repairCostPerPct || 1)} Coins)
+                </button>
+              )}
+            </div>
+
+            {/* PERFORMANCE PARTS UPGRADES GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-96 overflow-y-auto pr-1">
+              {Object.values(UPGRADE_CONFIGS).map((part) => {
+                const currentLvl = truckUpgrades[part.id] || 1;
+                const nextLvlObj = part.levels.find((l) => l.lvl === currentLvl + 1);
+                const maxed = !nextLvlObj;
+                const canAfford = nextLvlObj && gameCoins >= nextLvlObj.cost;
 
                 return (
-                  <div
-                    key={truck.id}
-                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-emerald-950/50 border-emerald-400 ring-2 ring-emerald-500/30'
-                        : isOwned
-                        ? 'bg-slate-800/80 border-slate-700'
-                        : 'bg-slate-900 border-slate-800 opacity-95'
-                    }`}
-                  >
+                  <div key={part.id} className="bg-slate-950/80 p-4 rounded-2xl border border-white/10 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-black text-sm text-white">{truck.name}</span>
-                        {isSelected ? (
-                          <span className="text-[10px] bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Check size={10} /> ACTIVE
-                          </span>
-                        ) : isOwned ? (
-                          <span className="text-[10px] bg-slate-700 text-slate-300 font-extrabold px-2 py-0.5 rounded-full">
-                            OWNED
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-black text-amber-400">
-                            🪙 {truck.cost} Pts
-                          </span>
-                        )}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-black text-xs text-white flex items-center gap-1.5">
+                          <span>{part.icon}</span>
+                          <span>{part.title}</span>
+                        </span>
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
+                          Tier {currentLvl} / {part.levels.length}
+                        </span>
                       </div>
-
-                      <div className="space-y-1.5 text-[11px] text-slate-300 mb-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400">Hopper Capacity:</span>
-                          <strong className="text-white">{truck.capacity} kg</strong>
+                      <p className="text-[10px] text-slate-400 leading-tight mb-2.5">{part.desc}</p>
+                      <div className="bg-slate-900 p-2.5 rounded-xl text-[10px] text-slate-300 border border-white/5 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Active Tier:</span>
+                          <span className="text-emerald-400 font-bold">{part.levels.find((l) => l.lvl === currentLvl)?.label}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400">Max Top Speed:</span>
-                          <strong className="text-emerald-400">{truck.speed}</strong>
-                        </div>
-                        <div className="mt-2 bg-slate-900/90 p-2 rounded-xl text-[10px] text-slate-300 border border-white/5">
-                          <span className="text-amber-400 font-bold block mb-0.5">Vector Field Power:</span>
-                          {truck.auraPower}
-                        </div>
+                        {!maxed && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Next Tier:</span>
+                            <span className="text-[#e2fd00] font-bold">{nextLvlObj.label}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      {isSelected ? (
-                        <div className="w-full py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-center text-xs font-bold border border-emerald-500/30">
-                          Currently Driving
-                        </div>
-                      ) : isOwned ? (
-                        <button
-                          onClick={() => {
-                            setSelectedTruckModel(truck.id);
-                            localStorage.setItem('smartbin_active_truck', truck.id);
-                            setNotification(`🚛 Switched active truck to ${truck.name}!`);
-                          }}
-                          className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-black text-xs transition cursor-pointer"
-                        >
-                          Equip Truck
-                        </button>
+                    <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between">
+                      {maxed ? (
+                        <span className="text-[10px] font-black text-emerald-400 w-full text-center py-1">
+                          ★ MAXIMUM TIER REACHED
+                        </span>
                       ) : (
-                        <button
-                          disabled={ecoPoints < truck.cost}
-                          onClick={() => {
-                            if (ecoPoints >= truck.cost) {
-                              const nextPts = ecoPoints - truck.cost;
-                              setEcoPoints(nextPts);
-                              ecoPointsRef.current = nextPts;
-                              const updatedOwned = [...ownedTrucks, truck.id];
-                              setOwnedTrucks(updatedOwned);
-                              localStorage.setItem('smartbin_owned_trucks', JSON.stringify(updatedOwned));
-                              setSelectedTruckModel(truck.id);
-                              localStorage.setItem('smartbin_active_truck', truck.id);
-                              playSound('collect');
-                              setNotification(`🎉 Congratulations! Purchased ${truck.name} for ${truck.cost} Eco-Points!`);
-                            }
-                          }}
-                          className={`w-full py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-                            ecoPoints >= truck.cost
-                              ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md'
-                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                          }`}
-                        >
-                          {ecoPoints >= truck.cost ? `Buy for ${truck.cost} Eco-Points` : 'Insufficient Points'}
-                        </button>
+                        <>
+                          <span className="text-xs font-black text-amber-400">🪙 {nextLvlObj.cost} Coins</span>
+                          <button
+                            disabled={!canAfford}
+                            onClick={() => {
+                              if (canAfford) {
+                                const nextCoins = gameCoins - nextLvlObj.cost;
+                                setGameCoins(nextCoins);
+                                gameCoinsRef.current = nextCoins;
+                                localStorage.setItem('smartbin_game_coins', nextCoins.toString());
+                                const updated = { ...truckUpgrades, [part.id]: currentLvl + 1 };
+                                setTruckUpgrades(updated);
+                                truckUpgradesRef.current = updated;
+                                localStorage.setItem('smartbin_truck_upgrades', JSON.stringify(updated));
+                                playSound('collect');
+                                setNotification(`🛠️ Upgraded ${part.title} to Tier ${currentLvl + 1}!`);
+                              }
+                            }}
+                            className={`px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase transition cursor-pointer ${
+                              canAfford
+                                ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow'
+                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            }`}
+                          >
+                            Upgrade Tier
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -3581,7 +6332,7 @@ export default function LivingCity3D({ onExit }) {
                 onClick={() => setShowGarageShop(false)}
                 className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer"
               >
-                Close Garage
+                Close & Return
               </button>
             </div>
           </div>
@@ -3589,75 +6340,155 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MOBILE TOUCH ON-SCREEN CONTROLS (D-Pad, Horn, Nitro & Collect)
+          3RD COLLISION DEATH RESPAWN MODAL
+          User requirement: "3 death p 1 coin respawn puch nai to kuch nai milega"
+          ───────────────────────────────────────────────────────────── */}
+      {showRespawnCoinModal && (
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in zoom-in-95 pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-rose-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-5 text-white">
+            <div className="w-16 h-16 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
+              <ShieldAlert size={36} className="animate-pulse" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 block">3 VEHICLE COLLISIONS</span>
+              <h3 className="text-2xl font-black text-white mt-1">OUT OF LIVES!</h3>
+            </div>
+            <p className="text-slate-300 text-xs leading-relaxed">
+              Truck has sustained critical collision damage. Pay 1 Game Coin to respawn and protect your cargo, or forfeit your shift.
+            </p>
+            <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-white/10 text-left space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-300">
+                <span>Collected Bins:</span>
+                <strong className="text-emerald-400">{wasteCollected} / {totalBins} Bins</strong>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Current Payload:</span>
+                <strong className="text-amber-400">{currentLoad} kg</strong>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Coin Balance:</span>
+                <strong className="text-[#e2fd00]">🪙 {gameCoins} Coins</strong>
+              </div>
+            </div>
+            <div className="space-y-2.5 pt-2">
+              <button
+                disabled={gameCoins < 1}
+                onClick={() => {
+                  if (gameCoins >= 1) {
+                    const next = gameCoins - 1;
+                    setGameCoins(next);
+                    gameCoinsRef.current = next;
+                    localStorage.setItem('smartbin_game_coins', next.toString());
+                    setLives(3);
+                    livesRef.current = 3;
+                    setShowRespawnCoinModal(false);
+                    resetTruckTriggerRef.current?.("Paid 1 Coin: Truck Repaired & Cargo Intact");
+                    playSound('collect');
+                  }
+                }}
+                className={`w-full py-3 rounded-2xl font-black text-xs uppercase shadow-lg transition flex items-center justify-center gap-2 cursor-pointer ${
+                  gameCoins >= 1
+                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <span>🪙 PAY 1 COIN TO RESPAWN (KEEP CARGO)</span>
+              </button>
+              <button
+                onClick={() => {
+                  setLives(3);
+                  livesRef.current = 3;
+                  setWasteCollected(0);
+                  wasteCollectedRef.current = 0;
+                  setCurrentLoad(0);
+                  currentLoadRef.current = 0;
+                  setShowRespawnCoinModal(false);
+                  resetTruckTriggerRef.current?.("Shift Forfeited");
+                  setNotification("⚠️ Shift forfeited: Cargo discarded and progress reset to zero.");
+                }}
+                className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-rose-950/80 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 font-bold text-xs border border-white/5 transition cursor-pointer"
+              >
+                Forfeit Shift (Zero Reward)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE TOUCH ON-SCREEN CONTROLS (Rendered only in City Driving Mode)
           Ensures phone users can comfortably drive and collect without a physical keyboard
           ───────────────────────────────────────────────────────────── */}
-      <div className="md:hidden absolute bottom-5 left-4 z-30 pointer-events-auto flex flex-col items-center select-none">
-        {/* Forward */}
-        <button
-          onTouchStart={() => { mobileKeysRef.current.forward = true; }}
-          onTouchEnd={() => { mobileKeysRef.current.forward = false; }}
-          onMouseDown={() => { mobileKeysRef.current.forward = true; }}
-          onMouseUp={() => { mobileKeysRef.current.forward = false; }}
-          className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
-        >
-          ▲
-        </button>
-        {/* Left, Backward, Right */}
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <button
-            onTouchStart={() => { mobileKeysRef.current.left = true; }}
-            onTouchEnd={() => { mobileKeysRef.current.left = false; }}
-            onMouseDown={() => { mobileKeysRef.current.left = true; }}
-            onMouseUp={() => { mobileKeysRef.current.left = false; }}
-            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
-          >
-            ◀
-          </button>
-          <button
-            onTouchStart={() => { mobileKeysRef.current.backward = true; }}
-            onTouchEnd={() => { mobileKeysRef.current.backward = false; }}
-            onMouseDown={() => { mobileKeysRef.current.backward = true; }}
-            onMouseUp={() => { mobileKeysRef.current.backward = false; }}
-            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
-          >
-            ▼
-          </button>
-          <button
-            onTouchStart={() => { mobileKeysRef.current.right = true; }}
-            onTouchEnd={() => { mobileKeysRef.current.right = false; }}
-            onMouseDown={() => { mobileKeysRef.current.right = true; }}
-            onMouseUp={() => { mobileKeysRef.current.right = false; }}
-            className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
-          >
-            ▶
-          </button>
-        </div>
-      </div>
+      {gameScreen === 'city' && (
+        <>
+          <div className="md:hidden absolute bottom-5 left-4 z-30 pointer-events-auto flex flex-col items-center select-none">
+            {/* Forward */}
+            <button
+              onTouchStart={() => { mobileKeysRef.current.forward = true; }}
+              onTouchEnd={() => { mobileKeysRef.current.forward = false; }}
+              onMouseDown={() => { mobileKeysRef.current.forward = true; }}
+              onMouseUp={() => { mobileKeysRef.current.forward = false; }}
+              className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+            >
+              ▲
+            </button>
+            {/* Left, Backward, Right */}
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <button
+                onTouchStart={() => { mobileKeysRef.current.left = true; }}
+                onTouchEnd={() => { mobileKeysRef.current.left = false; }}
+                onMouseDown={() => { mobileKeysRef.current.left = true; }}
+                onMouseUp={() => { mobileKeysRef.current.left = false; }}
+                className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+              >
+                ◀
+              </button>
+              <button
+                onTouchStart={() => { mobileKeysRef.current.backward = true; }}
+                onTouchEnd={() => { mobileKeysRef.current.backward = false; }}
+                onMouseDown={() => { mobileKeysRef.current.backward = true; }}
+                onMouseUp={() => { mobileKeysRef.current.backward = false; }}
+                className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+              >
+                ▼
+              </button>
+              <button
+                onTouchStart={() => { mobileKeysRef.current.right = true; }}
+                onTouchEnd={() => { mobileKeysRef.current.right = false; }}
+                onMouseDown={() => { mobileKeysRef.current.right = true; }}
+                onMouseUp={() => { mobileKeysRef.current.right = false; }}
+                className="w-13 h-13 rounded-2xl bg-slate-900/90 active:bg-emerald-600 border border-white/20 text-white font-black text-lg flex items-center justify-center shadow-2xl active:scale-95 transition cursor-pointer"
+              >
+                ▶
+              </button>
+            </div>
+          </div>
 
-      {/* Mobile Action Buttons (Right side: Horn, Nitro Boost) */}
-      <div className="md:hidden absolute bottom-5 right-4 z-30 pointer-events-auto flex flex-col items-end gap-2 select-none">
-        {citizenLevel >= 3 && (
-          <button
-            onTouchStart={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
-            onTouchEnd={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
-            onMouseDown={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
-            onMouseUp={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
-            className="px-4 py-2.5 rounded-2xl bg-cyan-600 active:bg-cyan-400 text-white font-black text-xs shadow-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <Zap size={14} />
-            <span>NITRO</span>
-          </button>
-        )}
+          {/* Mobile Action Buttons (Right side: Horn, Nitro Boost) */}
+          <div className="md:hidden absolute bottom-5 right-4 z-30 pointer-events-auto flex flex-col items-end gap-2 select-none">
+            {citizenLevel >= 3 && (
+              <button
+                onTouchStart={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
+                onTouchEnd={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
+                onMouseDown={() => { mobileKeysRef.current.nitro = true; setNitroActive(true); playSound('nitro'); }}
+                onMouseUp={() => { mobileKeysRef.current.nitro = false; setNitroActive(false); }}
+                className="px-4 py-2.5 rounded-2xl bg-cyan-600 active:bg-cyan-400 text-white font-black text-xs shadow-xl active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <Zap size={14} />
+                <span>NITRO</span>
+              </button>
+            )}
 
-        <button
-          onClick={() => playSound('horn')}
-          className="w-12 h-12 rounded-2xl bg-amber-500 active:bg-amber-400 text-slate-950 font-black text-base shadow-xl active:scale-95 transition flex items-center justify-center cursor-pointer"
-          title="Horn"
-        >
-          📢
-        </button>
-      </div>
+            <button
+              onClick={() => playSound('horn')}
+              className="w-12 h-12 rounded-2xl bg-amber-500 active:bg-amber-400 text-slate-950 font-black text-base shadow-xl active:scale-95 transition flex items-center justify-center cursor-pointer"
+              title="Horn"
+            >
+              📢
+            </button>
+          </div>
+        </>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           LEVEL UP SUPERPOWER UNLOCK MODAL

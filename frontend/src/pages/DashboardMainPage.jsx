@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Wifi, Truck, CheckCircle2, MapPin, Camera, BarChart2, MessageSquare, ArrowRight, Star, FileText, Gift, Sparkles, Shield, Award, Navigation, Zap } from 'lucide-react';
+import { Trash2, Wifi, Truck, CheckCircle2, MapPin, Camera, BarChart2, MessageSquare, ArrowRight, Star, FileText, Gift, Sparkles, Shield, Award, Navigation, Zap, Gamepad2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function DashboardMainPage() {
   const [userName, setUserName] = useState('Citizen');
   const [userRole, setUserRole] = useState('citizen');
   const [userCity, setUserCity] = useState('Bilaspur');
-  const [userPoints, setUserPoints] = useState(250);
+  const [userPoints, setUserPoints] = useState(0);
   const [reportsCount, setReportsCount] = useState(12);
 
   useEffect(() => {
@@ -149,6 +149,35 @@ export default function DashboardMainPage() {
             <span className="text-[10px] text-amber-300 font-semibold">Grade A Clean City</span>
           </div>
         </div>
+      </div>
+
+      {/* Dedicated 3D Game Entry Banner (Strict App vs Game Boundary) */}
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 border border-emerald-500/40 p-5 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black shrink-0 border border-emerald-500/30">
+            <Gamepad2 size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-extrabold text-base text-white">SmartBin 3D Living City & Fleet Simulator</h3>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
+                3D GAME
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Experience the standalone 3D driving game: test drive municipal haulers, explore 16 city blocks, and collect bins.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/city"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition active:scale-95 flex items-center justify-center gap-2 shrink-0"
+        >
+          <Gamepad2 size={16} />
+          <span>Launch 3D Game</span>
+          <ArrowRight size={14} />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

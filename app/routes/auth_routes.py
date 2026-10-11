@@ -54,8 +54,8 @@ def register():
             phone=phone,
             password_hash=hashed_pw,
             role=role,
-            eco_points=100, # Registration bonus
-            cash_wallet_balance=20.0 # Welcome cash bonus
+            eco_points=0,
+            cash_wallet_balance=0.0
         )
         db.session.add(new_user)
         db.session.commit()

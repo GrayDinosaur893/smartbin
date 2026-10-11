@@ -78,7 +78,7 @@ def ensure_database_seeded():
             db.session.add(DriverProfile(user_id=driver.id, vehicle_number="CG-10-G-2080", vehicle_type="Garbage Truck 6T", assigned_zone="Bilaspur Municipal Corporation", city_name="Bilaspur", shift_status="on_duty"))
 
         if User.query.filter_by(email='citizen@smartbin.gov.in').first() is None:
-            citizen = User(name="Divyansh (Citizen)", email="citizen@smartbin.gov.in", phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Bilaspur", eco_points=250, cash_wallet_balance=2.50)
+            citizen = User(name="Divyansh (Citizen)", email="citizen@smartbin.gov.in", phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Bilaspur", eco_points=0, cash_wallet_balance=0.0)
             db.session.add(citizen)
 
         # 2. Municipal Zones
@@ -125,7 +125,7 @@ def login():
             elif 'driver' in email:
                 user = User(name="Rajesh Kumar (Driver)", email=email, phone="9876543210", password_hash=generate_password_hash("driver123"), role="driver", city_zone="Bilaspur")
             else:
-                user = User(name="Divyansh (Citizen)", email=email, phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Bilaspur", eco_points=250, cash_wallet_balance=2.50)
+                user = User(name="Divyansh (Citizen)", email=email, phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Bilaspur", eco_points=0, cash_wallet_balance=0.0)
             
             db.session.add(user)
             db.session.commit()
@@ -1055,12 +1055,21 @@ def report_waste_api():
 
     db.session.commit()
 
+    # Calculate Eco-Points: 12 if emergency (high/critical severity, illegal dumping, urgent), else 6
+    is_emergency = bool(
+        (str(new_report.severity).lower() in ['high', 'critical', 'severe']) or
+        new_report.is_illegal_dumping or
+        ('emergency' in (user_notes or '').lower()) or
+        ('urgent' in (user_notes or '').lower())
+    )
+    report_points = 12 if is_emergency else 6
+
     if user_id and ai_res['verification_status'] == 'verified':
         RewardService.award_points_and_cash(
             user_id=int(user_id),
-            points=100,
+            points=report_points,
             transaction_type="report_verified",
-            description=f"Verified waste report {report_code}"
+            description=f"Verified waste report {report_code} ({'Emergency - 12 Pts' if is_emergency else 'Standard - 6 Pts'})"
         )
 
     # Fetch citizen phone if available
@@ -1072,12 +1081,15 @@ def report_waste_api():
         report_code=new_report.report_code,
         city_name=new_report.city_name,
         waste_type=new_report.waste_type,
-        eco_points=100,
+        eco_points=report_points,
         user_phone=citizen_phone
     )
 
     return jsonify({
         'success': True,
+        'earned_points': report_points,
+        'is_emergency': is_emergency,
+        'total_eco_points': citizen_user.eco_points if citizen_user else 0,
         'report': {
             'id': new_report.id,
             'code': new_report.report_code,

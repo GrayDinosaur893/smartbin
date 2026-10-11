@@ -42,7 +42,7 @@ def seed_database():
         # Legacy fallback email for single-login testing
         driver_default = User(name="Rajesh Kumar (Driver)", email="driver@smartbin.gov.in", phone="9876543210", password_hash=generate_password_hash("driver123"), role="driver", city_zone="Durg")
 
-        citizen = User(name="Divyansh (Citizen)", email="citizen@smartbin.gov.in", phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Durg", eco_points=250, cash_wallet_balance=2.50)
+        citizen = User(name="Divyansh (Citizen)", email="citizen@smartbin.gov.in", phone="9123456789", password_hash=generate_password_hash("citizen123"), role="citizen", city_zone="Durg", eco_points=0, cash_wallet_balance=0.0)
 
         db.session.add_all([admin, driver_durg, driver_bilaspur, driver_raipur, driver_default, citizen])
         db.session.commit()

@@ -133,12 +133,18 @@ export default function ReportWastePage() {
 
       const data = await res.json();
       if (data.success) {
-        // Update user eco points locally
+        // Award points: 12 if emergency (high severity / illegal dumping / urgent), else 6
+        const earned = Number(data.earned_points) || (data.report?.severity === 'high' || data.report?.is_illegal_dumping ? 12 : 6);
         if (user) {
-          const updated = { ...user, eco_points: (user.eco_points || 0) + 100 };
+          const updated = { 
+            ...user, 
+            eco_points: (typeof data.total_eco_points === 'number') 
+              ? data.total_eco_points 
+              : ((user.eco_points || 0) + earned) 
+          };
           localStorage.setItem('smartbin_user', JSON.stringify(updated));
         }
-        setSuccessResult(data);
+        setSuccessResult({ ...data, earned_points: earned });
       } else {
         setError(data.error || 'Failed to submit waste report.');
         if (data.waste_detected === false) {
@@ -167,7 +173,7 @@ export default function ReportWastePage() {
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
           Report Waste <Sparkles size={22} className="text-emerald-600" />
         </h1>
-        <p className="text-slate-500 mt-1 text-sm">Help us keep our city clean. AI verifies real waste and rewards +100 Eco-Points.</p>
+        <p className="text-slate-500 mt-1 text-sm">Help us keep our city clean. AI verifies real waste and rewards up to +12 Eco-Points (12 for Emergency, 6 for Standard).</p>
       </div>
 
       <input 
@@ -207,7 +213,7 @@ export default function ReportWastePage() {
             </div>
 
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-900 font-bold text-sm space-y-1">
-              <p>🎉 +100 Eco-Points Added to Wallet!</p>
+              <p>🎉 +{successResult.earned_points || 6} Eco-Points Added to Wallet!</p>
               <p className="text-xs font-medium text-emerald-700">Redeemable for store vouchers & discounts.</p>
             </div>
 

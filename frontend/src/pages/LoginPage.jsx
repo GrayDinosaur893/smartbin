@@ -56,8 +56,8 @@ export default function LoginPage() {
         email: email,
         role: email.includes('admin') ? 'admin' : email.includes('driver') ? 'driver' : 'citizen',
         city_zone: 'Bilaspur',
-        eco_points: 250,
-        cash_wallet_balance: 2.50
+        eco_points: 0,
+        cash_wallet_balance: 0.0
       };
       localStorage.setItem('smartbin_user', JSON.stringify(fallbackUser));
       if (loginMode === 'game') {
@@ -80,8 +80,8 @@ export default function LoginPage() {
       email: 'citizen@smartbin.gov.in',
       role: 'citizen',
       city_zone: 'Bilaspur',
-      eco_points: 250,
-      cash_wallet_balance: 2.50,
+      eco_points: 0,
+      cash_wallet_balance: 0.0,
       lang: 'en'
     };
     localStorage.setItem('smartbin_selected_mode', loginMode);

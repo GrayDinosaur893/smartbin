@@ -9,8 +9,8 @@ export default function ProfilePage() {
     email: 'citizen@smartbin.gov.in',
     role: 'citizen',
     city_zone: 'Bilaspur',
-    eco_points: 250,
-    cash_wallet_balance: 2.50
+    eco_points: 0,
+    cash_wallet_balance: 0.0
   });
   const [reportsCount, setReportsCount] = useState(12);
 
@@ -92,7 +92,7 @@ export default function ProfilePage() {
             <div className="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-3">
               <Star size={24} fill="currentColor" />
             </div>
-            <p className="text-2xl font-bold text-slate-800">{user.eco_points ?? 250}</p>
+            <p className="text-2xl font-bold text-slate-800">{user.eco_points ?? 0}</p>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Points Earned</p>
           </div>
           

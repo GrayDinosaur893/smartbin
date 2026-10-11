@@ -118,14 +118,22 @@ def report_waste():
         db.session.add(new_report)
         db.session.commit()
 
-        # Award rewards if verified
+        # Award rewards if verified: 12 if emergency, else 6
+        is_emergency = bool(
+            (str(new_report.severity).lower() in ['high', 'critical', 'severe']) or
+            new_report.is_illegal_dumping or
+            ('emergency' in (user_notes or '').lower()) or
+            ('urgent' in (user_notes or '').lower())
+        )
+        report_points = 12 if is_emergency else 6
+
         if ai_res['verification_status'] == 'verified':
             RewardService.award_points_and_cash(
                 user_id=user_id,
-                points=50,
-                bonus_cash=15.0,
+                points=report_points,
+                bonus_cash=0.0,
                 transaction_type="report_verified",
-                description=f"Verified waste report {report_code}"
+                description=f"Verified waste report {report_code} ({'Emergency - 12 Pts' if is_emergency else 'Standard - 6 Pts'})"
             )
 
         # Trigger SMS notification to admin and citizen
@@ -134,7 +142,7 @@ def report_waste():
             report_code=new_report.report_code,
             city_name=new_report.city_name,
             waste_type=new_report.waste_type,
-            eco_points=50,
+            eco_points=report_points,
             user_phone=user.phone if user else None
         )
 
