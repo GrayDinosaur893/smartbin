@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 const API_BASE = '/api';
-import { Building2, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, Send, FileText, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Building2, Gift, Sparkles, HeartHandshake, MapPin, Filter, AlertCircle, Mail, Phone, Send, FileText, CheckCircle2, ShieldCheck, HelpCircle, Clock, Copy, ArrowRight } from 'lucide-react';
 
 export default function Sponsors({ user, lang }) {
   const [sponsors, setSponsors] = useState([]);
@@ -22,9 +22,22 @@ export default function Sponsors({ user, lang }) {
   });
   const [contactSuccess, setContactSuccess] = useState(false);
 
+  const getActiveUser = () => {
+    if (user && user.id) return user;
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+      if (stored && (stored.id || stored.email)) return stored;
+    } catch (e) {}
+    return user || {};
+  };
+
+  const activeUser = getActiveUser();
+
   const fetchSponsors = async () => {
     try {
-      const res = await fetch(`${API_BASE}/public/sponsors`);
+      const u = getActiveUser();
+      const url = u && u.id ? `${API_BASE}/public/sponsors?user_id=${u.id}` : `${API_BASE}/public/sponsors`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         setSponsors(data.sponsors || []);
@@ -38,7 +51,7 @@ export default function Sponsors({ user, lang }) {
 
   useEffect(() => {
     fetchSponsors();
-  }, []);
+  }, [user]);
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -49,17 +62,6 @@ export default function Sponsors({ user, lang }) {
       setContactForm({ name: '', email: '', phone: '', company: '', message: '' });
     }, 2500);
   };
-
-  const getActiveUser = () => {
-    if (user && user.id) return user;
-    try {
-      const stored = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
-      if (stored && (stored.id || stored.email)) return stored;
-    } catch (e) {}
-    return user || {};
-  };
-
-  const activeUser = getActiveUser();
 
   const handleRedeem = async (sponsor) => {
     const currentUser = getActiveUser();
@@ -83,6 +85,9 @@ export default function Sponsors({ user, lang }) {
           cash_wallet_balance: data.remaining_wallet
         };
         localStorage.setItem('smartbin_user', JSON.stringify(updatedUser));
+
+        // Mark sponsor offer as redeemed in local state immediately
+        setSponsors(prev => prev.map(s => s.id === sponsor.id ? { ...s, is_redeemed: true, redeemed_code: data.voucher_code } : s));
 
         setRedeemedCode({
           sponsor,
@@ -283,9 +288,16 @@ export default function Sponsors({ user, lang }) {
                       {sponsor.company_name}
                     </span>
 
-                    <span className="bg-amber-100 text-amber-800 font-black text-[11px] px-2.5 py-1 rounded-lg border border-amber-300">
-                      {sponsor.offer_type}
-                    </span>
+                    {sponsor.is_redeemed ? (
+                      <span className="bg-emerald-100 text-emerald-800 font-black text-[11px] px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1 shadow-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        {lang === 'hi' ? 'प्राप्त (Claimed)' : 'Redeemed'}
+                      </span>
+                    ) : (
+                      <span className="bg-amber-100 text-amber-800 font-black text-[11px] px-2.5 py-1 rounded-lg border border-amber-300">
+                        {sponsor.offer_type}
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -311,19 +323,196 @@ export default function Sponsors({ user, lang }) {
 
                 {/* Redeem Button Footer */}
                 <div className="bg-slate-50 p-4 border-t border-slate-100">
-                  <button
-                    onClick={() => handleRedeem(sponsor)}
-                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs py-2.5 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <Gift className="w-4 h-4 text-amber-300" />
-                    <span>{lang === 'hi' ? 'वाउचर प्राप्त करें (Redeem)' : 'Redeem Sponsor Voucher'}</span>
-                  </button>
+                  {sponsor.is_redeemed ? (
+                    <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3 flex flex-col items-center justify-center text-center gap-2">
+                      <div className="flex items-center gap-1.5 text-emerald-800 font-black text-xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>{lang === 'hi' ? 'वाउचर प्राप्त किया गया (Claimed)' : 'Voucher Claimed & Ready'}</span>
+                      </div>
+                      {sponsor.redeemed_code && (
+                        <div className="w-full flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-xs">
+                          <span className="font-mono font-black text-xs tracking-wider text-emerald-950 select-all">
+                            {sponsor.redeemed_code}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(sponsor.redeemed_code);
+                              alert(lang === 'hi' ? 'वाउचर कोड कॉपी हो गया!' : 'Voucher code copied to clipboard!');
+                            }}
+                            className="flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-900 font-bold bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{lang === 'hi' ? 'कॉपी' : 'Copy'}</span>
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-emerald-700 font-medium leading-tight">
+                        {lang === 'hi' ? 'बिलिंग काउंटर या ऐप पर यह कूपन कोड दिखाएं' : 'Present code at merchant billing or checkout'}
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleRedeem(sponsor)}
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs py-2.5 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Gift className="w-4 h-4 text-amber-300" />
+                      <span>{lang === 'hi' ? 'वाउचर प्राप्त करें (Redeem)' : 'Redeem Sponsor Voucher'}</span>
+                    </button>
+                  )}
                 </div>
 
               </div>
             ))}
           </div>
         )}
+
+        {/* More Rewards Coming Soon Section */}
+        <div className="space-y-6 pt-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 p-6 rounded-3xl border border-amber-200/60 shadow-xs">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                  {lang === 'hi' ? 'आगामी पुरस्कार' : 'Upcoming'}
+                </span>
+                <span className="flex items-center gap-1 text-xs font-bold text-amber-800">
+                  <Clock className="w-3.5 h-3.5" />
+                  {lang === 'hi' ? 'जल्द उपलब्ध होंगे' : 'Releasing This Month'}
+                </span>
+              </div>
+              <h2 className="text-2xl font-black text-slate-950 mt-1 flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-amber-500" />
+                <span>{lang === 'hi' ? 'और भी नए पुरस्कार जल्द आ रहे हैं!' : 'More Rewards Coming Soon'}</span>
+              </h2>
+              <p className="text-xs text-slate-600 mt-1 max-w-2xl">
+                {lang === 'hi'
+                  ? 'हम नगर निगम और राष्ट्रीय ब्रांड्स के साथ साझेदारी कर रहे हैं ताकि आपके रीसाइक्लिंग प्रयासों के लिए और भी बड़े डिस्काउंट और लाभ मिल सकें।'
+                  : 'We are onboarding top national and regional retail brands so you can save more while keeping Chhattisgarh green & clean.'}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const el = document.getElementById('contact-us');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-2 shrink-0"
+            >
+              <span>{lang === 'hi' ? 'ब्रांड पार्टनर बनें' : 'Partner Your Brand'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                id: 'cm-1',
+                company: 'PVR INOX Cinemas',
+                title: lang === 'hi' ? '₹150 मूवी टिकट छूट' : '₹150 Off Movie Tickets',
+                desc: lang === 'hi' ? 'दुर्ग, भिलाई और रायपुर के सभी पीवीआर व आइनॉक्स सिनेमाघरों में टिकटों पर छूट।' : 'Valid on any movie booking at PVR Surya Mall Bhilai & Magneto Raipur.',
+                points: 1500,
+                city: 'Bhilai / Raipur',
+                type: 'Entertainment',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              },
+              {
+                id: 'cm-2',
+                company: 'D-Mart & Reliance Smart',
+                title: lang === 'hi' ? '₹100 किराना खरीद वाउचर' : '₹100 Eco Grocery Voucher',
+                desc: lang === 'hi' ? 'दैनिक राशन व किराना खरीदारी पर ₹100 की सीधी छूट।' : 'Instant grocery discount on daily essentials, fruits and sustainable packaging goods.',
+                points: 1000,
+                city: 'All CG',
+                type: 'Groceries',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              },
+              {
+                id: 'cm-3',
+                company: 'CG Urban Transit / Bus Pass',
+                title: lang === 'hi' ? 'फ्री सिटी बस दैनिक पास' : '100% Free Daily City Bus Pass',
+                desc: lang === 'hi' ? 'नगर बस सेवा में पूरे दिन असीमित मुफ्त सफर, कार्बन उत्सर्जन कम करने हेतु।' : 'Unlimited daily rides on municipal city buses to promote public transit over cars.',
+                points: 400,
+                city: 'Durg / Raipur',
+                type: 'Public Transit',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              },
+              {
+                id: 'cm-4',
+                company: "Domino's Pizza Eco-Box",
+                title: lang === 'hi' ? 'फ्री रेगुलर पिज़्ज़ा वाउचर' : 'Free Regular Pizza Voucher',
+                desc: lang === 'hi' ? 'पुराने पिज़्ज़ा बॉक्स रीसायकल करने पर कॉम्प्लिमेंट्री रेगुलर पिज़्ज़ा।' : 'Complimentary regular cheese pizza on depositing clean cardboard takeout boxes at SmartBins.',
+                points: 1200,
+                city: 'All CG',
+                type: 'Food & Dining',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              },
+              {
+                id: 'cm-5',
+                company: 'PM Surya Ghar / Green Energy',
+                title: lang === 'hi' ? '₹5,000 सोलर रूफटॉप सब्सिडी' : '₹5,000 Rooftop Solar Subsidy',
+                desc: lang === 'hi' ? 'घर की छत पर सोलर पैनल लगवाने पर विशेष अतिरिक्त नगर निगम छूट कूपन।' : 'Additional municipal cash subsidy booster for rooftop solar installation via CREDA partners.',
+                points: 5000,
+                city: 'Chhattisgarh',
+                type: 'Clean Energy',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              },
+              {
+                id: 'cm-6',
+                company: 'Decathlon Sports India',
+                title: lang === 'hi' ? '₹250 इको-स्पोर्ट्स किट डिस्काउंट' : '₹250 Sports Gear Discount',
+                desc: lang === 'hi' ? 'साइकिलिंग, वॉकिंग व आउटडोर फिटनेस गियर पर सीधा ₹250 का वाउचर।' : 'Discount on reusable water bottles, cycling accessories, and running shoes to keep citizens fit.',
+                points: 2000,
+                city: 'Raipur / Online',
+                type: 'Health & Fitness',
+                badge: lang === 'hi' ? 'जल्द आ रहा है' : 'Coming Soon'
+              }
+            ].map((teaser) => (
+              <div
+                key={teaser.id}
+                className="relative bg-slate-50/80 rounded-3xl border border-slate-200/90 p-6 flex flex-col justify-between overflow-hidden shadow-xs hover:border-amber-300 transition group"
+              >
+                <div className="space-y-4">
+                  {/* Top Header */}
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="bg-slate-200/80 text-slate-700 font-extrabold text-[11px] px-3 py-1 rounded-full flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                      {teaser.company}
+                    </span>
+                    <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-700" />
+                      {teaser.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 group-hover:text-amber-800 transition">
+                      {teaser.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      {teaser.desc}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-200/60">
+                    <div className="flex items-center gap-1 text-slate-500 font-bold">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{teaser.city}</span>
+                    </div>
+
+                    <div className="bg-slate-200 text-slate-700 font-black px-2.5 py-1 rounded-lg">
+                      ~{teaser.points} {lang === 'hi' ? 'अंक' : 'Points'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-200/60">
+                  <div className="w-full bg-slate-200/70 text-slate-500 font-extrabold text-xs py-2 rounded-xl text-center flex items-center justify-center gap-1.5 cursor-not-allowed">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{lang === 'hi' ? 'शीघ्र जारी होगा (Coming Soon)' : 'Available Soon'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Inline Action Cards for Contact Us & Terms */}
         <div id="contact-us" className="grid grid-cols-1 md:grid-cols-2 gap-6">

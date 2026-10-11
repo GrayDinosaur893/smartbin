@@ -1587,6 +1587,17 @@ def admin_optimize_routes_api():
 
 @api_bp.route('/public/sponsors', methods=['GET'])
 def get_sponsors():
+    user_id = request.args.get('user_id', type=int)
+    redeemed_map = {}
+    if user_id:
+        try:
+            user_redemptions = VoucherRedemption.query.filter_by(user_id=user_id).all()
+            for r in user_redemptions:
+                if r.sponsor_offer_id:
+                    redeemed_map[r.sponsor_offer_id] = r.voucher_code
+        except Exception as e:
+            print(f"[get_sponsors redemptions check error] {e}")
+
     sponsors = SponsorOffer.query.filter_by(status='approved').order_by(SponsorOffer.created_at.desc()).all()
     return jsonify({
         'success': True,
@@ -1600,7 +1611,9 @@ def get_sponsors():
             'city_scope': s.city_scope,
             'points_required': s.points_required,
             'voucher_code_prefix': s.voucher_code_prefix,
-            'created_at': s.created_at.strftime('%Y-%m-%d %H:%M')
+            'created_at': s.created_at.strftime('%Y-%m-%d %H:%M'),
+            'is_redeemed': s.id in redeemed_map,
+            'redeemed_code': redeemed_map.get(s.id)
         } for s in sponsors]
     })
 

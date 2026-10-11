@@ -23,7 +23,15 @@ import {
   ExternalLink,
   X,
   MousePointer,
-  UserCheck
+  UserCheck,
+  Coffee,
+  Home,
+  Trees,
+  Flame,
+  LogIn,
+  ShieldCheck,
+  Gamepad2,
+  User
 } from 'lucide-react';
 
 /**
@@ -105,6 +113,217 @@ const SPOT_APP_FEATURES = [
   }
 ];
 
+/**
+ * CITY INFRASTRUCTURE & BUILDINGS AUDIT DATASET
+ * Showcased during Game Mode: Describes each building, cafe, house, garden, and component in the city.
+ */
+const CITY_BUILDINGS_DATA = [
+  {
+    id: 'block-1',
+    blockIndex: 1,
+    bx: -69,
+    bz: -69,
+    category: 'cafe',
+    name: 'Green Bean Urban Cafe & Bakery',
+    tag: 'Commercial Biomass Partner',
+    desc: 'Generates ~32kg organic coffee grounds and food scraps daily. Integrated with city anaerobic digester for 100% biogas composting.',
+    segregation: 'Wet & dry segregated at counter • Compost partner',
+    points: 25
+  },
+  {
+    id: 'block-2',
+    blockIndex: 2,
+    bx: -69,
+    bz: -23,
+    category: 'corporate',
+    name: 'North-West Commercial Plaza',
+    tag: 'Retail Recycling Center',
+    desc: 'High-density commercial market with smart cardboard compactors and returnable container deposit boxes.',
+    segregation: 'Dedicated Cardboard Balers & Dry Waste Sorting',
+    points: 25
+  },
+  {
+    id: 'block-3',
+    blockIndex: 3,
+    bx: -69,
+    bz: 23,
+    category: 'residential',
+    name: 'Vindhya Heritage Model Villa',
+    tag: 'Source Segregation Champion',
+    desc: 'Exemplary citizen residence practicing dual-bin source segregation. Scans QR codes on SmartBins to earn weekly municipal rebates.',
+    segregation: 'Green (Wet) & Blue (Dry) Household Bins',
+    points: 25
+  },
+  {
+    id: 'block-4',
+    blockIndex: 4,
+    bx: -69,
+    bz: 69,
+    category: 'corporate',
+    name: 'Bilaspur Smart Infrastructure Tower',
+    tag: 'Paperless Digital Enterprise',
+    desc: '16-floor corporate tower with 95% digitized paperwork. All unavoidable paper waste is shredded and baled on-site.',
+    segregation: 'Certified Document Shredding & Fiber Recycling',
+    points: 25
+  },
+  {
+    id: 'block-5',
+    blockIndex: 5,
+    bx: -23,
+    bz: -69,
+    category: 'corporate',
+    name: 'Mahanadi IT & Clean Energy Hub',
+    tag: 'Solar Microgrid & Tech Sector',
+    desc: 'Houses green data operations and rooftop solar microgrid controllers. Collects IT equipment for authorized e-waste dismantling.',
+    segregation: 'Quarterly Certified E-Waste Safe Disposal',
+    points: 25
+  },
+  {
+    id: 'block-6',
+    blockIndex: 6,
+    bx: -23,
+    bz: -23,
+    category: 'garden',
+    name: 'Central Botanical Flora Gardens & Fountain',
+    tag: 'Municipal Green Lungs',
+    desc: 'Public park featuring illuminated fountains irrigated with treated wastewater. Soil enriched by municipal leaf compost.',
+    segregation: '100% Recycled Treated Water & Horticultural Compost',
+    points: 35
+  },
+  {
+    id: 'block-7',
+    blockIndex: 7,
+    bx: -23,
+    bz: 23,
+    category: 'cafe',
+    name: "Chai Point & Baker's Delight",
+    tag: 'Zero Single-Use Plastic',
+    desc: 'Prohibits disposable plastic cutlery and straws. Replaces takeout plastics with biodegradable sugarcane bagasse.',
+    segregation: '100% Biodegradable Bagasse Packaging Only',
+    points: 25
+  },
+  {
+    id: 'block-8',
+    blockIndex: 8,
+    bx: -23,
+    bz: 69,
+    category: 'residential',
+    name: 'Nehru Nagar Smart Housing Society',
+    tag: 'Decentralized Composting Society',
+    desc: '48-apartment housing cooperative operating on-site aerobic composting drums, diverting 70% of waste from municipal trucks.',
+    segregation: 'On-site Rotary Drum Community Composter',
+    points: 25
+  },
+  {
+    id: 'block-9',
+    blockIndex: 9,
+    bx: 23,
+    bz: -69,
+    category: 'corporate',
+    name: 'C.G. Mineral & Sustainable Energy Board',
+    tag: 'Corporate CSR Sponsor Hub',
+    desc: 'Sponsors 100+ IoT SmartBins across Chhattisgarh under corporate CSR mandates and funds driver safety incentives.',
+    segregation: 'CSR Sponsor Marketplace Engine & Clean Tech Grants',
+    points: 25
+  },
+  {
+    id: 'block-10',
+    blockIndex: 10,
+    bx: 23,
+    bz: -23,
+    category: 'corporate',
+    name: 'SmartBin GIS Fleet Command HQ',
+    tag: 'C++ VRP Route Optimizer Center',
+    desc: 'Monitors real-time bin telemetry, calculates optimal fuel-saving C++ routes, and verifies GPS timestamps for waste trucks.',
+    segregation: 'Centralized Administrative Telemetry & Route Dispatch',
+    points: 35
+  },
+  {
+    id: 'block-11',
+    blockIndex: 11,
+    bx: 23,
+    bz: 23,
+    category: 'garden',
+    name: 'Shivalik Public Green Park & Open Gym',
+    tag: 'Solar-Powered Eco Promenade',
+    desc: 'Equipped with solar phone-charging benches, exercise equipment crafted from recycled steel, and designated pet cleanup bins.',
+    segregation: 'Recycled Steel Gear & Dual Public Litter Bins',
+    points: 35
+  },
+  {
+    id: 'block-12',
+    blockIndex: 12,
+    bx: 23,
+    bz: 69,
+    category: 'corporate',
+    name: 'Durg-Bhilai Telecom & IoT Gateway',
+    tag: 'LoRaWAN Long-Range Transceiver',
+    desc: 'Houses high-altitude LoRa antennas that receive wireless fill-level telemetry from ultrasonic bin sensors every 15 minutes.',
+    segregation: 'Wireless Sensor Mesh Network & Telemetry Relay',
+    points: 25
+  },
+  {
+    id: 'block-13',
+    blockIndex: 13,
+    bx: 69,
+    bz: -69,
+    category: 'residential',
+    name: 'Model Zero-Waste Villa Complex',
+    tag: 'Solar Rooftop & Rain Harvesting',
+    desc: 'Residential villas equipped with rooftop solar and kitchen waste composters. Certified zero-landfill pilot block.',
+    segregation: 'Home Composting & Greywater Garden Irrigation',
+    points: 25
+  },
+  {
+    id: 'block-14',
+    blockIndex: 14,
+    bx: 69,
+    bz: -23,
+    category: 'cafe',
+    name: 'Subhash Chowk Fresh Roastery',
+    tag: 'Bio-Enzyme Citrus Extraction',
+    desc: 'Recycles 45kg of citrus peels daily by supplying organic natural floor cleaner and bio-enzyme workshops.',
+    segregation: 'Dedicated Organic Peel Collection & Zero Waste Bar',
+    points: 25
+  },
+  {
+    id: 'block-15',
+    blockIndex: 15,
+    bx: 69,
+    bz: 23,
+    category: 'corporate',
+    name: 'Bhilai Eco-Steel Logistics Bureau',
+    tag: 'Industrial Byproduct Recycler',
+    desc: 'Coordinates scrap metal sorting and sends industrial scrap from the dumpyard to induction recycling furnaces.',
+    segregation: 'Ferrous & Non-Ferrous Metal Salvage Coordination',
+    points: 25
+  },
+  {
+    id: 'block-16',
+    blockIndex: 16,
+    bx: 69,
+    bz: 69,
+    category: 'corporate',
+    name: 'Civic Digital FinTech & Rewards Bureau',
+    tag: 'Eco-Points Redemption Exchange',
+    desc: 'Processes citizen points redemption into retail discounts (D-Mart, PVR, Domino\'s, City Bus Passes) via secure digital vouchers.',
+    segregation: 'Points-to-Rupee Civic Ledger & Sponsor Vouchers',
+    points: 25
+  },
+  {
+    id: 'dumpyard-salvage',
+    blockIndex: 99,
+    bx: 0,
+    bz: -115,
+    category: 'landfill',
+    name: 'Northern Scrapyard Landfill & Salvage Bay',
+    tag: 'Heavy Grapple Crane & Metal Recovery',
+    desc: 'Features heavy crawler crane with 4-jaw grapple claw, crushed end-of-life rusted cars, oil drum reprocessing, and compressed waste mounds.',
+    segregation: 'Landfill Diversion, Scrap Shredding & Final Waste Drop',
+    points: 50
+  }
+];
+
 export default function LivingCity3D({ onExit }) {
   const mountRef = useRef(null);
 
@@ -126,6 +345,43 @@ export default function LivingCity3D({ onExit }) {
   const [viewMode, setViewMode] = useState('chase');
   const [showHelp, setShowHelp] = useState(false);
   
+  // Game Mode vs Normal Mode State
+  const [gameMode, setGameMode] = useState('normal'); // 'normal' | 'game'
+  const gameModeRef = useRef('normal');
+  gameModeRef.current = gameMode;
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [activeBuildingInfo, setActiveBuildingInfo] = useState(null);
+  const activeBuildingRef = useRef(null);
+
+  const [surveyedBuildings, setSurveyedBuildings] = useState([]);
+  const surveyedBuildingsRef = useRef([]);
+
+  const getCitizenUser = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('smartbin_user') || '{}');
+      if (stored && (stored.id || stored.email || stored.name)) return stored;
+    } catch (e) {}
+    return null;
+  };
+
+  const handleToggleGameMode = (targetMode) => {
+    if (targetMode === 'game') {
+      const u = getCitizenUser();
+      if (!u) {
+        setShowLoginModal(true);
+        return;
+      }
+      setGameMode('game');
+      setNotification("🎮 Game Mode: Drive near any building or component to inspect its waste profile & earn bonus Eco-Points!");
+    } else {
+      setGameMode('normal');
+      setActiveBuildingInfo(null);
+      activeBuildingRef.current = null;
+      setNotification("🚗 Normal Mode: Free-roam driving without building inspections.");
+    }
+  };
+
   // Game Logic: Collisions, Lives, and Mission Completion
   const [lives, setLives] = useState(3);
   const [crashState, setCrashState] = useState(null);
@@ -1594,6 +1850,53 @@ export default function LivingCity3D({ onExit }) {
           traffic: trafficCars.map((tc) => ({ x: tc.x, z: tc.z })),
           target: { x: tgtX, z: tgtZ, label: tgtLabel }
         });
+
+        // ─────────────────────────────────────────────────────────────
+        // GAME MODE: PROXIMITY INSPECTION FOR BUILDINGS & COMPONENTS
+        // ─────────────────────────────────────────────────────────────
+        if (gameModeRef.current === 'game') {
+          const px = truckGroup.position.x;
+          const pz = truckGroup.position.z;
+          let nearestComp = null;
+          let minDist = 24.0; // Proximity threshold in meters
+
+          CITY_BUILDINGS_DATA.forEach((b) => {
+            const d = Math.hypot(px - b.bx, pz - b.bz);
+            if (d < minDist) {
+              minDist = d;
+              nearestComp = b;
+            }
+          });
+
+          if (nearestComp) {
+            if (activeBuildingRef.current?.id !== nearestComp.id) {
+              activeBuildingRef.current = nearestComp;
+              setActiveBuildingInfo(nearestComp);
+              playSound('collect');
+
+              if (!surveyedBuildingsRef.current.includes(nearestComp.id)) {
+                surveyedBuildingsRef.current.push(nearestComp.id);
+                setSurveyedBuildings([...surveyedBuildingsRef.current]);
+                setEcoPoints((prev) => {
+                  const next = prev + (nearestComp.points || 25);
+                  ecoPointsRef.current = next;
+                  return next;
+                });
+                setNotification(`🎯 Audited ${nearestComp.name}! +${nearestComp.points} Eco-Points!`);
+              }
+            }
+          } else {
+            if (activeBuildingRef.current) {
+              activeBuildingRef.current = null;
+              setActiveBuildingInfo(null);
+            }
+          }
+        } else {
+          if (activeBuildingRef.current) {
+            activeBuildingRef.current = null;
+            setActiveBuildingInfo(null);
+          }
+        }
       }
 
       // ─────────────────────────────────────────────────────────────
@@ -1666,27 +1969,72 @@ export default function LivingCity3D({ onExit }) {
           ───────────────────────────────────────────────────────────── */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-20">
         
-        {/* Left: Brand Badge & Lives Counter */}
+        {/* Left: Brand Badge & Mode Switcher */}
         <div className="flex items-center gap-3 pointer-events-auto">
-          <div className="bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-white/10 flex items-center gap-3 text-white">
-            <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center font-black">
-              <Truck size={20} className="text-white" />
+          <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-white/10 flex items-center gap-3 text-white">
+            <div className="w-8 h-8 rounded-xl bg-emerald-700 flex items-center justify-center font-black">
+              <Truck size={18} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-white text-sm">SmartBin Fleet Sim</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                  0-30 KM/H CAP
+                <span className="font-extrabold text-white text-xs sm:text-sm">SmartBin Fleet</span>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">
+                  0-30 KM/H
                 </span>
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Features Audited:</span>
-                <span className="text-[11px] font-extrabold text-[#e2fd00]">
-                  {discoveredFeatures.length} / 6
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] text-slate-400 font-bold uppercase">
+                  {gameMode === 'game' ? 'Buildings Audited:' : 'Features Found:'}
+                </span>
+                <span className="text-[10px] font-extrabold text-[#e2fd00]">
+                  {gameMode === 'game' ? `${surveyedBuildings.length} / ${CITY_BUILDINGS_DATA.length}` : `${discoveredFeatures.length} / 6`}
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Mode Switch: Normal Mode vs Game Mode */}
+          <div className="bg-slate-900/95 backdrop-blur-md p-1 rounded-2xl shadow-xl border border-white/10 flex items-center gap-1">
+            <button
+              onClick={() => handleToggleGameMode('normal')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                gameMode === 'normal'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Truck size={13} />
+              <span>Normal Mode</span>
+            </button>
+
+            <button
+              onClick={() => handleToggleGameMode('game')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                gameMode === 'game'
+                  ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                  : 'text-slate-400 hover:text-amber-400'
+              }`}
+            >
+              <Gamepad2 size={13} />
+              <span>Game Mode</span>
+              {gameMode === 'game' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping ml-0.5" />
+              )}
+            </button>
+          </div>
+
+          {/* Citizen Status Pill (When logged in) */}
+          {(() => {
+            const citizen = getCitizenUser();
+            if (!citizen) return null;
+            return (
+              <div className="hidden lg:flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-[11px] text-white">
+                <User size={13} className="text-emerald-400" />
+                <span className="font-bold text-slate-300">{citizen.name || 'Citizen'}</span>
+                <span className="text-[#e2fd00] font-black">+{ecoPoints} Pts</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Center: Real-time Notification Banner */}
@@ -1895,6 +2243,154 @@ export default function LivingCity3D({ onExit }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
+          GAME MODE: GTA-STYLE BUILDING & COMPONENT INSPECTION HUD
+          ───────────────────────────────────────────────────────────── */}
+      {gameMode === 'game' && activeBuildingInfo && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 max-w-xl w-[92%] sm:w-auto bg-slate-950/95 text-white p-4 sm:p-5 rounded-3xl border-2 border-[#e2fd00] shadow-[0_0_30px_rgba(226,253,0,0.3)] backdrop-blur-xl z-30 animate-in slide-in-from-top-4 pointer-events-auto">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-md"
+                style={{
+                  backgroundColor:
+                    activeBuildingInfo.category === 'garden' ? '#15803d' :
+                    activeBuildingInfo.category === 'cafe' ? '#b45309' :
+                    activeBuildingInfo.category === 'residential' ? '#059669' :
+                    activeBuildingInfo.category === 'landfill' ? '#0f766e' : '#0284c7'
+                }}
+              >
+                {activeBuildingInfo.category === 'garden' && <Trees size={22} />}
+                {activeBuildingInfo.category === 'cafe' && <Coffee size={22} />}
+                {activeBuildingInfo.category === 'residential' && <Home size={22} />}
+                {activeBuildingInfo.category === 'landfill' && <Flame size={22} />}
+                {activeBuildingInfo.category === 'corporate' && <Building2 size={22} />}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-[#e2fd00] text-slate-950 tracking-wider">
+                    {activeBuildingInfo.tag}
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-400">
+                    +{activeBuildingInfo.points} Eco-Points
+                  </span>
+                </div>
+                <h4 className="font-black text-base sm:text-lg text-white leading-tight mt-0.5">
+                  {activeBuildingInfo.name}
+                </h4>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveBuildingInfo(null)}
+              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-2 text-xs text-slate-300">
+            <p className="leading-relaxed">
+              {activeBuildingInfo.desc}
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3 py-2 rounded-xl border border-white/5 text-[11px]">
+              <span className="text-slate-400">
+                Segregation: <strong className="text-white">{activeBuildingInfo.segregation}</strong>
+              </span>
+              <span className="text-[#e2fd00] font-black">
+                Audited: {surveyedBuildings.length} / {CITY_BUILDINGS_DATA.length} City Zones
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          CITIZEN LOGIN REQUIRED MODAL (Before entering Game Mode)
+          ───────────────────────────────────────────────────────────── */}
+      {showLoginModal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-white space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">CITIZEN LOGIN REQUIRED</h3>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase">नागरिक प्रमाणीकरण आवश्यक</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <p className="leading-relaxed">
+                <strong>Game Mode</strong> connects to your verified Citizen profile to record real-time municipal audits, describe every building & component, and earn redeemable Eco-Points.
+              </p>
+              
+              <div className="bg-slate-800/80 p-3 rounded-2xl border border-white/5 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-[11px]">
+                  <Sparkles size={14} />
+                  <span>Game Mode Interactive Features:</span>
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-slate-300 text-[11px] font-medium">
+                  <li>Detailed waste breakdown for every cafe, house, and corporate tower</li>
+                  <li>Live GTA inspection HUD when driving near city blocks</li>
+                  <li>Earn +25 to +50 Eco-Points per audited municipal zone</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <button
+                onClick={() => {
+                  const demoCitizen = {
+                    id: 108,
+                    name: "Civic Explorer",
+                    email: "citizen@smartbin.cg.gov.in",
+                    role: "citizen",
+                    city: "Durg-Bhilai",
+                    eco_points: 250
+                  };
+                  localStorage.setItem('smartbin_user', JSON.stringify(demoCitizen));
+                  setShowLoginModal(false);
+                  setGameMode('game');
+                  setNotification("✅ Logged in as Citizen #108! Game Mode activated with building audit tour.");
+                }}
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Sparkles size={14} className="text-[#e2fd00]" />
+                <span>Quick Citizen Demo Login (1-Click Start)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  window.location.href = '/login?redirect=/city';
+                }}
+                className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-white/10 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LogIn size={14} />
+                <span>Sign In with Existing Citizen Account</span>
+              </button>
+
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="w-full py-2 text-slate-400 hover:text-white text-xs font-bold text-center cursor-pointer"
+              >
+                Continue in Normal Mode (Free Roam)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
           MISSION COMPLETE / SHIFT VICTORY MODAL
           ───────────────────────────────────────────────────────────── */}
       {missionComplete && (
@@ -1946,97 +2442,159 @@ export default function LivingCity3D({ onExit }) {
 
       {/* ─────────────────────────────────────────────────────────────
           GTA-STYLE CIRCULAR MINI-MAP RADAR HUD (Bottom-Left)
+          Fixed Arrow in Center (Always Points Up), Map Rotates Underneath!
           ───────────────────────────────────────────────────────────── */}
-      <div className="absolute bottom-6 left-6 z-30 pointer-events-auto flex flex-col gap-2">
-        <div className="relative w-44 h-44 rounded-full bg-slate-950/90 border-4 border-slate-700/80 shadow-2xl backdrop-blur-md overflow-hidden flex items-center justify-center">
-          
-          <div className="absolute inset-0 rounded-full border border-slate-800/60 pointer-events-none" />
-          <span className="absolute top-1 text-[9px] font-black text-rose-500 z-10">N</span>
-          <span className="absolute bottom-1 text-[9px] font-black text-slate-500 z-10">S</span>
-          <span className="absolute left-1 text-[9px] font-black text-slate-500 z-10">W</span>
-          <span className="absolute right-1 text-[9px] font-black text-slate-500 z-10">E</span>
+      {(() => {
+        const mapRotationDeg = 180 + (radarData.playerAngle * 180 / Math.PI);
+        const northAngleDeg = (180 + (radarData.playerAngle * 180 / Math.PI)) % 360;
 
-          <svg className="w-full h-full" viewBox="-130 -130 260 260">
-            <circle cx="0" cy="0" r="128" fill="#090d16" />
+        return (
+          <div className="absolute bottom-6 left-6 z-30 pointer-events-auto flex flex-col gap-2">
+            <div className="relative w-48 h-48 sm:w-52 sm:h-52 rounded-full bg-slate-950/95 border-4 border-slate-700/90 shadow-2xl backdrop-blur-md overflow-hidden flex items-center justify-center">
+              
+              {/* Outer Compass North Marker (Rotates along radar rim to point to true North!) */}
+              <div
+                className="absolute inset-0 pointer-events-none z-20 flex items-start justify-center transition-transform duration-75"
+                style={{ transform: `rotate(${northAngleDeg}deg)` }}
+              >
+                <span className="text-[11px] font-black text-rose-500 drop-shadow-[0_0_4px_rgba(244,63,94,0.8)] mt-1.5">
+                  N
+                </span>
+              </div>
 
-            {/* Roads */}
-            {[-92, -46, 0, 46, 92].map((coord) => (
-              <React.Fragment key={coord}>
-                <line x1="-125" y1={coord} x2="125" y2={coord} stroke="#1e293b" strokeWidth="14" />
-                <line x1={coord} y1="-125" x2={coord} y2="125" stroke="#1e293b" strokeWidth="14" />
-                <line x1="-125" y1={coord} x2="125" y2={coord} stroke="#eab308" strokeWidth="0.8" strokeDasharray="3, 3" />
-                <line x1={coord} y1="-125" x2={coord} y2="125" stroke="#eab308" strokeWidth="0.8" strokeDasharray="3, 3" />
-              </React.Fragment>
-            ))}
+              <svg className="w-full h-full" viewBox="-120 -120 240 240">
+                <defs>
+                  <clipPath id="gta-radar-clip">
+                    <circle cx="0" cy="0" r="114" />
+                  </clipPath>
+                  <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#0b1728" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="#050a12" stopOpacity="1" />
+                  </radialGradient>
+                </defs>
 
-            {/* Gardens */}
-            <rect x="-85" y="9" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
-            <rect x="7" y="-37" width="32" height="32" fill="#16a34a" rx="4" opacity="0.85" />
+                {/* Radar Background */}
+                <circle cx="0" cy="0" r="116" fill="url(#radar-glow)" stroke="#1e293b" strokeWidth="2" />
+                <circle cx="0" cy="0" r="75" fill="none" stroke="#1e293b" strokeWidth="0.8" strokeDasharray="3, 3" />
+                <circle cx="0" cy="0" r="40" fill="none" stroke="#1e293b" strokeWidth="0.8" strokeDasharray="3, 3" />
 
-            {/* Dumpyard Salvage Landfill */}
-            <rect x="-22" y="-128" width="44" height="24" fill="#0f766e" rx="3" />
-            <circle cx={radarData.dumpyard.x} cy={radarData.dumpyard.z} r="4.5" fill="#10b981" />
+                {/* ── ROTATING WORLD MAP (GTA Vice City / San Andreas style) ── */}
+                <g clipPath="url(#gta-radar-clip)">
+                  <g transform={`rotate(${mapRotationDeg}) translate(${-radarData.playerX}, ${-radarData.playerZ})`}>
+                    
+                    {/* World Roads */}
+                    {[-92, -46, 0, 46, 92].map((coord) => (
+                      <React.Fragment key={coord}>
+                        <line x1="-135" y1={coord} x2="135" y2={coord} stroke="#1e293b" strokeWidth="16" />
+                        <line x1={coord} y1="-135" x2={coord} y2="135" stroke="#1e293b" strokeWidth="16" />
+                        <line x1="-135" y1={coord} x2="135" y2={coord} stroke="#eab308" strokeWidth="1.0" strokeDasharray="4, 4" />
+                        <line x1={coord} y1="-135" x2={coord} y2="135" stroke="#eab308" strokeWidth="1.0" strokeDasharray="4, 4" />
+                      </React.Fragment>
+                    ))}
 
-            {/* AI Traffic */}
-            {radarData.traffic.map((tc, idx) => (
-              <circle key={idx} cx={tc.x} cy={tc.z} r="2.2" fill="#facc15" />
-            ))}
+                    {/* Building Blocks */}
+                    {CITY_BUILDINGS_DATA.map((b) => {
+                      if (b.category === 'landfill') return null;
+                      const isG = b.category === 'garden';
+                      const isC = b.category === 'cafe';
+                      const isH = b.category === 'residential';
+                      return (
+                        <rect
+                          key={b.id}
+                          x={b.bx - 14}
+                          y={b.bz - 14}
+                          width={28}
+                          height={28}
+                          rx={3}
+                          fill={isG ? '#15803d' : isC ? '#78350f' : isH ? '#b45309' : '#0f172a'}
+                          stroke={isG ? '#22c55e' : '#334155'}
+                          strokeWidth="1"
+                          opacity="0.85"
+                        />
+                      );
+                    })}
 
-            {/* SmartBins */}
-            {radarData.bins.map((b) => (
-              <circle
-                key={b.id}
-                cx={b.x}
-                cy={b.z}
-                r={b.collected ? 2.5 : 4.0}
-                fill={b.collected ? '#64748b' : (b.id % 3 === 1 ? '#3b82f6' : (b.id % 3 === 2 ? '#22c55e' : '#f97316'))}
-                stroke="#ffffff"
-                strokeWidth={b.collected ? 0.5 : 1.2}
-              />
-            ))}
+                    {/* Gardens Fountains */}
+                    <circle cx="-23" cy="-23" r="4" fill="#38bdf8" />
+                    <circle cx="23" cy="23" r="4" fill="#38bdf8" />
 
-            {/* Target Route Line */}
-            {radarData.target && (
-              <line
-                x1={radarData.playerX}
-                y1={radarData.playerZ}
-                x2={radarData.target.x}
-                y2={radarData.target.z}
-                stroke="#e2fd00"
-                strokeWidth="1.8"
-                strokeDasharray="4, 3"
-                opacity="0.9"
-              />
-            )}
+                    {/* Dumpyard Salvage Landfill */}
+                    <rect x="-24" y="-132" width="48" height="28" fill="#0f766e" rx="4" stroke="#14b8a6" strokeWidth="1" />
+                    <circle cx={radarData.dumpyard.x} cy={radarData.dumpyard.z} r="5" fill="#10b981" />
 
-            {/* IoT Fleet Vector Field Aura on Radar (28m radius) */}
-            <circle
-              cx={radarData.playerX}
-              cy={radarData.playerZ}
-              r="28"
-              fill="rgba(56, 189, 248, 0.08)"
-              stroke="#38bdf8"
-              strokeWidth="0.8"
-              strokeDasharray="3, 3"
-              opacity="0.65"
-            />
+                    {/* AI Traffic Cars */}
+                    {radarData.traffic.map((tc, idx) => (
+                      <circle key={idx} cx={tc.x} cy={tc.z} r="2.6" fill="#facc15" stroke="#000" strokeWidth="0.6" />
+                    ))}
 
-            {/* Player Blip */}
-            <g transform={`translate(${radarData.playerX}, ${radarData.playerZ}) rotate(${(-radarData.playerAngle * 180) / Math.PI})`}>
-              <polygon points="0,-7 5,6 0,3 -5,6" fill="#ffffff" stroke="#000000" strokeWidth="1" />
-            </g>
-          </svg>
-        </div>
+                    {/* Smart Bins */}
+                    {radarData.bins.map((b) => (
+                      <circle
+                        key={b.id}
+                        cx={b.x}
+                        cy={b.z}
+                        r={b.collected ? 2.8 : 4.5}
+                        fill={b.collected ? '#64748b' : (b.id % 3 === 1 ? '#3b82f6' : (b.id % 3 === 2 ? '#22c55e' : '#f97316'))}
+                        stroke="#ffffff"
+                        strokeWidth={b.collected ? 0.6 : 1.5}
+                      />
+                    ))}
 
-        {/* Radar Info Pill */}
-        <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 shadow-lg text-white text-[11px] font-bold flex items-center justify-between">
-          <div className="flex items-center gap-1.5 truncate">
-            <Compass size={14} className="text-[#e2fd00] shrink-0" />
-            <span className="truncate">{currentTargetName}</span>
+                    {/* Route Line to Target */}
+                    {radarData.target && (
+                      <line
+                        x1={radarData.playerX}
+                        y1={radarData.playerZ}
+                        x2={radarData.target.x}
+                        y2={radarData.target.z}
+                        stroke="#e2fd00"
+                        strokeWidth="2.2"
+                        strokeDasharray="4, 3"
+                        opacity="0.95"
+                      />
+                    )}
+
+                    {/* IoT Proximity Vector Aura (28m) */}
+                    <circle
+                      cx={radarData.playerX}
+                      cy={radarData.playerZ}
+                      r="28"
+                      fill="rgba(56, 189, 248, 0.08)"
+                      stroke="#38bdf8"
+                      strokeWidth="0.8"
+                      strokeDasharray="3, 3"
+                      opacity="0.75"
+                    />
+
+                  </g>
+                </g>
+
+                {/* ── FIXED PLAYER ARROW (GTA Vice City / San Andreas Style) ── */}
+                {/* Always at center (0, 0), always pointing straight UP */}
+                <g transform="translate(0, 0)" className="pointer-events-none">
+                  <polygon points="0,-9 6,6 0,2 -6,6" fill="#e2fd00" stroke="#000000" strokeWidth="1.8" />
+                  <circle cx="0" cy="0" r="1.5" fill="#000000" />
+                </g>
+
+                {/* Crosshair guidelines */}
+                <line x1="0" y1="-114" x2="0" y2="-102" stroke="#475569" strokeWidth="1.2" />
+                <line x1="0" y1="102" x2="0" y2="114" stroke="#475569" strokeWidth="1.2" />
+                <line x1="-114" y1="0" x2="-102" y2="0" stroke="#475569" strokeWidth="1.2" />
+                <line x1="102" y1="0" x2="114" y2="0" stroke="#475569" strokeWidth="1.2" />
+              </svg>
+            </div>
+
+            {/* Radar Info Pill */}
+            <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 shadow-lg text-white text-[11px] font-bold flex items-center justify-between">
+              <div className="flex items-center gap-1.5 truncate">
+                <Compass size={14} className="text-[#e2fd00] shrink-0" />
+                <span className="truncate">{currentTargetName}</span>
+              </div>
+              <span className="text-[#e2fd00] shrink-0 ml-2">{targetDistance}m</span>
+            </div>
           </div>
-          <span className="text-[#e2fd00] shrink-0 ml-2">{targetDistance}m</span>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ─────────────────────────────────────────────────────────────
           BOTTOM STATUS & SPEEDOMETER
